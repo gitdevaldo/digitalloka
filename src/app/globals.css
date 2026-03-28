@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  --background: #FFFDF5;
+  --foreground: #1E293B;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #8B5CF6;
+  --accent-foreground: #FFFFFF;
+  --secondary: #F472B6;
+  --tertiary: #FBBF24;
+  --quaternary: #34D399;
+  --border: #E2E8F0;
+  --input: #FFFFFF;
+  --card: #FFFFFF;
+  --ring: #8B5CF6;
+  --shadow: #1E293B;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
+  border: 2px solid var(--muted);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* Bounce timing function */
+.bounce-ease {
+  transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Hard shadow utilities */
+.shadow-pop {
+  box-shadow: 4px 4px 0px 0px var(--shadow);
+}
+.shadow-pop-hover {
+  box-shadow: 6px 6px 0px 0px var(--shadow);
+}
+.shadow-pop-active {
+  box-shadow: 2px 2px 0px 0px var(--shadow);
+}
+.shadow-pop-accent {
+  box-shadow: 4px 4px 0px 0px var(--accent);
+}
+.shadow-pop-secondary {
+  box-shadow: 4px 4px 0px 0px var(--secondary);
+}
+.shadow-pop-tertiary {
+  box-shadow: 4px 4px 0px 0px var(--tertiary);
+}
+.shadow-pop-soft {
+  box-shadow: 8px 8px 0px 0px var(--border);
+}
+
+/* Wiggle animation */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(3deg); }
+  75% { transform: rotate(-3deg); }
+}
+.animate-wiggle {
+  animation: wiggle 0.3s ease-in-out;
+}
+
+/* Pop in animation */
+@keyframes pop-in {
+  0% { transform: scale(0); opacity: 0; }
+  80% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-pop-in {
+  animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .bounce-ease,
+  .animate-wiggle,
+  .animate-pop-in {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* Dot pattern background */
+.bg-dots {
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
