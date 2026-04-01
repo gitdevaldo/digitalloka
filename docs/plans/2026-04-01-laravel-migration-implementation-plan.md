@@ -29,6 +29,7 @@ Implement the first executable migration slice from Next.js to Laravel by creati
    - same-origin check for mutating routes
    - auth session requirement
 6. Add migration notes for local setup and next implementation steps.
+7. Archive legacy Next.js implementation into `.archive/legacy` with reference README.
 
 ## Acceptance Criteria
 

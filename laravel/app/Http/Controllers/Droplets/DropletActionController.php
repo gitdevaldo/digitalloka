@@ -9,6 +9,7 @@ use App\Services\Auth\SupabaseAuthService;
 use App\Services\DigitalOcean\DigitalOceanService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use RuntimeException;
 
 class DropletActionController extends Controller
 {
@@ -35,7 +36,11 @@ class DropletActionController extends Controller
             return response()->json(['error' => 'Access denied'], 403);
         }
 
-        $actions = $this->digitalOceanService->listActions((int) $dropletId, $userId);
+        try {
+            $actions = $this->digitalOceanService->listActions((int) $dropletId, $userId);
+        } catch (RuntimeException $exception) {
+            return response()->json(['error' => $exception->getMessage()], 502);
+        }
 
         return response()->json(['actions' => $actions], 200);
     }
@@ -56,11 +61,15 @@ class DropletActionController extends Controller
             return response()->json(['error' => 'Access denied'], 403);
         }
 
-        $action = $this->digitalOceanService->performAction(
-            (int) $dropletId,
-            (string) $request->validated('type'),
-            $userId
-        );
+        try {
+            $action = $this->digitalOceanService->performAction(
+                (int) $dropletId,
+                (string) $request->validated('type'),
+                $userId
+            );
+        } catch (RuntimeException $exception) {
+            return response()->json(['error' => $exception->getMessage()], 502);
+        }
 
         return response()->json(['action' => $action], 201);
     }

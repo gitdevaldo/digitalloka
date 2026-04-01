@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\Auth\SupabaseAuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use RuntimeException;
 
 class LoginController extends Controller
 {
@@ -19,7 +20,14 @@ class LoginController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        $result = $this->authService->buildMagicLinkRedirect($payload['email']);
+        try {
+            $result = $this->authService->startMagicLinkLogin($payload['email']);
+        } catch (RuntimeException $exception) {
+            return response()->json([
+                'error' => $exception->getMessage(),
+                'kind' => 'service',
+            ], 503);
+        }
 
         return response()->json($result, 200);
     }

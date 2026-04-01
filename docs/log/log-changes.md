@@ -1,6 +1,39 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Completed Laravel service/controller implementation slice and archived Next.js legacy code.
+- What you do:
+  - Implemented Supabase magic-link initiation and session user resolution service logic.
+  - Implemented database-backed droplet access checks using `users.droplet_ids`.
+  - Implemented DigitalOcean API integration methods and controller-level error mapping.
+  - Added base Laravel model/controller and initial users migration.
+  - Archived Next.js app/config and legacy docs into `.archive/legacy/` with archive README.
+  - Expanded `.gitignore` with Laravel runtime artifacts.
+- File path that changes:
+  - `laravel/app/Services/Auth/SupabaseAuthService.php`
+  - `laravel/app/Services/Access/DropletAccessService.php`
+  - `laravel/app/Services/DigitalOcean/DigitalOceanService.php`
+  - `laravel/app/Http/Controllers/Auth/LoginController.php`
+  - `laravel/app/Http/Controllers/Droplets/DropletController.php`
+  - `laravel/app/Http/Controllers/Droplets/DropletActionController.php`
+  - `laravel/app/Http/Controllers/Controller.php`
+  - `laravel/app/Models/User.php`
+  - `laravel/database/migrations/2026_04_01_000000_create_users_table.php`
+  - `.archive/legacy/README.md`
+  - `.archive/legacy/src/` (moved)
+  - `.archive/legacy/next.config.js` (moved)
+  - `.archive/legacy/package.json` (moved)
+  - `.archive/legacy/package-lock.json` (moved)
+  - `.archive/legacy/postcss.config.js` (moved)
+  - `.archive/legacy/tailwind.config.ts` (moved)
+  - `.archive/legacy/tsconfig.json` (moved)
+  - `.archive/legacy/dashboard.html` (moved)
+  - `.archive/legacy/prd.md` (moved)
+  - `.gitignore`
+  - `docs/plans/2026-04-01-laravel-migration-implementation-plan.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Implemented Laravel migration Phase 1 scaffold with route and service parity skeleton.
 - What you do:
   - Created a Laravel workspace scaffold under `laravel/` including composer metadata, env template, service config, route definitions, middleware, request validation, controllers, and service boundaries.
