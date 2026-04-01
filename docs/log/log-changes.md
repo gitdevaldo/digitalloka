@@ -1,6 +1,39 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Extended implementation with checkout lifecycle and reminder command wiring.
+- What you do:
+  - Added user checkout request/controller and order creation logic with order items and pending transactions.
+  - Extended order status transition behavior to create entitlements on paid state.
+  - Added license issue endpoint and command scheduler baseline for renewal reminder automation.
+  - Added entitlement admin status-update request/controller and updated routing.
+  - Updated README to reflect implemented modules and current runtime limitation.
+- File path that changes:
+  - `app/Http/Requests/User/CreateCheckoutRequest.php`
+  - `app/Http/Controllers/User/CheckoutController.php`
+  - `app/Services/Commerce/OrderService.php`
+  - `app/Http/Controllers/Parity/LicenseValidationController.php`
+  - `app/Http/Requests/Admin/UpdateEntitlementStatusRequest.php`
+  - `app/Http/Controllers/Admin/EntitlementController.php`
+  - `app/Console/Commands/SendRenewalRemindersCommand.php`
+  - `app/Console/Kernel.php`
+  - `routes/api.php`
+  - `resources/views/layouts/app.blade.php`
+  - `resources/views/catalog/index.blade.php`
+  - `resources/views/catalog/show.blade.php`
+  - `resources/views/dashboard/overview.blade.php`
+  - `resources/views/dashboard/droplets.blade.php`
+  - `resources/views/dashboard/products.blade.php`
+  - `resources/views/dashboard/orders.blade.php`
+  - `resources/views/dashboard/licenses.blade.php`
+  - `resources/views/admin/overview.blade.php`
+  - `resources/views/admin/orders.blade.php`
+  - `resources/views/admin/users.blade.php`
+  - `resources/views/admin/settings.blade.php`
+  - `README.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Implemented product expansion phase foundation (schema, APIs, and web surfaces).
 - What you do:
   - Added complete migration set for products, pricing, orders, transactions, entitlements, licenses, affiliate, site settings, and audit logs plus user role/status extension.

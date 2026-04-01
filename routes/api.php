@@ -11,6 +11,7 @@ use App\Http\Controllers\Parity\LicenseValidationController;
 use App\Http\Controllers\User\LicenseController as UserLicenseController;
 use App\Http\Controllers\User\OrderController as UserOrderController;
 use App\Http\Controllers\User\ProductController as UserProductController;
+use App\Http\Controllers\User\CheckoutController as UserCheckoutController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\SiteSettingController as AdminSiteSettingController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -33,6 +34,7 @@ Route::get('/user/products', [UserProductController::class, 'index']);
 Route::post('/user/products/{id}/actions', [UserProductController::class, 'action'])->middleware(EnsureSameOrigin::class);
 Route::get('/user/orders', [UserOrderController::class, 'index']);
 Route::get('/user/orders/{id}', [UserOrderController::class, 'show']);
+Route::post('/user/checkout', [UserCheckoutController::class, 'store'])->middleware(EnsureSameOrigin::class);
 Route::get('/user/licenses', [UserLicenseController::class, 'index']);
 
 Route::get('/admin/orders', [AdminOrderController::class, 'index']);
