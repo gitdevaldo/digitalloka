@@ -1,6 +1,17 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Moved homepage filters to side rail and prioritized product results.
+- What you do:
+  - Replaced top-heavy homepage filter block with a dedicated side filter rail.
+  - Kept product list as the primary visual focus area in the main column.
+  - Added sticky desktop behavior for filter rail with responsive fallback on smaller screens.
+  - Verified tests still pass.
+- File path that changes:
+  - `resources/views/catalog/index.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Replaced oversized homepage cards with compact catalog toolbar.
 - What you do:
   - Removed the two large top cards from catalog homepage.

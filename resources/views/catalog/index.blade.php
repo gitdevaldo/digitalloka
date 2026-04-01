@@ -1,71 +1,116 @@
 @extends('layouts.app', ['title' => 'DigitalLoka Catalog'])
 
 @section('content')
-<section class="panel stack catalog-toolbar">
-  <div class="section-head">
-    <div>
-      <p class="section-eyebrow">Marketplace</p>
-      <h1>Digital Product Catalog</h1>
+<section class="catalog-shell">
+  <aside class="card filter-rail">
+    <div class="section-head">
+      <div>
+        <p class="section-eyebrow">Control</p>
+        <h2>Filters</h2>
+      </div>
+      <button class="btn btn-ghost" onclick="resetFilters()">Reset</button>
     </div>
-    <div class="toolbar-meta">
-      <span class="chip" id="result-count">0 items</span>
-      <span class="chip" id="sort-state">recommended</span>
+    <p class="muted">Adjust constraints and apply when ready.</p>
+
+    <div class="filter-stack">
+      <label>
+        <span class="section-eyebrow">Category</span>
+        <input id="filter-category" placeholder="category slug" />
+      </label>
+      <label>
+        <span class="section-eyebrow">Type</span>
+        <input id="filter-type" placeholder="product type" />
+      </label>
+      <label>
+        <span class="section-eyebrow">Availability</span>
+        <select id="filter-availability">
+          <option value="">Any availability</option>
+          <option value="available">available</option>
+          <option value="out-of-stock">out-of-stock</option>
+          <option value="coming-soon">coming-soon</option>
+        </select>
+      </label>
+      <div class="controls controls-2">
+        <label>
+          <span class="section-eyebrow">Min price</span>
+          <input id="filter-min-price" type="number" placeholder="0" />
+        </label>
+        <label>
+          <span class="section-eyebrow">Max price</span>
+          <input id="filter-max-price" type="number" placeholder="100" />
+        </label>
+      </div>
+      <label>
+        <span class="section-eyebrow">Sort</span>
+        <select id="filter-sort">
+          <option value="recommended">recommended</option>
+          <option value="newest">newest</option>
+          <option value="price_asc">price_asc</option>
+          <option value="price_desc">price_desc</option>
+        </select>
+      </label>
     </div>
-  </div>
-  <p class="muted">Filter and sort quickly, then open product details from the list below.</p>
-  <div class="controls">
-    <label>
-      <span class="section-eyebrow">Category</span>
-      <input id="filter-category" placeholder="category slug" />
-    </label>
-    <label>
-      <span class="section-eyebrow">Type</span>
-      <input id="filter-type" placeholder="product type" />
-    </label>
-    <label>
-      <span class="section-eyebrow">Availability</span>
-      <select id="filter-availability">
-        <option value="">Any availability</option>
-        <option value="available">available</option>
-        <option value="out-of-stock">out-of-stock</option>
-        <option value="coming-soon">coming-soon</option>
-      </select>
-    </label>
-    <label>
-      <span class="section-eyebrow">Min price</span>
-      <input id="filter-min-price" type="number" placeholder="0" />
-    </label>
-    <label>
-      <span class="section-eyebrow">Max price</span>
-      <input id="filter-max-price" type="number" placeholder="100" />
-    </label>
-    <label>
-      <span class="section-eyebrow">Sort</span>
-      <select id="filter-sort">
-        <option value="recommended">recommended</option>
-        <option value="newest">newest</option>
-        <option value="price_asc">price_asc</option>
-        <option value="price_desc">price_desc</option>
-      </select>
-    </label>
-  </div>
-  <div class="catalog-actions">
+
     <button class="btn" onclick="loadProducts()">Apply Filters</button>
-    <button class="btn btn-ghost" onclick="resetFilters()">Reset</button>
-  </div>
+  </aside>
+
+  <section class="results-column stack">
+    <div class="panel results-head">
+      <div>
+        <p class="section-eyebrow">Marketplace</p>
+        <h1>Digital Product Catalog</h1>
+      </div>
+      <div class="toolbar-meta">
+        <span class="chip" id="result-count">0 items</span>
+        <span class="chip" id="sort-state">recommended</span>
+      </div>
+    </div>
+
+    <section id="catalog-grid"></section>
+  </section>
 </section>
 
-<section id="catalog-grid"></section>
-
 <style>
+  .catalog-shell {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+  }
+
+  .filter-rail {
+    position: sticky;
+    top: 84px;
+    display: grid;
+    gap: 12px;
+  }
+
+  .filter-stack {
+    display: grid;
+    gap: 10px;
+  }
+
+  .controls-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 0;
+  }
+
+  .results-head {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .results-column {
+    min-width: 0;
+  }
+
   #catalog-grid {
     display: grid;
     gap: 10px;
     width: 100%;
-  }
-
-  .catalog-toolbar {
-    margin-bottom: 2px;
   }
 
   .toolbar-meta {
@@ -94,6 +139,17 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+  }
+
+  @media (max-width: 980px) {
+    .catalog-shell {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .filter-rail {
+      position: static;
+      top: auto;
+    }
   }
 </style>
 
