@@ -110,6 +110,12 @@
       font-size: 1.02rem;
       font-weight: 800;
       text-decoration: none;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .brand:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 6px 6px 0 0 var(--shadow);
     }
 
     .brand b {
@@ -130,7 +136,7 @@
       background: var(--card);
       border: 2px solid var(--foreground);
       border-radius: var(--radius-md);
-      padding: 16px;
+      padding: 18px;
       box-shadow: 4px 4px 0 0 var(--shadow);
     }
 
@@ -144,8 +150,66 @@
 
     .grid {
       display: grid;
-      gap: 12px;
+      gap: 14px;
       grid-template-columns: minmax(0, 1fr);
+    }
+
+    .grid-2 {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .section-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .section-eyebrow {
+      margin: 0;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      color: var(--muted-foreground);
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+    }
+
+    .metric-label {
+      margin: 0;
+      font-size: 0.74rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted-foreground);
+      font-weight: 700;
+    }
+
+    .metric-value {
+      margin: 6px 0 0;
+      font-family: "Outfit", sans-serif;
+      font-size: 1.2rem;
+      font-weight: 800;
     }
 
     .muted {
@@ -267,6 +331,16 @@
       text-decoration: none;
     }
 
+    .btn-secondary {
+      background: var(--tertiary);
+      color: var(--foreground);
+    }
+
+    .btn-ghost {
+      background: #fff;
+      color: var(--foreground);
+    }
+
     button:hover,
     .btn:hover {
       transform: translate(-2px, -2px);
@@ -302,6 +376,11 @@
 
       .card {
         padding: 14px;
+      }
+
+      .metric-row,
+      .grid-2 {
+        grid-template-columns: minmax(0, 1fr);
       }
     }
   </style>

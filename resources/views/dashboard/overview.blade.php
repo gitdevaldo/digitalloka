@@ -1,13 +1,32 @@
 @extends('layouts.app', ['title' => 'Dashboard'])
 
 @section('content')
-<div class="card">
-  <span class="chip">Workspace</span>
-  <h1>User Dashboard</h1>
-  <p class="muted">Manage droplets, products, and orders from one place.</p>
-</div>
+<section class="card stack">
+  <div class="section-head">
+    <div>
+      <p class="section-eyebrow">Workspace</p>
+      <h1>User Dashboard</h1>
+    </div>
+    <span class="chip">Operational</span>
+  </div>
+  <p class="muted">Manage droplets, products, and orders from a single operational panel.</p>
+  <div class="metric-row">
+    <div class="metric">
+      <p class="metric-label">Droplets</p>
+      <p class="metric-value">Live</p>
+    </div>
+    <div class="metric">
+      <p class="metric-label">Products</p>
+      <p class="metric-value">Entitled</p>
+    </div>
+    <div class="metric">
+      <p class="metric-label">Orders</p>
+      <p class="metric-value">Tracked</p>
+    </div>
+  </div>
+</section>
 
-<div class="grid">
+<section class="grid-2">
   <article class="card">
     <h2>Droplets</h2>
     <p class="muted">Manage droplet actions and monitoring flow.</p>
@@ -23,5 +42,5 @@
     <p class="muted">Review order statuses and finance details.</p>
     <a class="btn" href="/dashboard/orders">View orders</a>
   </article>
-</div>
+</section>
 @endsection

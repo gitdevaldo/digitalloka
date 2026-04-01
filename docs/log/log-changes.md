@@ -1,6 +1,20 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Improved production UI hierarchy and interaction quality across key Blade screens.
+- What you do:
+  - Refined shared layout with stronger typography rhythm, utility classes, metric blocks, and polished action styles.
+  - Redesigned catalog page with clearer section hierarchy, labeled filter controls, KPI row, reset action, and improved result row composition.
+  - Upgraded dashboard and admin overview pages with structured hero/metric sections and cleaner module cards.
+  - Preserved full-width layout and header minimality as requested.
+- File path that changes:
+  - `resources/views/layouts/app.blade.php`
+  - `resources/views/catalog/index.blade.php`
+  - `resources/views/dashboard/overview.blade.php`
+  - `resources/views/admin/overview.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Restored full-width card layout while keeping header minimal.
 - What you do:
   - Restored card and panel visual treatments in shared Blade layout after flattening pass.
