@@ -2,7 +2,9 @@
 
 @section('content')
 <div class="card">
+  <span class="chip">Admin</span>
   <h1>Admin Settings</h1>
+  <p class="muted">Inspect and update grouped site configuration values.</p>
   <pre id="settings-box">Loading...</pre>
 </div>
 

@@ -2,7 +2,9 @@
 
 @section('content')
 <div class="card">
+  <span class="chip">Orders</span>
   <h1>Order History</h1>
+  <p class="muted">Track your order timeline and latest status.</p>
   <table>
     <thead><tr><th>Order</th><th>Status</th><th>Total</th></tr></thead>
     <tbody id="orders-body"><tr><td colspan="3">Loading...</td></tr></tbody>

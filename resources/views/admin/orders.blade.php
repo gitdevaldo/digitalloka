@@ -2,7 +2,9 @@
 
 @section('content')
 <div class="card">
+  <span class="chip">Admin</span>
   <h1>Admin Orders</h1>
+  <p class="muted">Monitor order transitions across all users.</p>
   <table>
     <thead><tr><th>Order</th><th>User</th><th>Status</th><th>Total</th></tr></thead>
     <tbody id="admin-orders"><tr><td colspan="4">Loading...</td></tr></tbody>

@@ -2,9 +2,10 @@
 
 @section('content')
 <div class="card">
+  <span class="chip">Products</span>
   <h1>Purchased Products</h1>
   <p class="muted">Entitlements and status per product.</p>
-  <div id="products-list">Loading...</div>
+  <div class="grid" id="products-list"><div class="card">Loading...</div></div>
 </div>
 
 <script>
@@ -14,12 +15,12 @@
     const rows = payload.data || [];
 
     document.getElementById('products-list').innerHTML = rows.map((row) =>
-      `<div><strong>${row.product?.name || 'Unknown Product'}</strong> - <span class="chip">${row.status}</span></div>`
-    ).join('') || 'No purchased products';
+      `<article class="card"><h3>${row.product?.name || 'Unknown Product'}</h3><p class="muted">Entitlement status</p><span class="chip">${row.status}</span></article>`
+    ).join('') || '<div class="card"><h3>No purchased products</h3><p class="muted">Products will appear here once active.</p></div>';
   }
 
   loadUserProducts().catch(() => {
-    document.getElementById('products-list').textContent = 'Unable to load purchased products.';
+    document.getElementById('products-list').innerHTML = '<div class="card"><h3>Unable to load purchased products</h3><p class="muted">Please refresh and try again.</p></div>';
   });
 </script>
 @endsection

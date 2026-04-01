@@ -2,8 +2,10 @@
 
 @section('content')
 <div class="card">
+  <span class="chip">Admin</span>
   <h1>Admin Users</h1>
-  <ul id="admin-users"><li>Loading...</li></ul>
+  <p class="muted">Review account role and active-state assignments.</p>
+  <ul class="list" id="admin-users"><li>Loading...</li></ul>
 </div>
 
 <script>

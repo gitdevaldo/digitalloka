@@ -2,8 +2,10 @@
 
 @section('content')
 <div class="card">
+  <span class="chip">Admin</span>
   <h1>Admin Products</h1>
-  <ul id="admin-products"><li>Loading...</li></ul>
+  <p class="muted">Manage product status and storefront visibility.</p>
+  <ul class="list" id="admin-products"><li>Loading...</li></ul>
 </div>
 
 <script>

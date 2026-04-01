@@ -2,11 +2,13 @@
 
 @section('content')
 <div class="card">
+  <span class="chip">Catalog</span>
   <h1>Digital Product Catalog</h1>
-  <p class="muted">Browse products with filtering and sorting.</p>
+  <p class="muted">Browse products with filter and sorting controls designed for quick operational lookup.</p>
 </div>
 
-<div class="card" style="margin-top: 12px;">
+<div class="card">
+  <h2>Filters</h2>
   <div class="controls">
     <input id="filter-category" placeholder="Category slug" />
     <input id="filter-type" placeholder="Type" />
@@ -28,7 +30,30 @@
   <button onclick="loadProducts()">Apply Filters</button>
 </div>
 
-<div class="grid" style="margin-top: 14px;" id="catalog-grid"></div>
+<div id="catalog-grid"></div>
+
+<style>
+  #catalog-grid {
+    display: grid;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .catalog-row {
+    width: 100%;
+    display: grid;
+    gap: 8px;
+    padding: 14px;
+    border: 2px solid var(--foreground);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+    box-shadow: 4px 4px 0 0 var(--shadow);
+  }
+
+  .catalog-row .btn {
+    width: fit-content;
+  }
+</style>
 
 <script>
   function paramsFromUi() {
@@ -75,18 +100,18 @@
 
     const grid = document.getElementById('catalog-grid');
     grid.innerHTML = rows.map((item) => `
-      <article class="card">
+      <article class="catalog-row">
         <span class="chip">${item.status}</span>
         <h3>${item.name}</h3>
         <p class="muted">${item.short_description ?? 'No description yet.'}</p>
-        <a href="/products/${item.slug}">View product</a>
+        <a class="btn" href="/products/${item.slug}">View product</a>
       </article>
-    `).join('') || '<div class="card">No products found.</div>';
+    `).join('') || '<div class="panel"><h3>No products found</h3><p class="muted">Try changing filter parameters.</p></div>';
   }
 
   hydrateUiFromQuery();
   loadProducts().catch(() => {
-    document.getElementById('catalog-grid').innerHTML = '<div class="card">Failed to load products.</div>';
+    document.getElementById('catalog-grid').innerHTML = '<div class="panel"><h3>Failed to load products</h3><p class="muted">Please refresh and try again.</p></div>';
   });
 </script>
 @endsection

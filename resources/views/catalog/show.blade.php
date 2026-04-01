@@ -2,6 +2,7 @@
 
 @section('content')
 <div class="card" id="product-card">
+  <span class="chip">Catalog</span>
   <h1>Loading product...</h1>
 </div>
 
@@ -24,7 +25,7 @@
       <h1>${p.name}</h1>
       <p class="muted">${p.short_description || ''}</p>
       <h3>Packages</h3>
-      <ul>${prices || '<li>No active package</li>'}</ul>
+      <ul class="list">${prices || '<li>No active package</li>'}</ul>
       <h3>FAQ</h3>
       <pre>${JSON.stringify(p.faq_items || [], null, 2)}</pre>
     `;

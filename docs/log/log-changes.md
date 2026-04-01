@@ -1,6 +1,27 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Aligned Laravel Blade UI to brand guideline and removed public admin header link.
+- What you do:
+  - Reworked shared Blade layout styling to match brand tokens, typography, border/shadow language, and interaction patterns.
+  - Upgraded catalog, dashboard, and admin page presentation to branded cards, controls, and hierarchy while preserving existing data logic.
+  - Restricted admin navigation link visibility in header to admin route context instead of showing it globally.
+  - Re-ran automated tests after UI updates.
+- File path that changes:
+  - `resources/views/layouts/app.blade.php`
+  - `resources/views/catalog/index.blade.php`
+  - `resources/views/catalog/show.blade.php`
+  - `resources/views/dashboard/overview.blade.php`
+  - `resources/views/dashboard/products.blade.php`
+  - `resources/views/dashboard/orders.blade.php`
+  - `resources/views/admin/overview.blade.php`
+  - `resources/views/admin/products.blade.php`
+  - `resources/views/admin/users.blade.php`
+  - `resources/views/admin/orders.blade.php`
+  - `resources/views/admin/settings.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Updated Laravel migration PRD status to completed.
 - What you do:
   - Changed migration PRD status from Draft to Completed to reflect completed implementation state.
