@@ -1,327 +1,474 @@
 @extends('layouts.app', ['title' => 'DigitalLoka Catalog'])
 
 @section('content')
-<section class="catalog-shell">
-  <aside class="card filter-rail">
-    <div class="section-head">
-      <div>
-        <p class="section-eyebrow">Control</p>
-        <h2>Filters</h2>
+<section class="dlk-page-wrapper">
+  <aside class="dlk-sidebar">
+    <div class="dlk-sidebar-section">
+      <p class="section-eyebrow">Category</p>
+      <div class="dlk-filter-chip-group" id="category-filters">
+        <button type="button" class="dlk-filter-chip active" data-category="" onclick="setCategory('')">
+          <span>All products</span>
+          <span class="dlk-chip-count" id="count-all">0</span>
+        </button>
       </div>
-      <button class="btn btn-ghost" onclick="resetFilters()">Reset</button>
     </div>
-    <p class="muted">Adjust constraints and apply when ready.</p>
 
-    <div class="filter-stack">
-      <label>
-        <span class="section-eyebrow">Category</span>
-        <input id="filter-category" list="category-options" placeholder="e.g. Compute" />
-      </label>
-      <datalist id="category-options"></datalist>
-      <label>
-        <span class="section-eyebrow">Type</span>
-        <input id="filter-type" placeholder="product type" />
-      </label>
-      <label>
-        <span class="section-eyebrow">Availability</span>
-        <select id="filter-availability">
-          <option value="">Any availability</option>
-          <option value="available">available</option>
-          <option value="out-of-stock">out-of-stock</option>
-          <option value="coming-soon">coming-soon</option>
-        </select>
-      </label>
+    <div class="dlk-sidebar-section">
+      <p class="section-eyebrow">Availability</p>
+      <select id="filter-availability" onchange="loadProducts()">
+        <option value="">Any availability</option>
+        <option value="available">available</option>
+        <option value="out-of-stock">out-of-stock</option>
+        <option value="coming-soon">coming-soon</option>
+      </select>
+    </div>
+
+    <div class="dlk-sidebar-section">
+      <p class="section-eyebrow">Price range</p>
       <div class="controls controls-2">
-        <label>
-          <span class="section-eyebrow">Min price</span>
-          <input id="filter-min-price" type="number" placeholder="0" />
-        </label>
-        <label>
-          <span class="section-eyebrow">Max price</span>
-          <input id="filter-max-price" type="number" placeholder="100" />
-        </label>
+        <input id="filter-min-price" type="number" min="0" placeholder="Min" />
+        <input id="filter-max-price" type="number" min="0" placeholder="Max" />
       </div>
-      <label>
-        <span class="section-eyebrow">Sort</span>
-        <select id="filter-sort">
-          <option value="recommended">recommended</option>
-          <option value="newest">newest</option>
-          <option value="price_asc">price_asc</option>
-          <option value="price_desc">price_desc</option>
-        </select>
-      </label>
+      <button type="button" class="btn btn-ghost" onclick="loadProducts()">Apply Price</button>
     </div>
 
-    <button class="btn" onclick="loadProducts()">Apply Filters</button>
+    <div class="dlk-sidebar-section">
+      <p class="section-eyebrow">Type</p>
+      <input id="filter-type" placeholder="Product type" />
+    </div>
+
+    <button type="button" class="btn" onclick="resetFilters()">Reset All Filters</button>
   </aside>
 
-  <section class="results-column stack">
-    <div class="panel results-head" id="results-head">
-      <div class="results-title-wrap">
-        <p class="section-eyebrow">Marketplace</p>
-        <h1 class="results-title">Digital Product Catalog</h1>
-        <p class="muted results-subtitle">Browse matching products and open details from the list below.</p>
+  <main class="dlk-main">
+    <section class="dlk-hero-strip">
+      <div>
+        <p class="section-eyebrow" style="color: rgba(255,255,255,0.85);">Marketplace</p>
+        <h1 class="dlk-hero-title">Digital Product Catalog</h1>
+        <p class="dlk-hero-subtitle">Templates, plugins, and digital assets sourced from live backend data.</p>
       </div>
-      <div class="toolbar-meta">
-        <span class="chip" id="result-count">0 items</span>
-        <span class="chip" id="sort-state">recommended</span>
+      <div class="dlk-hero-badges">
+        <div class="dlk-hero-badge">
+          <span class="dlk-hero-num" id="result-count">0</span>
+          <span class="dlk-hero-label">Products</span>
+        </div>
+        <div class="dlk-hero-badge">
+          <span class="dlk-hero-num" id="active-sort">recommended</span>
+          <span class="dlk-hero-label">Sort</span>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <section id="catalog-grid"></section>
-  </section>
+    <section class="dlk-toolbar">
+      <input id="search-input" placeholder="Search product name or description" oninput="renderProducts()" />
+      <select id="filter-sort" onchange="loadProducts()">
+        <option value="recommended">Featured</option>
+        <option value="newest">Newest</option>
+        <option value="price_asc">Price: Low to High</option>
+        <option value="price_desc">Price: High to Low</option>
+      </select>
+    </section>
+
+    <section class="dlk-product-grid" id="catalog-grid"></section>
+  </main>
 </section>
 
 <style>
-  .catalog-shell {
+  .dlk-page-wrapper {
     display: grid;
-    grid-template-columns: 300px minmax(0, 1fr);
-    gap: 14px;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 20px;
     align-items: start;
   }
 
-  .filter-rail {
+  .dlk-sidebar {
     position: sticky;
     top: 84px;
     display: grid;
-    gap: 12px;
-  }
-
-  .filter-stack {
-    display: grid;
-    gap: 10px;
-  }
-
-  .controls-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin-bottom: 0;
-  }
-
-  .results-head {
-    display: flex;
-    align-items: start;
-    justify-content: space-between;
-    gap: 14px;
-    flex-wrap: wrap;
+    gap: 16px;
     padding: 16px;
     border: 2px solid var(--foreground);
-    background: linear-gradient(125deg, rgba(139, 92, 246, 0.08), rgba(52, 211, 153, 0.08) 60%, rgba(251, 191, 36, 0.08));
-    box-shadow: 4px 4px 0 0 var(--shadow);
+    border-radius: var(--radius-xl);
+    background: var(--card);
+    box-shadow: 5px 5px 0 var(--shadow);
   }
 
-  .results-title-wrap {
+  .dlk-sidebar-section {
     display: grid;
-    gap: 4px;
-    min-width: 260px;
-  }
-
-  .results-title {
-    font-size: clamp(1.5rem, 2.6vw, 2.1rem);
-    line-height: 1.1;
-  }
-
-  .results-subtitle {
-    margin: 0;
-    max-width: 62ch;
-  }
-
-  .results-column {
-    min-width: 0;
-  }
-
-  #catalog-grid {
-    display: grid;
-    gap: 10px;
-    width: 100%;
-  }
-
-  .toolbar-meta {
-    display: flex;
     gap: 8px;
-    flex-wrap: wrap;
   }
 
-  .catalog-row .btn {
-    width: fit-content;
-  }
-
-  .catalog-row {
+  .dlk-filter-chip-group {
     display: grid;
-    gap: 10px;
+    gap: 6px;
   }
 
-  .catalog-row header {
+  .dlk-filter-chip {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--card);
+    color: var(--foreground);
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .dlk-filter-chip:hover,
+  .dlk-filter-chip.active {
+    border-color: var(--foreground);
+    box-shadow: 3px 3px 0 var(--shadow);
+    transform: translate(-1px, -1px);
+  }
+
+  .dlk-chip-count {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--muted);
+    color: var(--muted-foreground);
+    font-weight: 700;
+  }
+
+  .dlk-main {
+    display: grid;
+    gap: 16px;
+  }
+
+  .dlk-hero-strip {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: start;
+    padding: 22px;
+    border: 2px solid var(--foreground);
+    border-radius: var(--radius-xl);
+    background: var(--accent);
+    box-shadow: 6px 6px 0 var(--shadow);
+  }
+
+  .dlk-hero-title {
+    color: var(--accent-foreground);
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+  }
+
+  .dlk-hero-subtitle {
+    margin-top: 6px;
+    color: rgba(255,255,255,0.86);
+    font-weight: 600;
+  }
+
+  .dlk-hero-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .dlk-hero-badge {
+    min-width: 120px;
+    border: 2px solid rgba(255,255,255,0.45);
+    border-radius: var(--radius-md);
+    padding: 8px 10px;
+    background: rgba(255,255,255,0.12);
+  }
+
+  .dlk-hero-num {
+    display: block;
+    color: #fff;
+    font-family: "Outfit", sans-serif;
+    font-size: 1.12rem;
+    font-weight: 800;
+    text-transform: capitalize;
+  }
+
+  .dlk-hero-label {
+    display: block;
+    color: rgba(255,255,255,0.8);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .dlk-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 240px;
     gap: 10px;
   }
 
-  .catalog-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .empty-state {
+  .dlk-product-grid {
     display: grid;
-    gap: 12px;
-    border: 2px dashed var(--foreground);
-    border-radius: var(--radius-md);
-    padding: 18px;
-    background: linear-gradient(180deg, rgba(241, 245, 249, 0.85), rgba(255, 253, 245, 0.95));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
   }
 
-  .empty-state h3 {
-    font-size: 1.2rem;
-  }
-
-  .empty-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .empty-hints {
-    margin: 0;
-    padding-left: 18px;
+  .dlk-product-card {
     display: grid;
-    gap: 4px;
+    gap: 10px;
+    padding: 14px;
+    border: 2px solid var(--foreground);
+    border-radius: var(--radius-xl);
+    background: var(--card);
+    box-shadow: 4px 4px 0 var(--shadow);
+  }
+
+  .dlk-product-head {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .dlk-product-title {
+    font-family: "Outfit", sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  .dlk-product-meta {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
     color: var(--muted-foreground);
-    font-weight: 600;
-    font-size: 0.92rem;
+  }
+
+  .dlk-product-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dlk-price {
+    font-family: "Outfit", sans-serif;
+    font-size: 1.15rem;
+    font-weight: 800;
+  }
+
+  .dlk-empty-state {
+    grid-column: 1 / -1;
+    padding: 26px;
+    border: 2px dashed var(--foreground);
+    border-radius: var(--radius-xl);
+    background: var(--muted);
+    text-align: center;
   }
 
   @media (max-width: 980px) {
-    .catalog-shell {
+    .dlk-page-wrapper {
       grid-template-columns: minmax(0, 1fr);
     }
 
-    .filter-rail {
+    .dlk-sidebar {
       position: static;
       top: auto;
+    }
+
+    .dlk-toolbar {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .dlk-hero-strip {
+      flex-direction: column;
     }
   }
 </style>
 
 <script>
-  function normalizeCategoryInput(value) {
-    return String(value || '')
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '');
-  }
+  const state = {
+    category: '',
+    type: '',
+    availability: '',
+    minPrice: '',
+    maxPrice: '',
+    sort: 'recommended',
+    search: '',
+  };
 
-  function syncCategorySuggestions(rows) {
-    const categories = [...new Set(rows
-      .map((item) => item.category?.name || item.category?.slug)
-      .filter(Boolean))];
+  let allRows = [];
 
-    const options = categories
-      .sort((a, b) => a.localeCompare(b))
-      .map((name) => `<option value="${String(name).replace(/"/g, '&quot;')}"></option>`)
-      .join('');
-
-    document.getElementById('category-options').innerHTML = options;
-  }
-
-  function paramsFromUi() {
-    const params = new URLSearchParams(window.location.search);
-
-    const categoryValue = normalizeCategoryInput(document.getElementById('filter-category').value);
-
-    const fields = [
-      ['category', categoryValue],
-      ['type', document.getElementById('filter-type').value],
-      ['availability', document.getElementById('filter-availability').value],
-      ['min_price', document.getElementById('filter-min-price').value],
-      ['max_price', document.getElementById('filter-max-price').value],
-      ['sort', document.getElementById('filter-sort').value],
-    ];
-
-    params.forEach((_, key) => params.delete(key));
-
-    for (const [key, value] of fields) {
-      if (value !== '' && value != null) {
-        params.set(key, value);
-      }
+  function toNumberPrice(item) {
+    const prices = Array.isArray(item.prices) ? item.prices : [];
+    if (prices.length === 0) {
+      return null;
     }
 
-    return params;
+    const amounts = prices
+      .map((p) => Number.parseFloat(p.amount))
+      .filter((value) => Number.isFinite(value));
+
+    return amounts.length > 0 ? Math.min(...amounts) : null;
+  }
+
+  function statusBadge(status) {
+    const label = String(status || 'unknown');
+    return `<span class="chip">${label}</span>`;
+  }
+
+  function setCategory(categorySlug) {
+    state.category = categorySlug;
+
+    document.querySelectorAll('#category-filters .dlk-filter-chip').forEach((button) => {
+      button.classList.toggle('active', button.dataset.category === categorySlug);
+    });
+
+    loadProducts();
   }
 
   function resetFilters() {
-    document.getElementById('filter-category').value = '';
+    state.category = '';
+    state.type = '';
+    state.availability = '';
+    state.minPrice = '';
+    state.maxPrice = '';
+    state.sort = 'recommended';
+    state.search = '';
+
     document.getElementById('filter-type').value = '';
     document.getElementById('filter-availability').value = '';
     document.getElementById('filter-min-price').value = '';
     document.getElementById('filter-max-price').value = '';
     document.getElementById('filter-sort').value = 'recommended';
-    loadProducts();
+    document.getElementById('search-input').value = '';
+
+    setCategory('');
   }
 
-  function hydrateUiFromQuery() {
-    const params = new URLSearchParams(window.location.search);
-    document.getElementById('filter-category').value = params.get('category') || '';
-    document.getElementById('filter-type').value = params.get('type') || '';
-    document.getElementById('filter-availability').value = params.get('availability') || '';
-    document.getElementById('filter-min-price').value = params.get('min_price') || '';
-    document.getElementById('filter-max-price').value = params.get('max_price') || '';
-    document.getElementById('filter-sort').value = params.get('sort') || 'recommended';
+  function syncSidebarCategories(rows) {
+    const grouped = new Map();
+    rows.forEach((item) => {
+      const slug = item.category?.slug || '';
+      const name = item.category?.name || 'Uncategorized';
+      if (!slug) {
+        return;
+      }
+
+      if (!grouped.has(slug)) {
+        grouped.set(slug, { name, count: 0 });
+      }
+
+      grouped.get(slug).count += 1;
+    });
+
+    const buttons = ['<button type="button" class="dlk-filter-chip ' + (state.category === '' ? 'active' : '') + '" data-category="" onclick="setCategory(\'\')"><span>All products</span><span class="dlk-chip-count" id="count-all">' + rows.length + '</span></button>'];
+
+    [...grouped.entries()].sort((a, b) => a[1].name.localeCompare(b[1].name)).forEach(([slug, info]) => {
+      const activeClass = state.category === slug ? 'active' : '';
+      buttons.push('<button type="button" class="dlk-filter-chip ' + activeClass + '" data-category="' + slug + '" onclick="setCategory(\'' + slug + '\')"><span>' + info.name + '</span><span class="dlk-chip-count">' + info.count + '</span></button>');
+    });
+
+    document.getElementById('category-filters').innerHTML = buttons.join('');
   }
 
-  async function loadProducts() {
-    const params = paramsFromUi();
-    const newUrl = `${window.location.pathname}?${params.toString()}`;
-    window.history.replaceState({}, '', newUrl);
+  function getDisplayRows() {
+    const query = state.search.trim().toLowerCase();
+    if (!query) {
+      return allRows;
+    }
 
-    const response = await fetch(`/api/products?${params.toString()}`);
-    const payload = await response.json();
-    const rows = payload.data || [];
-    syncCategorySuggestions(rows);
+    return allRows.filter((item) => {
+      const haystack = [
+        item.name,
+        item.short_description,
+        item.category?.name,
+      ].filter(Boolean).join(' ').toLowerCase();
+
+      return haystack.includes(query);
+    });
+  }
+
+  function renderProducts() {
+    const rows = getDisplayRows();
+    document.getElementById('result-count').textContent = String(rows.length);
+    document.getElementById('active-sort').textContent = state.sort;
 
     const grid = document.getElementById('catalog-grid');
-    document.getElementById('result-count').textContent = `${rows.length} items`;
-    document.getElementById('sort-state').textContent = document.getElementById('filter-sort').value;
-
     if (rows.length === 0) {
-      grid.innerHTML = `
-        <section class="empty-state">
-          <h3>No products match this filter set</h3>
-          <p class="muted">Your current criteria returned no results. Adjust one or two filters and try again.</p>
-          <ul class="empty-hints">
-            <li>Clear category or type to broaden results.</li>
-            <li>Widen min/max price range.</li>
-            <li>Switch availability to "Any availability".</li>
-          </ul>
-          <div class="empty-actions">
-            <button class="btn" type="button" onclick="resetFilters()">Reset Filters</button>
-            <button class="btn btn-ghost" type="button" onclick="document.getElementById('filter-sort').value='recommended'; loadProducts();">Use Recommended Sort</button>
-          </div>
-        </section>
-      `;
+      grid.innerHTML = '<div class="dlk-empty-state"><h3>No products found</h3><p class="muted">Try changing category, price, or search query.</p></div>';
       return;
     }
 
-    grid.innerHTML = rows.map((item) => `
-      <article class="card catalog-row">
-        <header>
-          <h3>${item.name}</h3>
-          <span class="chip">${item.status}</span>
-        </header>
-        <p class="muted">${item.short_description ?? 'No description yet.'}</p>
-        <div class="catalog-actions">
-          <a class="btn" href="/products/${item.slug}">View product</a>
-          <button class="btn btn-secondary" type="button" onclick="window.location.href='/products/${item.slug}'">Open detail</button>
-        </div>
-      </article>
-    `).join('');
+    grid.innerHTML = rows.map((item) => {
+      const price = toNumberPrice(item);
+      const priceText = price === null ? 'N/A' : '$' + price.toFixed(2);
+
+      return '<article class="dlk-product-card">' +
+        '<div class="dlk-product-head">' +
+          '<div>' +
+            '<p class="dlk-product-meta">' + (item.category?.name || 'Uncategorized') + '</p>' +
+            '<h3 class="dlk-product-title">' + item.name + '</h3>' +
+          '</div>' +
+          statusBadge(item.status) +
+        '</div>' +
+        '<p class="muted">' + (item.short_description || 'No description available.') + '</p>' +
+        '<div class="dlk-product-footer">' +
+          '<strong class="dlk-price">' + priceText + '</strong>' +
+          '<a class="btn" href="/products/' + item.slug + '">View Product</a>' +
+        '</div>' +
+      '</article>';
+    }).join('');
   }
 
-  hydrateUiFromQuery();
+  function buildParams() {
+    state.type = document.getElementById('filter-type').value.trim();
+    state.availability = document.getElementById('filter-availability').value;
+    state.minPrice = document.getElementById('filter-min-price').value;
+    state.maxPrice = document.getElementById('filter-max-price').value;
+    state.sort = document.getElementById('filter-sort').value;
+
+    const params = new URLSearchParams();
+    if (state.category) params.set('category', state.category);
+    if (state.type) params.set('type', state.type);
+    if (state.availability) params.set('availability', state.availability);
+    if (state.minPrice) params.set('min_price', state.minPrice);
+    if (state.maxPrice) params.set('max_price', state.maxPrice);
+    if (state.sort) params.set('sort', state.sort);
+    params.set('per_page', '48');
+    return params;
+  }
+
+  async function loadProducts() {
+    const params = buildParams();
+    const newUrl = window.location.pathname + '?' + params.toString();
+    window.history.replaceState({}, '', newUrl);
+
+    const response = await fetch('/api/products?' + params.toString());
+    const payload = await response.json();
+    allRows = Array.isArray(payload.data) ? payload.data : [];
+
+    syncSidebarCategories(allRows);
+    renderProducts();
+  }
+
+  function hydrateFromQuery() {
+    const params = new URLSearchParams(window.location.search);
+    state.category = params.get('category') || '';
+    state.type = params.get('type') || '';
+    state.availability = params.get('availability') || '';
+    state.minPrice = params.get('min_price') || '';
+    state.maxPrice = params.get('max_price') || '';
+    state.sort = params.get('sort') || 'recommended';
+
+    document.getElementById('filter-type').value = state.type;
+    document.getElementById('filter-availability').value = state.availability;
+    document.getElementById('filter-min-price').value = state.minPrice;
+    document.getElementById('filter-max-price').value = state.maxPrice;
+    document.getElementById('filter-sort').value = state.sort;
+  }
+
+  hydrateFromQuery();
+  document.getElementById('filter-type').addEventListener('change', loadProducts);
+  document.getElementById('search-input').addEventListener('input', (event) => {
+    state.search = event.target.value;
+    renderProducts();
+  });
+
   loadProducts().catch(() => {
-    document.getElementById('catalog-grid').innerHTML = '<div class="panel"><h3>Failed to load products</h3><p class="muted">Please refresh and try again.</p></div>';
+    document.getElementById('catalog-grid').innerHTML = '<div class="dlk-empty-state"><h3>Unable to load products</h3><p class="muted">Please refresh and try again.</p></div>';
   });
 </script>
 @endsection

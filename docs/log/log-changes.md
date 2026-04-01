@@ -1,6 +1,18 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Converted catalog page to marketplace-style layout from provided UI reference.
+- What you do:
+  - Rebuilt catalog Blade page into top-level marketplace composition with side filter rail and dynamic product card grid.
+  - Wired UI filters and sorting to backend API query parameters (`category`, `type`, `availability`, `min_price`, `max_price`, `sort`).
+  - Added client-side search within returned backend results and dynamic category filter chips from live API data.
+  - Updated empty/error states to match new visual system while preserving live backend integration.
+  - Verified tests still pass.
+- File path that changes:
+  - `resources/views/catalog/index.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Redesigned catalog header panel and empty-result state.
 - What you do:
   - Reworked catalog title/header block with stronger hierarchy, subtitle, and emphasized visual treatment.
