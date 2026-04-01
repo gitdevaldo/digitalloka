@@ -1,6 +1,15 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Added full product-expansion PRD for homepage, user product dashboard, and admin dashboard.
+- What you do:
+  - Created a detailed PRD defining scope, requirements, IA, data model, API expectations, security, rollout phases, acceptance criteria, and risks for expanding DigitalLoka beyond droplet-only management.
+  - Covered three focus areas: public product homepage, enhanced user dashboard for purchased products, and backend admin dashboard for orders/users/settings.
+- File path that changes:
+  - `docs/prds/2026-04-01-product-expansion-prd.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Refreshed stack and spec sections in instruction files to match current Laravel-first repository state.
 - What you do:
   - Updated architecture, commands, tech stack, and conventions in instruction files to Laravel-first runtime.
