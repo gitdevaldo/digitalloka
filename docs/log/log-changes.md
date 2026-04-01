@@ -1,6 +1,18 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Replaced catalog page with direct reference-style marketplace layout.
+- What you do:
+  - Rebuilt `catalog/index` to follow provided UI reference structure closely (fixed topbar, left filter rail, hero strip, toolbar, product card grid).
+  - Removed previous partial interpretation layout and switched to full-page reference composition.
+  - Kept live backend integration by fetching products from `/api/products` with query params for category, availability, price, type, and sort.
+  - Preserved search and empty/error states in the new layout.
+  - Verified tests still pass.
+- File path that changes:
+  - `resources/views/catalog/index.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Converted catalog page to marketplace-style layout from provided UI reference.
 - What you do:
   - Rebuilt catalog Blade page into top-level marketplace composition with side filter rail and dynamic product card grid.
