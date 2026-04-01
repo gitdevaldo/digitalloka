@@ -1,6 +1,32 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Implemented Laravel migration Phase 1 scaffold with route and service parity skeleton.
+- What you do:
+  - Created a Laravel workspace scaffold under `laravel/` including composer metadata, env template, service config, route definitions, middleware, request validation, controllers, and service boundaries.
+  - Added migration implementation plan for phased execution under `docs/plans/`.
+  - Added setup and next-step notes for enabling runnable Laravel bootstrap once PHP/Composer are available.
+- File path that changes:
+  - `docs/plans/2026-04-01-laravel-migration-implementation-plan.md`
+  - `laravel/README.md`
+  - `laravel/composer.json`
+  - `laravel/.env.example`
+  - `laravel/config/services.php`
+  - `laravel/routes/api.php`
+  - `laravel/routes/web.php`
+  - `laravel/app/Http/Middleware/EnsureSameOrigin.php`
+  - `laravel/app/Http/Requests/StoreDropletActionRequest.php`
+  - `laravel/app/Http/Controllers/Auth/LoginController.php`
+  - `laravel/app/Http/Controllers/Auth/LogoutController.php`
+  - `laravel/app/Http/Controllers/Auth/CallbackController.php`
+  - `laravel/app/Http/Controllers/Droplets/DropletController.php`
+  - `laravel/app/Http/Controllers/Droplets/DropletActionController.php`
+  - `laravel/app/Services/Auth/SupabaseAuthService.php`
+  - `laravel/app/Services/Access/DropletAccessService.php`
+  - `laravel/app/Services/DigitalOcean/DigitalOceanService.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Added explicit post-edit workflow mistakes and enforcement rules to lessons files.
 - What you do:
   - Appended a concrete mistake entry describing missed post-edit chain execution.
