@@ -1,6 +1,16 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Added Laravel product expansion PRD for homepage, user dashboard, and admin dashboard.
+- What you do:
+  - Created a new PRD for product expansion on top of Laravel migration baseline.
+  - Defined scope, functional requirements, IA, APIs, security, non-functional requirements, rollout phases, acceptance criteria, risks, and open decisions.
+  - Kept PRD independent from Digicart parity direction.
+- File path that changes:
+  - `docs/prds/2026-04-01-laravel-product-expansion-prd.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Refreshed stack and spec sections in instruction files to match current Laravel-first repository state.
 - What you do:
   - Updated architecture, commands, tech stack, and conventions in instruction files to Laravel-first runtime.
