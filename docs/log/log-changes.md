@@ -1,6 +1,21 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Relocated Laravel project from `laravel/` subdirectory to repository root.
+- What you do:
+  - Moved all Laravel runtime files and directories to root (`app/`, `routes/`, `config/`, `database/`, `composer.json`, `.env.example`, `README.md`).
+  - Removed old nested `laravel/` path references by moving file structure instead of duplicating content.
+- File path that changes:
+  - `app/` (moved)
+  - `routes/` (moved)
+  - `config/` (moved)
+  - `database/` (moved)
+  - `composer.json` (moved)
+  - `.env.example` (moved)
+  - `README.md` (moved)
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Completed Laravel service/controller implementation slice and archived Next.js legacy code.
 - What you do:
   - Implemented Supabase magic-link initiation and session user resolution service logic.
