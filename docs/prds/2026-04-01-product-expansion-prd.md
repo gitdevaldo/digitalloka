@@ -15,6 +15,9 @@ DigitalLoka currently focuses on infrastructure operations for assigned droplets
 
 Goal: evolve DigitalLoka from droplet-control utility into a managed digital product platform while preserving current droplet management capability.
 
+Audit alignment:
+- This PRD now incorporates findings from `docs/audits/2026-04-01-digicart-parity-deep-dive.md` to align implementation priorities with Digicart-style market expectations.
+
 ## 2. Product Vision
 
 DigitalLoka should provide a unified lifecycle for digital products:
@@ -60,11 +63,25 @@ Success outcomes:
 - Data model and API layer for products, orders, entitlements, and settings.
 - Role-based authorization for admin features.
 
+### In Scope (Parity Foundation Additions)
+- Commerce domain completeness for digital products:
+  - transactions model and payment state handling
+  - deterministic order status transition rules
+- Access domain completeness:
+  - entitlement lifecycle states (active, expired, pending, revoked)
+  - license key generation and validation endpoint foundation
+- Growth domain foundation:
+  - affiliate account/referral tracking model
+  - attribution/pixel integration hooks
+  - reminder/follow-up automation triggers
+
 ### Out of Scope (Phase 1)
 - Full CMS or long-form marketing pages.
 - Complex promotion engine (coupon stacking, campaign builder).
 - Multi-tenant white-labeling.
 - Native mobile apps.
+- Advanced affiliate payout automation (manual review workflow allowed initially).
+- Full LMS/course delivery engine (only access/entitlement foundation in this PRD).
 
 ## 6. Personas
 
@@ -101,6 +118,23 @@ Success outcomes:
 - As an admin, I can manage site settings and feature toggles.
 
 ## 8. Functional Requirements
+
+## 8.0 Benchmark Alignment Requirements (from parity audit)
+
+FR-B1 Conversion-first product structure
+- Product detail pages must support value blocks, package/licensing options, FAQ sections, and clear purchase CTA states.
+
+FR-B2 Member-area parity baseline
+- Customer area must include modules for Products, Orders, Entitlements/Licenses, and Droplets in one unified navigation.
+
+FR-B3 Operator visibility baseline
+- Admin area must provide queue-friendly workflows for order state changes, entitlement changes, and user access support actions.
+
+FR-B4 Automation baseline
+- System must support lifecycle triggers (renewal reminders, payment follow-ups, expiry notifications) with template-driven notifications.
+
+FR-B5 License validation baseline
+- System must support generation, lookup, validation, and revocation for product licenses through server-side APIs.
 
 ## 8.1 Homepage (Catalog Surface)
 
@@ -230,7 +264,11 @@ Core entities (phase 1):
 - product_prices (or pricing fields)
 - orders
 - order_items
+- transactions
 - entitlements
+- licenses
+- affiliate_accounts
+- affiliate_referrals
 - site_settings
 - audit_logs
 
@@ -329,6 +367,12 @@ Admin KPI
 - entitlement correction turnaround
 - settings change failure rate
 
+Growth/Parity KPI
+- affiliate referral conversion rate
+- reminder-triggered recovery rate
+- license validation success/failure ratio
+- checkout-to-entitlement completion latency
+
 ## 16. Rollout Plan
 
 Phase 1: Data and API foundation
@@ -345,6 +389,11 @@ Phase 4: Admin dashboard launch
 
 Phase 5: Hardening
 - performance tuning, policy audits, analytics validation
+
+Phase 6: Parity growth modules
+- affiliate tracking baseline
+- lifecycle reminder automation
+- license validation API
 
 ## 17. Acceptance Criteria
 
@@ -391,6 +440,9 @@ Risk 5: Regression in existing droplet management
 3. Entitlement lifecycle states and renewal rules by product type.
 4. Admin role hierarchy (admin vs super-admin capabilities).
 5. Need for manual fulfillment workflow in phase 1.
+6. License key format and revocation policy details.
+7. Affiliate commission and withdrawal policy boundaries.
+8. Reminder channel priority (email, WhatsApp, in-app) and escalation logic.
 
 ## 20. Implementation Notes
 
