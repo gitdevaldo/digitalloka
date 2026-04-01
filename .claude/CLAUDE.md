@@ -75,6 +75,8 @@ npx supabase migration new <name>
 
 **Type hints:** Full TypeScript with strict mode. All functions must have explicit return types.
 
+**Brand/UI guideline:** Follow `docs/projects/frontend-brand-guidelines.md` for all UI decisions (typography, color tokens, logo treatment, SVG/icon style, motion, and component patterns).
+
 **API calls:** All DigitalOcean API calls go through `lib/digitalocean/` wrapper. Never call DO API directly from components.
 
 **Auth:** Use Supabase Auth helpers. Server components use `createServerClient`, client components use `createBrowserClient`.
@@ -156,7 +158,7 @@ Never mark a task complete without proving it works. Run `python -m compileall m
 
 ### Self-Improvement Loop
 
-After ANY correction from the user, save the lesson to auto-memory (`~/.claude/projects/.../memory/`). Review memory at session start. Never repeat the same mistake.
+After ANY correction from the user, save the lesson to `.claude/lessons/lessons.md` and `.github/lessons.md`. Review lessons at session start. Never repeat the same mistake.
 
 ### Workflow Orchestration
 
@@ -167,7 +169,12 @@ After ANY correction from the user, save the lesson to auto-memory (`~/.claude/p
 
 ### Generated Documents
 
-All generated markdown documents (reports, PRDs, audits, plans) go in the `docs/` folder with descriptive filenames (date prefix when relevant).
+All generated markdown documents must go to the correct docs subdirectory based on document type, with descriptive filenames (date prefix when relevant):
+
+- PRDs: `docs/prds/`
+- Plans: `docs/plans/`
+- Audits: `docs/audits/`
+- Issues and bug reports: `docs/issues/`
 
 ---
 

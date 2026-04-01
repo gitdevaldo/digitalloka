@@ -1,43 +1,33 @@
 # Project Guidelines
 
-DigitalOcean Panel: A customer-facing dashboard for managing DigitalOcean droplets via API. Built for VPS resellers who need to provide their buyers with a self-service control panel without exposing the main DigitalOcean account.
+DigitalOcean Panel is a customer-facing dashboard for managing assigned DigitalOcean droplets through proxied API routes.
 
 ## Architecture
 
-```
-do-panel/
+```text
+digitalloka/
 ├── src/
-│   ├── app/                   # Next.js App Router pages and layouts
-│   │   ├── (auth)/            # Auth routes (login, register, reset-password)
-│   │   ├── (dashboard)/       # Protected dashboard routes
-│   │   │   ├── droplets/      # Droplet management pages
-│   │   │   ├── settings/      # User settings
-│   │   │   └── layout.tsx     # Dashboard layout with sidebar
-│   │   └── api/               # API routes (Next.js Route Handlers)
-│   ├── components/            # React components
-│   │   ├── ui/                # shadcn/ui components
-│   │   ├── droplets/          # Droplet-specific components
-│   │   └── layout/            # Layout components (sidebar, header)
-│   ├── lib/
-│   │   ├── supabase/          # Supabase client and helpers
-│   │   ├── digitalocean/      # DigitalOcean API wrapper
-│   │   └── utils.ts           # Shared utilities
-│   └── types/                 # TypeScript type definitions
-├── supabase/
-│   └── migrations/            # Database migrations
-└── public/                    # Static assets
+│   ├── app/                   # Next.js App Router pages and route handlers
+│   │   ├── api/               # API routes (auth + droplets)
+│   │   ├── auth/callback/     # Supabase callback
+│   │   └── dashboard/         # Protected dashboard pages
+│   ├── components/            # UI and feature components
+│   └── lib/
+│       ├── auth.ts            # Session + droplet access checks
+│       ├── security.ts        # Origin/IP/redirect security helpers
+│       ├── rate-limit.ts      # In-memory rate limiting
+│       ├── digitalocean/      # DO API wrapper and types
+│       └── supabase/          # Browser/server Supabase clients
+└── .github/
+    └── copilot-instructions.md
 ```
 
-**Core Flow:**
-1. User authenticates via Supabase Auth
-2. User's DO API token stored encrypted in Supabase DB
-3. Dashboard fetches droplet data via DO API using user's token
-4. Actions (power on/off, reboot, resize) proxied through API routes
-
-**Key Entities:**
-- `users` — Supabase Auth users
-- `do_tokens` — Encrypted DigitalOcean API tokens per user
-- `droplet_assignments` — Maps which droplets each user can manage
+Core flow:
+1. User authenticates via Supabase Auth.
+2. Middleware protects dashboard routes and handles auth callback redirects.
+3. Client components call only internal `/api/*` routes.
+4. API routes enforce auth, ownership checks, input validation, and rate limiting.
+5. All DigitalOcean calls go through `src/lib/digitalocean/api.ts`.
 
 ## Commands
 
@@ -54,53 +44,50 @@ npm run build
 # Lint
 npm run lint
 
-# Type check
-npx tsc --noEmit
+# Start production build
+npm run start
 
-# Database migrations
-npx supabase db push
-npx supabase migration new <name>
+# Manual type-check
+npx tsc --noEmit
 ```
+
+No test script is currently configured in `package.json`.
 
 ## Tech Stack
 
-- **Framework:** Next.js 14+ (App Router)
-- **Language:** TypeScript (strict mode)
-- **UI:** Tailwind CSS + shadcn/ui
-- **Auth & Database:** Supabase (Auth + PostgreSQL)
-- **API:** DigitalOcean API v2
-- **State:** React Server Components + TanStack Query for client state
+- Framework: Next.js 15 App Router
+- Language: TypeScript (strict mode)
+- UI: Tailwind CSS + custom component set
+- Auth and Database: Supabase (SSR + PostgreSQL)
+- API Provider: DigitalOcean API v2
+- Validation: Zod
 
 ## Code Conventions
 
-**Type hints:** Full TypeScript with strict mode. All functions must have explicit return types.
+- Keep TypeScript strict; avoid bypassing types.
+- Use `@/*` imports for source files.
+- Follow `docs/projects/frontend-brand-guidelines.md` for all frontend/UI work (style, typography, color, logo, SVG/iconography, motion, and elements).
+- Keep DigitalOcean API access server-side only via `src/lib/digitalocean/`.
+- Server auth/client boundaries:
+  - Server: `createSupabaseServer`, `createSupabaseAdmin`
+  - Browser: `createSupabaseBrowser`
+- In API routes, enforce this order:
+  1. Origin check for mutating requests (`isSameOrigin`)
+  2. Session check (`getSession`)
+  3. Ownership check (`validateDropletAccess`) for droplet-scoped endpoints
+  4. Input validation (`zod.safeParse`)
+  5. Action execution + typed error mapping (`RateLimitError`, `DigitalOceanAPIError`)
 
-**API calls:** All DigitalOcean API calls go through `lib/digitalocean/` wrapper. Never call DO API directly from components.
+## Security Requirements
 
-**Auth:** Use Supabase Auth helpers. Server components use `createServerClient`, client components use `createBrowserClient`.
-
-**Environment variables:**
-- `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon key
-- `SUPABASE_SERVICE_ROLE_KEY` — Server-side only, for admin operations
-
-## Key Constraints
-
-- **Token Security:** DO tokens must be encrypted at rest. Never expose in client-side code or logs.
-- **Scoped Access:** Users can ONLY manage droplets assigned to them. Enforce at API route level.
-- **No Direct DO Panel Access:** This is a proxy panel — users never see real DO credentials.
-- **Rate Limiting:** Implement rate limiting on API routes to prevent abuse.
-- **Audit Logging:** Log all destructive actions (power off, resize, delete) with user ID and timestamp.
-
-## DigitalOcean API Reference
-
-Key endpoints used:
-- `GET /v2/droplets` — List droplets
-- `GET /v2/droplets/{id}` — Get droplet details
-- `POST /v2/droplets/{id}/actions` — Power on/off, reboot, resize
-- `GET /v2/droplets/{id}/actions` — Get action history
-
-API docs: https://docs.digitalocean.com/reference/api/api-reference/
+- Never expose or log secrets.
+- Required environment variables:
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `DIGITALOCEAN_TOKEN`
+- Enforce droplet access control on every droplet endpoint.
+- Keep same-origin checks on state-changing API routes.
 
 ---
 
@@ -156,7 +143,7 @@ Never mark a task complete without proving it works. Run `python -m compileall m
 
 ### Self-Improvement Loop
 
-After ANY correction from the user, save the lesson to auto-memory (`~/.claude/projects/.../memory/`). Review memory at session start. Never repeat the same mistake.
+After ANY correction from the user, save the lesson to `.claude/lessons/lessons.md` and `.github/lessons.md`. Review lessons at session start. Never repeat the same mistake.
 
 ### Workflow Orchestration
 
@@ -167,7 +154,12 @@ After ANY correction from the user, save the lesson to auto-memory (`~/.claude/p
 
 ### Generated Documents
 
-All generated markdown documents (reports, PRDs, audits, plans) go in the `docs/` folder with descriptive filenames (date prefix when relevant).
+All generated markdown documents must go to the correct docs subdirectory based on document type, with descriptive filenames (date prefix when relevant):
+
+- PRDs: `docs/prds/`
+- Plans: `docs/plans/`
+- Audits: `docs/audits/`
+- Issues and bug reports: `docs/issues/`
 
 ---
 
@@ -201,4 +193,4 @@ If not 100% certain which element or issue the user means, ASK before making cod
 
 ### Principle 7: Do Exactly What Is Asked — No Assumptions, No Extra Steps
 
-Execute EXACTLY the user's instruction. Do not assume next steps, do not start additional work. If asked for information, give it and stop. If asked to delete something, delete ALL of it. Before taking action: "Did the user explicitly ask me to do this?" If no → don't do it.
+Execute EXACTLY the user's instruction. Do not assume next steps, do not start additional work. If asked for information, give it and stop. If asked to delete something, delete ALL of it. Before taking action: "Did the user explicitly ask me to do this?" If no -> don't do it.
