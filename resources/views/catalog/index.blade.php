@@ -56,10 +56,11 @@
   </aside>
 
   <section class="results-column stack">
-    <div class="panel results-head">
-      <div>
+    <div class="panel results-head" id="results-head">
+      <div class="results-title-wrap">
         <p class="section-eyebrow">Marketplace</p>
-        <h1>Digital Product Catalog</h1>
+        <h1 class="results-title">Digital Product Catalog</h1>
+        <p class="muted results-subtitle">Browse matching products and open details from the list below.</p>
       </div>
       <div class="toolbar-meta">
         <span class="chip" id="result-count">0 items</span>
@@ -100,8 +101,28 @@
     display: flex;
     align-items: start;
     justify-content: space-between;
-    gap: 10px;
+    gap: 14px;
     flex-wrap: wrap;
+    padding: 16px;
+    border: 2px solid var(--foreground);
+    background: linear-gradient(125deg, rgba(139, 92, 246, 0.08), rgba(52, 211, 153, 0.08) 60%, rgba(251, 191, 36, 0.08));
+    box-shadow: 4px 4px 0 0 var(--shadow);
+  }
+
+  .results-title-wrap {
+    display: grid;
+    gap: 4px;
+    min-width: 260px;
+  }
+
+  .results-title {
+    font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+    line-height: 1.1;
+  }
+
+  .results-subtitle {
+    margin: 0;
+    max-width: 62ch;
   }
 
   .results-column {
@@ -140,6 +161,35 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+  }
+
+  .empty-state {
+    display: grid;
+    gap: 12px;
+    border: 2px dashed var(--foreground);
+    border-radius: var(--radius-md);
+    padding: 18px;
+    background: linear-gradient(180deg, rgba(241, 245, 249, 0.85), rgba(255, 253, 245, 0.95));
+  }
+
+  .empty-state h3 {
+    font-size: 1.2rem;
+  }
+
+  .empty-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .empty-hints {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 4px;
+    color: var(--muted-foreground);
+    font-weight: 600;
+    font-size: 0.92rem;
   }
 
   @media (max-width: 980px) {
@@ -235,6 +285,25 @@
     document.getElementById('result-count').textContent = `${rows.length} items`;
     document.getElementById('sort-state').textContent = document.getElementById('filter-sort').value;
 
+    if (rows.length === 0) {
+      grid.innerHTML = `
+        <section class="empty-state">
+          <h3>No products match this filter set</h3>
+          <p class="muted">Your current criteria returned no results. Adjust one or two filters and try again.</p>
+          <ul class="empty-hints">
+            <li>Clear category or type to broaden results.</li>
+            <li>Widen min/max price range.</li>
+            <li>Switch availability to "Any availability".</li>
+          </ul>
+          <div class="empty-actions">
+            <button class="btn" type="button" onclick="resetFilters()">Reset Filters</button>
+            <button class="btn btn-ghost" type="button" onclick="document.getElementById('filter-sort').value='recommended'; loadProducts();">Use Recommended Sort</button>
+          </div>
+        </section>
+      `;
+      return;
+    }
+
     grid.innerHTML = rows.map((item) => `
       <article class="card catalog-row">
         <header>
@@ -247,7 +316,7 @@
           <button class="btn btn-secondary" type="button" onclick="window.location.href='/products/${item.slug}'">Open detail</button>
         </div>
       </article>
-    `).join('') || '<div class="panel"><h3>No products found</h3><p class="muted">Try changing filter parameters.</p></div>';
+    `).join('');
   }
 
   hydrateUiFromQuery();

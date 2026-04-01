@@ -1,6 +1,17 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Redesigned catalog header panel and empty-result state.
+- What you do:
+  - Reworked catalog title/header block with stronger hierarchy, subtitle, and emphasized visual treatment.
+  - Replaced basic "no products found" panel with guided empty state including actionable reset and recommendation actions.
+  - Kept filter behavior and API contract unchanged.
+  - Verified tests still pass.
+- File path that changes:
+  - `resources/views/catalog/index.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Improved category filter UX and kept slug conversion internal.
 - What you do:
   - Removed slug-centric wording from category filter input.
