@@ -1,6 +1,17 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Replaced oversized homepage cards with compact catalog toolbar.
+- What you do:
+  - Removed the two large top cards from catalog homepage.
+  - Introduced a single compact toolbar section with title, filter controls, and concise status chips.
+  - Kept product rows as full-width cards to prioritize listing visibility.
+  - Verified tests still pass.
+- File path that changes:
+  - `resources/views/catalog/index.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Improved production UI hierarchy and interaction quality across key Blade screens.
 - What you do:
   - Refined shared layout with stronger typography rhythm, utility classes, metric blocks, and polished action styles.

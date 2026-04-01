@@ -1,36 +1,18 @@
 @extends('layouts.app', ['title' => 'DigitalLoka Catalog'])
 
 @section('content')
-<section class="card stack">
+<section class="panel stack catalog-toolbar">
   <div class="section-head">
     <div>
       <p class="section-eyebrow">Marketplace</p>
       <h1>Digital Product Catalog</h1>
     </div>
-    <span class="chip">Live Listing</span>
-  </div>
-  <p class="muted">Find the right product fast with operational filters, deterministic sorting, and one-click detail access.</p>
-  <div class="metric-row">
-    <div class="metric">
-      <p class="metric-label">State</p>
-      <p class="metric-value" id="metric-total">-</p>
-    </div>
-    <div class="metric">
-      <p class="metric-label">Sort</p>
-      <p class="metric-value" id="metric-sort">recommended</p>
-    </div>
-    <div class="metric">
-      <p class="metric-label">Mode</p>
-      <p class="metric-value">Filtered</p>
+    <div class="toolbar-meta">
+      <span class="chip" id="result-count">0 items</span>
+      <span class="chip" id="sort-state">recommended</span>
     </div>
   </div>
-</section>
-
-<section class="card stack">
-  <div class="section-head">
-    <h2>Filters</h2>
-    <button class="btn btn-ghost" onclick="resetFilters()">Reset</button>
-  </div>
+  <p class="muted">Filter and sort quickly, then open product details from the list below.</p>
   <div class="controls">
     <label>
       <span class="section-eyebrow">Category</span>
@@ -43,11 +25,11 @@
     <label>
       <span class="section-eyebrow">Availability</span>
       <select id="filter-availability">
-      <option value="">Any availability</option>
-      <option value="available">available</option>
-      <option value="out-of-stock">out-of-stock</option>
-      <option value="coming-soon">coming-soon</option>
-    </select>
+        <option value="">Any availability</option>
+        <option value="available">available</option>
+        <option value="out-of-stock">out-of-stock</option>
+        <option value="coming-soon">coming-soon</option>
+      </select>
     </label>
     <label>
       <span class="section-eyebrow">Min price</span>
@@ -60,14 +42,17 @@
     <label>
       <span class="section-eyebrow">Sort</span>
       <select id="filter-sort">
-      <option value="recommended">recommended</option>
-      <option value="newest">newest</option>
-      <option value="price_asc">price_asc</option>
-      <option value="price_desc">price_desc</option>
-    </select>
+        <option value="recommended">recommended</option>
+        <option value="newest">newest</option>
+        <option value="price_asc">price_asc</option>
+        <option value="price_desc">price_desc</option>
+      </select>
     </label>
   </div>
-  <button class="btn" onclick="loadProducts()">Apply Filters</button>
+  <div class="catalog-actions">
+    <button class="btn" onclick="loadProducts()">Apply Filters</button>
+    <button class="btn btn-ghost" onclick="resetFilters()">Reset</button>
+  </div>
 </section>
 
 <section id="catalog-grid"></section>
@@ -77,6 +62,16 @@
     display: grid;
     gap: 10px;
     width: 100%;
+  }
+
+  .catalog-toolbar {
+    margin-bottom: 2px;
+  }
+
+  .toolbar-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
   }
 
   .catalog-row .btn {
@@ -156,8 +151,8 @@
     const rows = payload.data || [];
 
     const grid = document.getElementById('catalog-grid');
-    document.getElementById('metric-total').textContent = `${rows.length} items`;
-    document.getElementById('metric-sort').textContent = document.getElementById('filter-sort').value;
+    document.getElementById('result-count').textContent = `${rows.length} items`;
+    document.getElementById('sort-state').textContent = document.getElementById('filter-sort').value;
 
     grid.innerHTML = rows.map((item) => `
       <article class="card catalog-row">
