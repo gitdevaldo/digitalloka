@@ -1,16 +1,6 @@
 # Change Log
 
 ## 2026-04-01 00:00
-- Short description: Integrated Digicart parity audit findings into product expansion PRD.
-- What you do:
-  - Updated product expansion PRD to include benchmark alignment requirements based on Digicart parity audit.
-  - Added parity scope foundations for transactions, licenses, affiliate tracking, and lifecycle automation.
-  - Extended data model, KPIs, rollout phases, and open questions to reflect audit-based execution priorities.
-- File path that changes:
-  - `docs/prds/2026-04-01-product-expansion-prd.md`
-  - `docs/log/log-changes.md`
-
-## 2026-04-01 00:00
 - Short description: Added Digicart parity deep-dive audit and feature-gap blueprint.
 - What you do:
   - Performed benchmark analysis from public Digitalkit/Digicart pages and translated findings into a parity roadmap for DigitalLoka.
