@@ -1,6 +1,77 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Implemented Laravel product expansion core for homepage, user dashboard, and admin dashboard.
+- What you do:
+  - Added product/order/admin schema migrations and user role/status extension.
+  - Added domain models and services for catalog listing, order lifecycle, entitlement management, site settings, admin access checks, and audit logging.
+  - Implemented public/user/admin API controllers with request validation and security checks.
+  - Implemented web page controllers and Blade views for homepage catalog, user dashboard modules, and admin dashboard modules.
+  - Wired API and web routes for product listing/filtering, user order/product flows, and admin operations.
+- File path that changes:
+  - `database/migrations/2026_04_01_000100_add_role_and_status_to_users_table.php`
+  - `database/migrations/2026_04_01_000110_create_product_categories_table.php`
+  - `database/migrations/2026_04_01_000120_create_products_table.php`
+  - `database/migrations/2026_04_01_000130_create_product_prices_table.php`
+  - `database/migrations/2026_04_01_000140_create_orders_table.php`
+  - `database/migrations/2026_04_01_000150_create_order_items_table.php`
+  - `database/migrations/2026_04_01_000160_create_transactions_table.php`
+  - `database/migrations/2026_04_01_000170_create_entitlements_table.php`
+  - `database/migrations/2026_04_01_000180_create_site_settings_table.php`
+  - `database/migrations/2026_04_01_000190_create_audit_logs_table.php`
+  - `app/Models/User.php`
+  - `app/Models/ProductCategory.php`
+  - `app/Models/Product.php`
+  - `app/Models/ProductPrice.php`
+  - `app/Models/Order.php`
+  - `app/Models/OrderItem.php`
+  - `app/Models/Transaction.php`
+  - `app/Models/Entitlement.php`
+  - `app/Models/SiteSetting.php`
+  - `app/Models/AuditLog.php`
+  - `app/Services/Access/AdminAccessService.php`
+  - `app/Services/Access/EntitlementService.php`
+  - `app/Services/Audit/AuditLogService.php`
+  - `app/Services/Catalog/CatalogService.php`
+  - `app/Services/Commerce/OrderService.php`
+  - `app/Services/Settings/SiteSettingService.php`
+  - `app/Http/Requests/Catalog/ListProductsRequest.php`
+  - `app/Http/Requests/User/CreateCheckoutRequest.php`
+  - `app/Http/Requests/User/ProductActionRequest.php`
+  - `app/Http/Requests/Admin/StoreProductRequest.php`
+  - `app/Http/Requests/Admin/UpdateOrderStatusRequest.php`
+  - `app/Http/Requests/Admin/UpdateUserAccessRequest.php`
+  - `app/Http/Requests/Admin/UpdateEntitlementStatusRequest.php`
+  - `app/Http/Requests/Admin/UpsertSiteSettingRequest.php`
+  - `app/Http/Controllers/Catalog/ProductController.php`
+  - `app/Http/Controllers/User/CheckoutController.php`
+  - `app/Http/Controllers/User/ProductController.php`
+  - `app/Http/Controllers/User/OrderController.php`
+  - `app/Http/Controllers/Admin/ProductController.php`
+  - `app/Http/Controllers/Admin/OrderController.php`
+  - `app/Http/Controllers/Admin/UserController.php`
+  - `app/Http/Controllers/Admin/EntitlementController.php`
+  - `app/Http/Controllers/Admin/SiteSettingController.php`
+  - `app/Http/Controllers/Web/CatalogPageController.php`
+  - `app/Http/Controllers/Web/DashboardPageController.php`
+  - `app/Http/Controllers/Web/AdminPageController.php`
+  - `resources/views/layouts/app.blade.php`
+  - `resources/views/catalog/index.blade.php`
+  - `resources/views/catalog/show.blade.php`
+  - `resources/views/dashboard/overview.blade.php`
+  - `resources/views/dashboard/droplets.blade.php`
+  - `resources/views/dashboard/products.blade.php`
+  - `resources/views/dashboard/orders.blade.php`
+  - `resources/views/admin/overview.blade.php`
+  - `resources/views/admin/products.blade.php`
+  - `resources/views/admin/users.blade.php`
+  - `resources/views/admin/orders.blade.php`
+  - `resources/views/admin/settings.blade.php`
+  - `routes/api.php`
+  - `routes/web.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Added implementation plan for Laravel product expansion PRD.
 - What you do:
   - Created a comprehensive phase-based implementation plan for homepage product discovery, user dashboard expansion, and admin dashboard delivery.
