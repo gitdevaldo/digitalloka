@@ -1,15 +1,6 @@
 # Change Log
 
 ## 2026-04-01 00:00
-- Short description: Added Digicart parity deep-dive audit and feature-gap blueprint.
-- What you do:
-  - Performed benchmark analysis from public Digitalkit/Digicart pages and translated findings into a parity roadmap for DigitalLoka.
-  - Documented feature inventory, gap analysis, architecture modules, IA recommendations, phased roadmap, and actionable backlog.
-- File path that changes:
-  - `docs/audits/2026-04-01-digicart-parity-deep-dive.md`
-  - `docs/log/log-changes.md`
-
-## 2026-04-01 00:00
 - Short description: Added full product-expansion PRD for homepage, user product dashboard, and admin dashboard.
 - What you do:
   - Created a detailed PRD defining scope, requirements, IA, data model, API expectations, security, rollout phases, acceptance criteria, and risks for expanding DigitalLoka beyond droplet-only management.
