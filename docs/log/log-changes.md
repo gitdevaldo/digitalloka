@@ -1,6 +1,17 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Updated instruction stack/spec sections to Laravel-first architecture.
+- What you do:
+  - Replaced outdated Next.js stack/spec content with current Laravel-root architecture and service boundaries.
+  - Updated command and tech stack sections to Laravel/PHP workflow.
+  - Added explicit note that `.archive/legacy/` is historical and read-only unless explicitly requested.
+- File path that changes:
+  - `.claude/CLAUDE.md`
+  - `.github/copilot-instructions.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Relocated Laravel project from `laravel/` subdirectory to repository root.
 - What you do:
   - Moved all Laravel runtime files and directories to root (`app/`, `routes/`, `config/`, `database/`, `composer.json`, `.env.example`, `README.md`).

@@ -1,82 +1,87 @@
 # Project Guidelines
 
-DigitalOcean Panel is a customer-facing dashboard for managing assigned DigitalOcean droplets through proxied API routes.
+DigitalOcean Panel is a customer-facing dashboard for managing assigned DigitalOcean droplets through proxied API routes. The active codebase is Laravel-first; previous Next.js code is archived.
 
 ## Architecture
 
 ```text
 digitalloka/
-├── src/
-│   ├── app/                   # Next.js App Router pages and route handlers
-│   │   ├── api/               # API routes (auth + droplets)
-│   │   ├── auth/callback/     # Supabase callback
-│   │   └── dashboard/         # Protected dashboard pages
-│   ├── components/            # UI and feature components
-│   └── lib/
-│       ├── auth.ts            # Session + droplet access checks
-│       ├── security.ts        # Origin/IP/redirect security helpers
-│       ├── rate-limit.ts      # In-memory rate limiting
-│       ├── digitalocean/      # DO API wrapper and types
-│       └── supabase/          # Browser/server Supabase clients
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/       # Auth and droplet route handlers
+│   │   ├── Middleware/        # Request and origin guards
+│   │   └── Requests/          # Validation request classes
+│   ├── Models/                # Eloquent models
+│   └── Services/
+│       ├── Auth/              # Supabase auth/session integration
+│       ├── Access/            # Droplet ownership checks
+│       └── DigitalOcean/      # DigitalOcean API wrapper
+├── config/                    # Service configuration
+├── database/migrations/       # Laravel DB migrations
+├── routes/
+│   ├── api.php                # API routes
+│   └── web.php                # Callback/web routes
+├── docs/
+└── .archive/legacy/           # Archived Next.js implementation
 └── .github/
     └── copilot-instructions.md
 ```
 
 Core flow:
 1. User authenticates via Supabase Auth.
-2. Middleware protects dashboard routes and handles auth callback redirects.
-3. Client components call only internal `/api/*` routes.
-4. API routes enforce auth, ownership checks, input validation, and rate limiting.
-5. All DigitalOcean calls go through `src/lib/digitalocean/api.ts`.
+2. Laravel controllers and middleware validate session/auth context.
+3. Droplet ownership is enforced through `users.droplet_ids` checks.
+4. API routes enforce origin checks, request validation, and typed errors.
+5. All DigitalOcean calls go through `app/Services/DigitalOcean/DigitalOceanService.php`.
 
 ## Commands
 
 ```bash
 # Install dependencies
-npm install
+composer install
 
-# Development
-npm run dev
+# Copy environment file
+cp .env.example .env
 
-# Build
-npm run build
+# Generate app key
+php artisan key:generate
 
-# Lint
-npm run lint
+# Run migrations
+php artisan migrate
 
-# Start production build
-npm run start
+# Start local server
+php artisan serve
 
-# Manual type-check
-npx tsc --noEmit
+# Run tests (when configured)
+php artisan test
 ```
 
-No test script is currently configured in `package.json`.
+If PHP/Composer are missing in local environment, install them first before running Laravel commands.
 
 ## Tech Stack
 
-- Framework: Next.js 15 App Router
-- Language: TypeScript (strict mode)
-- UI: Tailwind CSS + custom component set
+- Framework: Laravel 11+
+- Language: PHP 8.2+
+- UI: Laravel-delivered UI following project brand guideline
 - Auth and Database: Supabase (SSR + PostgreSQL)
 - API Provider: DigitalOcean API v2
-- Validation: Zod
+- Validation: Laravel request validation
 
 ## Code Conventions
 
-- Keep TypeScript strict; avoid bypassing types.
-- Use `@/*` imports for source files.
+ - Use strict PHP typing and explicit request validation.
 - Follow `docs/projects/frontend-brand-guidelines.md` for all frontend/UI work (style, typography, color, logo, SVG/iconography, motion, and elements).
-- Keep DigitalOcean API access server-side only via `src/lib/digitalocean/`.
-- Server auth/client boundaries:
-  - Server: `createSupabaseServer`, `createSupabaseAdmin`
-  - Browser: `createSupabaseBrowser`
+- Keep DigitalOcean API access server-side only via `app/Services/DigitalOcean/DigitalOceanService.php`.
+- Use service boundaries:
+  - Auth/session: `app/Services/Auth/SupabaseAuthService.php`
+  - Access checks: `app/Services/Access/DropletAccessService.php`
+  - Provider calls: `app/Services/DigitalOcean/DigitalOceanService.php`
 - In API routes, enforce this order:
   1. Origin check for mutating requests (`isSameOrigin`)
-  2. Session check (`getSession`)
-  3. Ownership check (`validateDropletAccess`) for droplet-scoped endpoints
-  4. Input validation (`zod.safeParse`)
-  5. Action execution + typed error mapping (`RateLimitError`, `DigitalOceanAPIError`)
+  2. Session/auth check via Supabase auth service
+  3. Ownership check via `DropletAccessService`
+  4. Input validation via Laravel request rules
+  5. Action execution + typed error mapping
 
 ## Security Requirements
 
@@ -88,6 +93,7 @@ No test script is currently configured in `package.json`.
   - `DIGITALOCEAN_TOKEN`
 - Enforce droplet access control on every droplet endpoint.
 - Keep same-origin checks on state-changing API routes.
+- Treat `.archive/legacy/` as read-only historical reference unless explicitly asked to modify archives.
 
 ---
 

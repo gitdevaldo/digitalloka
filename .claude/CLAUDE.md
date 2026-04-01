@@ -1,98 +1,95 @@
 # Project Guidelines
 
-DigitalOcean Panel: A customer-facing dashboard for managing DigitalOcean droplets via API. Built for VPS resellers who need to provide their buyers with a self-service control panel without exposing the main DigitalOcean account.
+DigitalOcean Panel: A customer-facing dashboard for managing DigitalOcean droplets via API. The active implementation is now Laravel-first, with the previous Next.js app archived for reference.
 
 ## Architecture
 
 ```
-do-panel/
-├── src/
-│   ├── app/                   # Next.js App Router pages and layouts
-│   │   ├── (auth)/            # Auth routes (login, register, reset-password)
-│   │   ├── (dashboard)/       # Protected dashboard routes
-│   │   │   ├── droplets/      # Droplet management pages
-│   │   │   ├── settings/      # User settings
-│   │   │   └── layout.tsx     # Dashboard layout with sidebar
-│   │   └── api/               # API routes (Next.js Route Handlers)
-│   ├── components/            # React components
-│   │   ├── ui/                # shadcn/ui components
-│   │   ├── droplets/          # Droplet-specific components
-│   │   └── layout/            # Layout components (sidebar, header)
-│   ├── lib/
-│   │   ├── supabase/          # Supabase client and helpers
-│   │   ├── digitalocean/      # DigitalOcean API wrapper
-│   │   └── utils.ts           # Shared utilities
-│   └── types/                 # TypeScript type definitions
-├── supabase/
-│   └── migrations/            # Database migrations
-└── public/                    # Static assets
+digitalloka/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/       # Auth and droplet route handlers
+│   │   ├── Middleware/        # Request-origin and security middleware
+│   │   └── Requests/          # Validation request classes
+│   ├── Models/                # Eloquent models (users, etc.)
+│   └── Services/
+│       ├── Auth/              # Supabase auth/session adapter
+│       ├── Access/            # Droplet ownership checks
+│       └── DigitalOcean/      # DigitalOcean API wrapper
+├── config/                    # Service and app configuration
+├── database/migrations/       # Laravel migrations
+├── routes/
+│   ├── api.php                # API route declarations
+│   └── web.php                # Web/callback routes
+├── docs/
+└── .archive/legacy/           # Archived Next.js implementation
 ```
 
 **Core Flow:**
-1. User authenticates via Supabase Auth
-2. User's DO API token stored encrypted in Supabase DB
-3. Dashboard fetches droplet data via DO API using user's token
-4. Actions (power on/off, reboot, resize) proxied through API routes
+1. User authenticates via Supabase magic-link flow.
+2. Laravel routes/controllers enforce auth and ownership checks.
+3. Laravel service layer calls DigitalOcean API through a centralized wrapper.
+4. Mutating droplet actions run through validated requests and origin checks.
 
 **Key Entities:**
 - `users` — Supabase Auth users
-- `do_tokens` — Encrypted DigitalOcean API tokens per user
-- `droplet_assignments` — Maps which droplets each user can manage
+- `droplet_ids` (on `users`) — Assigned droplet IDs used for access control
 
 ## Commands
 
 ```bash
 # Install dependencies
-npm install
+composer install
 
-# Development
-npm run dev
+# Copy environment template
+cp .env.example .env
 
-# Build
-npm run build
+# Generate application key
+php artisan key:generate
 
-# Lint
-npm run lint
+# Run migrations
+php artisan migrate
 
-# Type check
-npx tsc --noEmit
+# Start development server
+php artisan serve
 
-# Database migrations
-npx supabase db push
-npx supabase migration new <name>
+# Run tests (when configured)
+php artisan test
 ```
 
 ## Tech Stack
 
-- **Framework:** Next.js 14+ (App Router)
-- **Language:** TypeScript (strict mode)
-- **UI:** Tailwind CSS + shadcn/ui
+- **Framework:** Laravel 11+
+- **Language:** PHP 8.2+
 - **Auth & Database:** Supabase (Auth + PostgreSQL)
 - **API:** DigitalOcean API v2
-- **State:** React Server Components + TanStack Query for client state
+- **HTTP Client:** Laravel HTTP client / Guzzle
+- **Frontend/UI:** Laravel-delivered UI following `docs/projects/frontend-brand-guidelines.md`
 
 ## Code Conventions
 
-**Type hints:** Full TypeScript with strict mode. All functions must have explicit return types.
+**Type hints:** Use strict typing in PHP classes and explicit validation for all request payloads.
 
 **Brand/UI guideline:** Follow `docs/projects/frontend-brand-guidelines.md` for all UI decisions (typography, color tokens, logo treatment, SVG/icon style, motion, and component patterns).
 
-**API calls:** All DigitalOcean API calls go through `lib/digitalocean/` wrapper. Never call DO API directly from components.
+**API calls:** All DigitalOcean API calls go through `app/Services/DigitalOcean/DigitalOceanService.php`. Never call DO API directly from views/client code.
 
-**Auth:** Use Supabase Auth helpers. Server components use `createServerClient`, client components use `createBrowserClient`.
+**Auth:** Use `app/Services/Auth/SupabaseAuthService.php` for session resolution and magic-link initiation.
+
+**Access Control:** Use `app/Services/Access/DropletAccessService.php` for droplet ownership checks.
 
 **Environment variables:**
 - `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon key
 - `SUPABASE_SERVICE_ROLE_KEY` — Server-side only, for admin operations
+- `DIGITALOCEAN_TOKEN` — Server-side only
 
 ## Key Constraints
 
-- **Token Security:** DO tokens must be encrypted at rest. Never expose in client-side code or logs.
-- **Scoped Access:** Users can ONLY manage droplets assigned to them. Enforce at API route level.
-- **No Direct DO Panel Access:** This is a proxy panel — users never see real DO credentials.
-- **Rate Limiting:** Implement rate limiting on API routes to prevent abuse.
-- **Audit Logging:** Log all destructive actions (power off, resize, delete) with user ID and timestamp.
+- **Token Security:** Never expose or log Supabase or DigitalOcean secrets.
+- **Scoped Access:** Users can ONLY manage droplets assigned to their `droplet_ids`.
+- **No Direct DO Panel Access:** All provider calls must be proxied through Laravel services/controllers.
+- **Legacy Isolation:** Do not modify `.archive/legacy/` during active development except explicit archive maintenance.
 
 ## DigitalOcean API Reference
 
