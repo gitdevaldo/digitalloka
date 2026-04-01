@@ -1,6 +1,27 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Restored full-width card layout while keeping header minimal.
+- What you do:
+  - Restored card and panel visual treatments in shared Blade layout after flattening pass.
+  - Kept layout full-width and single-column so cards remain full-width instead of centered/tiled.
+  - Updated catalog result rows to use card styling while preserving full-width stacking.
+- File path that changes:
+  - `resources/views/layouts/app.blade.php`
+  - `resources/views/catalog/index.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
+- Short description: Removed all header navigation buttons and kept header minimal.
+- What you do:
+  - Removed global header navigation links from shared Blade layout.
+  - Kept brand mark only in header to reduce distraction and focus on page-specific controls.
+  - Verified test suite still passes after layout update.
+- File path that changes:
+  - `resources/views/layouts/app.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Aligned Laravel Blade UI to brand guideline and removed public admin header link.
 - What you do:
   - Reworked shared Blade layout styling to match brand tokens, typography, border/shadow language, and interaction patterns.

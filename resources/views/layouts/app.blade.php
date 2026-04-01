@@ -86,9 +86,9 @@
     }
 
     .header-inner {
-      max-width: 1160px;
-      margin: 0 auto;
-      padding: 14px 16px;
+      width: 100%;
+      margin: 0;
+      padding: 14px 24px;
       display: flex;
       gap: 12px;
       align-items: center;
@@ -117,58 +117,35 @@
       font-weight: 800;
     }
 
-    nav {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    nav a {
-      display: inline-flex;
-      align-items: center;
-      border: 2px solid var(--foreground);
-      border-radius: 999px;
-      background: var(--card);
-      padding: 8px 12px;
-      text-decoration: none;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      box-shadow: 3px 3px 0 0 var(--shadow);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    nav a:hover {
-      transform: translate(-2px, -2px);
-      box-shadow: 5px 5px 0 0 var(--shadow);
-    }
-
     main {
-      width: min(1160px, 100% - 24px);
-      margin: 20px auto 36px;
+      width: 100%;
+      margin: 0;
+      padding: 18px 24px 28px;
       display: grid;
       gap: 14px;
     }
 
     .card {
+      width: 100%;
       background: var(--card);
       border: 2px solid var(--foreground);
-      border-radius: var(--radius-xl);
-      padding: 18px;
-      box-shadow: 6px 6px 0 0 var(--shadow);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: 4px 4px 0 0 var(--shadow);
     }
 
     .panel {
+      width: 100%;
       background: var(--muted);
       border: 2px solid var(--border);
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-md);
       padding: 14px;
     }
 
     .grid {
       display: grid;
       gap: 12px;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .muted {
@@ -215,12 +192,14 @@
 
     table {
       width: 100%;
-      border-collapse: separate;
+      border-collapse: collapse;
       border-spacing: 0;
-      border: 2px solid var(--foreground);
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      box-shadow: 4px 4px 0 0 var(--shadow);
+      border: 0;
+      border-top: 2px solid var(--border);
+      border-bottom: 2px solid var(--border);
+      border-radius: 0;
+      overflow: visible;
+      box-shadow: none;
     }
 
     thead {
@@ -313,20 +292,12 @@
 
     @media (max-width: 640px) {
       .header-inner {
-        padding: 12px;
-      }
-
-      nav {
-        width: 100%;
-      }
-
-      nav a {
-        flex: 1 1 auto;
-        justify-content: center;
+        padding: 12px 14px;
       }
 
       main {
-        width: calc(100% - 16px);
+        width: 100%;
+        padding: 14px;
       }
 
       .card {
@@ -340,15 +311,6 @@
     <header>
       <div class="header-inner">
         <a class="brand" href="/">Digital<b>Loka</b></a>
-        <nav>
-          <a href="/">Catalog</a>
-          <a href="/dashboard">Dashboard</a>
-          <a href="/dashboard/products">Products</a>
-          <a href="/dashboard/orders">Orders</a>
-          @if (request()->is('admin*'))
-            <a href="/admin">Admin</a>
-          @endif
-        </nav>
       </div>
     </header>
     <main>

@@ -39,17 +39,6 @@
     width: 100%;
   }
 
-  .catalog-row {
-    width: 100%;
-    display: grid;
-    gap: 8px;
-    padding: 14px;
-    border: 2px solid var(--foreground);
-    border-radius: var(--radius-lg);
-    background: var(--card);
-    box-shadow: 4px 4px 0 0 var(--shadow);
-  }
-
   .catalog-row .btn {
     width: fit-content;
   }
@@ -100,7 +89,7 @@
 
     const grid = document.getElementById('catalog-grid');
     grid.innerHTML = rows.map((item) => `
-      <article class="catalog-row">
+      <article class="card catalog-row">
         <span class="chip">${item.status}</span>
         <h3>${item.name}</h3>
         <p class="muted">${item.short_description ?? 'No description yet.'}</p>
