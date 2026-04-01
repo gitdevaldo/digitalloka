@@ -1,6 +1,45 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Added Laravel runtime scaffold and validated migrations/tests locally.
+- What you do:
+  - Imported required Laravel runtime files and directories (artisan, bootstrap, public, storage, tests, and framework config set).
+  - Aligned bootstrap and service configuration with project-specific Supabase and DigitalOcean settings.
+  - Updated composer metadata/scripts and environment template for local Laravel execution.
+  - Ran package discovery, `migrate:fresh`, and `artisan test` successfully after generating app key and enabling sqlite extensions.
+- File path that changes:
+  - `artisan`
+  - `bootstrap/app.php`
+  - `bootstrap/providers.php`
+  - `bootstrap/cache/.gitignore`
+  - `config/app.php`
+  - `config/auth.php`
+  - `config/cache.php`
+  - `config/database.php`
+  - `config/filesystems.php`
+  - `config/logging.php`
+  - `config/mail.php`
+  - `config/queue.php`
+  - `config/services.php`
+  - `config/session.php`
+  - `public/.htaccess`
+  - `public/index.php`
+  - `public/robots.txt`
+  - `routes/console.php`
+  - `tests/CreatesApplication.php`
+  - `tests/Feature/ExampleTest.php`
+  - `tests/TestCase.php`
+  - `tests/Unit/ExampleTest.php`
+  - `app/Providers/AppServiceProvider.php`
+  - `database/factories/UserFactory.php`
+  - `database/seeders/DatabaseSeeder.php`
+  - `phpunit.xml`
+  - `.env.example`
+  - `composer.json`
+  - `composer.lock`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Installed PHP/Composer runtime and generated dependency lockfile.
 - What you do:
   - Installed PHP 8.2 runtime on Windows via winget.
