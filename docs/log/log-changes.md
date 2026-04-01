@@ -1,6 +1,85 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Implemented product expansion phase foundation (schema, APIs, and web surfaces).
+- What you do:
+  - Added complete migration set for products, pricing, orders, transactions, entitlements, licenses, affiliate, site settings, and audit logs plus user role/status extension.
+  - Implemented domain models, service layer modules (catalog, commerce, entitlement, license, affiliate, settings, reminder, admin access, audit log), and API controllers for public/user/admin/parity flows.
+  - Added web IA page controllers and Blade views for catalog, customer dashboard modules, and admin dashboard modules.
+  - Extended API and web routes to expose PRD-aligned surfaces and action endpoints.
+- File path that changes:
+  - `database/migrations/2026_04_01_000100_add_role_and_status_to_users_table.php`
+  - `database/migrations/2026_04_01_000110_create_product_categories_table.php`
+  - `database/migrations/2026_04_01_000120_create_products_table.php`
+  - `database/migrations/2026_04_01_000130_create_product_prices_table.php`
+  - `database/migrations/2026_04_01_000140_create_orders_table.php`
+  - `database/migrations/2026_04_01_000150_create_order_items_table.php`
+  - `database/migrations/2026_04_01_000160_create_transactions_table.php`
+  - `database/migrations/2026_04_01_000170_create_entitlements_table.php`
+  - `database/migrations/2026_04_01_000180_create_licenses_table.php`
+  - `database/migrations/2026_04_01_000190_create_affiliate_accounts_table.php`
+  - `database/migrations/2026_04_01_000200_create_affiliate_referrals_table.php`
+  - `database/migrations/2026_04_01_000210_create_site_settings_table.php`
+  - `database/migrations/2026_04_01_000220_create_audit_logs_table.php`
+  - `app/Models/User.php`
+  - `app/Models/ProductCategory.php`
+  - `app/Models/Product.php`
+  - `app/Models/ProductPrice.php`
+  - `app/Models/Order.php`
+  - `app/Models/OrderItem.php`
+  - `app/Models/Transaction.php`
+  - `app/Models/Entitlement.php`
+  - `app/Models/License.php`
+  - `app/Models/AffiliateAccount.php`
+  - `app/Models/AffiliateReferral.php`
+  - `app/Models/SiteSetting.php`
+  - `app/Models/AuditLog.php`
+  - `app/Services/Access/AdminAccessService.php`
+  - `app/Services/Access/EntitlementService.php`
+  - `app/Services/Access/LicenseService.php`
+  - `app/Services/Audit/AuditLogService.php`
+  - `app/Services/Catalog/CatalogService.php`
+  - `app/Services/Commerce/OrderService.php`
+  - `app/Services/Growth/AffiliateService.php`
+  - `app/Services/Growth/ReminderService.php`
+  - `app/Services/Settings/SiteSettingService.php`
+  - `app/Http/Requests/Catalog/ListProductsRequest.php`
+  - `app/Http/Requests/User/ProductActionRequest.php`
+  - `app/Http/Requests/Admin/UpdateOrderStatusRequest.php`
+  - `app/Http/Requests/Admin/UpdateUserAccessRequest.php`
+  - `app/Http/Requests/Admin/UpdateEntitlementStatusRequest.php`
+  - `app/Http/Requests/Admin/UpsertSiteSettingRequest.php`
+  - `app/Http/Controllers/Catalog/ProductController.php`
+  - `app/Http/Controllers/User/ProductController.php`
+  - `app/Http/Controllers/User/OrderController.php`
+  - `app/Http/Controllers/User/LicenseController.php`
+  - `app/Http/Controllers/Admin/OrderController.php`
+  - `app/Http/Controllers/Admin/UserController.php`
+  - `app/Http/Controllers/Admin/EntitlementController.php`
+  - `app/Http/Controllers/Admin/SiteSettingController.php`
+  - `app/Http/Controllers/Parity/LicenseValidationController.php`
+  - `app/Http/Controllers/Growth/AffiliateController.php`
+  - `app/Http/Controllers/Growth/ReminderController.php`
+  - `app/Http/Controllers/Web/CatalogPageController.php`
+  - `app/Http/Controllers/Web/DashboardPageController.php`
+  - `app/Http/Controllers/Web/AdminPageController.php`
+  - `resources/views/layouts/app.blade.php`
+  - `resources/views/catalog/index.blade.php`
+  - `resources/views/catalog/show.blade.php`
+  - `resources/views/dashboard/overview.blade.php`
+  - `resources/views/dashboard/droplets.blade.php`
+  - `resources/views/dashboard/products.blade.php`
+  - `resources/views/dashboard/orders.blade.php`
+  - `resources/views/dashboard/licenses.blade.php`
+  - `resources/views/admin/overview.blade.php`
+  - `resources/views/admin/orders.blade.php`
+  - `resources/views/admin/users.blade.php`
+  - `resources/views/admin/settings.blade.php`
+  - `routes/api.php`
+  - `routes/web.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Added full implementation plan for product expansion PRD.
 - What you do:
   - Created a comprehensive phase-by-phase implementation plan derived from the product expansion PRD and parity audit.
