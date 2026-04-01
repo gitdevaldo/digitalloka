@@ -1,6 +1,17 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Installed PHP/Composer runtime and generated dependency lockfile.
+- What you do:
+  - Installed PHP 8.2 runtime on Windows via winget.
+  - Installed Composer and configured PHP extensions required for secure package downloads.
+  - Ran composer install for the Laravel workspace and generated `composer.lock`.
+  - Removed temporary installer artifact from repository root.
+- File path that changes:
+  - `composer.lock`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Implemented Laravel product expansion core for homepage, user dashboard, and admin dashboard.
 - What you do:
   - Added product/order/admin schema migrations and user role/status extension.
