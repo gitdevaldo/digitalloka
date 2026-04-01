@@ -15,8 +15,9 @@
     <div class="filter-stack">
       <label>
         <span class="section-eyebrow">Category</span>
-        <input id="filter-category" placeholder="category slug" />
+        <input id="filter-category" list="category-options" placeholder="e.g. Compute" />
       </label>
+      <datalist id="category-options"></datalist>
       <label>
         <span class="section-eyebrow">Type</span>
         <input id="filter-type" placeholder="product type" />
@@ -154,11 +155,34 @@
 </style>
 
 <script>
+  function normalizeCategoryInput(value) {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
+  }
+
+  function syncCategorySuggestions(rows) {
+    const categories = [...new Set(rows
+      .map((item) => item.category?.name || item.category?.slug)
+      .filter(Boolean))];
+
+    const options = categories
+      .sort((a, b) => a.localeCompare(b))
+      .map((name) => `<option value="${String(name).replace(/"/g, '&quot;')}"></option>`)
+      .join('');
+
+    document.getElementById('category-options').innerHTML = options;
+  }
+
   function paramsFromUi() {
     const params = new URLSearchParams(window.location.search);
 
+    const categoryValue = normalizeCategoryInput(document.getElementById('filter-category').value);
+
     const fields = [
-      ['category', document.getElementById('filter-category').value],
+      ['category', categoryValue],
       ['type', document.getElementById('filter-type').value],
       ['availability', document.getElementById('filter-availability').value],
       ['min_price', document.getElementById('filter-min-price').value],
@@ -205,6 +229,7 @@
     const response = await fetch(`/api/products?${params.toString()}`);
     const payload = await response.json();
     const rows = payload.data || [];
+    syncCategorySuggestions(rows);
 
     const grid = document.getElementById('catalog-grid');
     document.getElementById('result-count').textContent = `${rows.length} items`;
