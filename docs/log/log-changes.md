@@ -1,6 +1,17 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Rebuilt catalog sidebar to match reference structure directly.
+- What you do:
+  - Replaced catalog page with reference-equivalent composition including sidebar sections: Category, Price Range, Rating, Tags, Status, and Reset All Filters.
+  - Restored reference toolbar/active-filters/product-card pattern and matched interaction flow.
+  - Swapped static sample data with backend-loaded products from `/api/products` while preserving reference UI behavior.
+  - Verified tests still pass.
+- File path that changes:
+  - `resources/views/catalog/index.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Removed non-reference right-side hero info from catalog header.
 - What you do:
   - Removed the catalog hero right-side stats block that displayed dynamic product/sort values.
