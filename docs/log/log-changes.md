@@ -1,6 +1,17 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Refreshed stack and spec sections in instruction files to match current Laravel-first repository state.
+- What you do:
+  - Updated architecture, commands, tech stack, and conventions in instruction files to Laravel-first runtime.
+  - Removed stale Next.js-specific stack/spec assumptions from instruction sections.
+  - Preserved behavior/principles sections while aligning active/legacy codebase notes.
+- File path that changes:
+  - `.claude/CLAUDE.md`
+  - `.github/copilot-instructions.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Updated instruction stack/spec sections to Laravel-first architecture.
 - What you do:
   - Replaced outdated Next.js stack/spec content with current Laravel-root architecture and service boundaries.
