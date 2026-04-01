@@ -1,7 +1,7 @@
 # PRD: DigitalLoka Migration from Next.js to Laravel
 
 Date: 2026-04-01
-Status: Draft
+Status: Completed
 Owner: Product + Engineering
 Target audience: Product, Backend, Frontend, DevOps, QA
 
