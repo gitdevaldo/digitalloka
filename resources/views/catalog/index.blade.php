@@ -241,12 +241,9 @@
       box-shadow: 6px 6px 0 var(--shadow);
       padding: 26px 30px;
       margin-bottom: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      display: block;
       overflow: hidden;
       position: relative;
-      gap: 12px;
     }
 
     .hero-strip::before {
@@ -277,34 +274,6 @@
       color: rgba(255,255,255,0.85);
       font-size: 0.95rem;
       font-weight: 500;
-    }
-
-    .hero-badges { display: flex; gap: 10px; position: relative; z-index: 1; }
-
-    .hero-badge {
-      background: rgba(255,255,255,0.15);
-      border: 2px solid rgba(255,255,255,0.35);
-      border-radius: var(--radius-md);
-      padding: 10px 14px;
-      text-align: center;
-      min-width: 96px;
-    }
-
-    .hero-badge .num {
-      font-family: var(--font-heading);
-      font-size: 1.2rem;
-      font-weight: 900;
-      color: white;
-      display: block;
-      text-transform: capitalize;
-    }
-
-    .hero-badge .label {
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: rgba(255,255,255,0.75);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
     }
 
     .toolbar {
@@ -485,7 +454,6 @@
     @media (max-width: 980px) {
       .sidebar { display: none; }
       .search-bar { display: none; }
-      .hero-badges { display: none; }
       .main { padding: 18px; }
       .product-grid { grid-template-columns: 1fr; }
       .hero-text h1 { font-size: 1.5rem; }
@@ -560,16 +528,6 @@
       <div class="hero-text">
         <h1>Premium Digital<br>Products <span>for Builders</span></h1>
         <p>Templates, UI kits, and plugins from live backend catalog.</p>
-      </div>
-      <div class="hero-badges">
-        <div class="hero-badge">
-          <span class="num" id="heroCount">0</span>
-          <span class="label">Products</span>
-        </div>
-        <div class="hero-badge">
-          <span class="num" id="heroSort">featured</span>
-          <span class="label">Sort</span>
-        </div>
       </div>
     </div>
 
@@ -681,8 +639,6 @@
     const filtered = getFiltered();
     const grid = document.getElementById('productGrid');
     document.getElementById('resultCount').textContent = String(filtered.length);
-    document.getElementById('heroCount').textContent = String(filtered.length);
-    document.getElementById('heroSort').textContent = state.sort;
 
     if (filtered.length === 0) {
       grid.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><h3>No products found</h3><p>Try adjusting your filters or search query.</p></div>`;

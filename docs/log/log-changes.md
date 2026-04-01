@@ -1,6 +1,16 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Removed non-reference right-side hero info from catalog header.
+- What you do:
+  - Removed the catalog hero right-side stats block that displayed dynamic product/sort values.
+  - Kept result count in toolbar only, matching reference intent to avoid active-filter info in hero area.
+  - Verified tests still pass.
+- File path that changes:
+  - `resources/views/catalog/index.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Replaced catalog page with direct reference-style marketplace layout.
 - What you do:
   - Rebuilt `catalog/index` to follow provided UI reference structure closely (fixed topbar, left filter rail, hero strip, toolbar, product card grid).
