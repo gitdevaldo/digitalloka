@@ -1,6 +1,21 @@
 # Change Log
 
 ## 2026-04-02 00:00
+- Short description: Implemented Supabase database hardening with RLS/RBAC policy pack and verification artifacts.
+- What you do:
+  - Created and executed a Supabase SQL hardening script that defines RBAC helper functions, enables RLS on all app tables, recreates policy coverage, and tightens grants for `anon` and `authenticated` roles.
+  - Added a dedicated SQL verification script for RLS flags, policy inventory, policy coverage, grant matrix, and helper-function checks.
+  - Added a policy matrix document describing actor-level access intent by table.
+  - Added an execution runbook including command sequence, rollback strategy, and validation checklist.
+  - Verified post-apply database state: RLS enabled on all target tables with policy coverage present across target datasets.
+- File path that changes:
+  - `docs/sql/2026-04-02-supabase-rls-rbac.sql`
+  - `docs/sql/2026-04-02-supabase-rls-rbac-verify.sql`
+  - `docs/audits/2026-04-02-supabase-policy-matrix.md`
+  - `docs/audits/2026-04-02-supabase-rls-rbac-runbook.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 00:00
 - Short description: Added implementation plan for Supabase database hardening (RBAC + RLS).
 - What you do:
   - Created a dedicated implementation plan for Supabase database security enhancement.
