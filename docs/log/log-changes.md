@@ -1,6 +1,15 @@
 # Change Log
 
 ## 2026-04-02 00:00
+- Short description: Added full detailed backend integration deep-dive PRD.
+- What you do:
+  - Conducted comprehensive backend integration deep dive coverage across homepage, user dashboard, admin dashboard, auth/session flow, service boundaries, security, data model, error contracts, and integration risks.
+  - Produced a complete backend integration PRD with functional requirements, non-functional requirements, phased delivery plan, and acceptance criteria.
+- File path that changes:
+  - `docs/prds/2026-04-02-backend-integration-full-deep-dive-prd.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 00:00
 - Short description: Re-grouped database URL variables under Supabase section in `.env.example`.
 - What you do:
   - Moved `DB_CONNECTION` and `DATABASE_URL` from standalone Database section into Supabase section.
