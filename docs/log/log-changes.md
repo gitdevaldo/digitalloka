@@ -1,6 +1,15 @@
 # Change Log
 
 ## 2026-04-02 00:00
+- Short description: Re-grouped database URL variables under Supabase section in `.env.example`.
+- What you do:
+  - Moved `DB_CONNECTION` and `DATABASE_URL` from standalone Database section into Supabase section.
+  - Kept all Supabase-related auth and Postgres configuration grouped in one category as requested.
+- File path that changes:
+  - `.env.example`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 00:00
 - Short description: Reorganized `.env.example` sections and clarified Supabase TLS/JWT fallback usage.
 - What you do:
   - Grouped `.env.example` into clear categories (Application, Logging, Database, Session/Cache/Queue, Mail, Supabase, Provider APIs, Security).
