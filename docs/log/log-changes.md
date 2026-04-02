@@ -1,5 +1,19 @@
 # Change Log
 
+## 2026-04-02 23:20
+- Short description: Added cross-page mobile responsiveness for admin dashboard, user dashboard, and catalog/homepage surfaces.
+- What you do:
+  - Improved admin dashboard mobile behavior with drawer-style sidebar on small screens and auto-close on page content/navigation taps.
+  - Improved dashboard mobile behavior with drawer-style sidebar, tighter panel spacing, safer table spacing, and filter-row horizontal scrolling.
+  - Improved catalog/homepage mobile behavior with tighter hero/product spacing and horizontal-safe filter chips.
+  - Added mobile breakpoints to reduce overflow and improve usability across narrow widths.
+  - Cleared compiled Blade views after updates.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `resources/views/dashboard/app.blade.php`
+  - `resources/views/catalog/index.blade.php`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-02 22:45
 - Short description: Standardized admin table spacing wrappers and fixed stock-management form visibility flow.
 - What you do:

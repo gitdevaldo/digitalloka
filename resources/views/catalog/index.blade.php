@@ -716,6 +716,18 @@
       .hero-text h1 { font-size: 1.5rem; }
       .main { padding: 20px; }
       .product-grid { grid-template-columns: 1fr; }
+      .filter-row { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+      .filter-row .filter-chip { flex: 0 0 auto; }
+      .product-card { border-radius: 16px; }
+      .product-meta { gap: 8px; }
+    }
+
+    @media (max-width: 560px) {
+      .hero-strip { padding: 18px; }
+      .hero-text h1 { font-size: 1.3rem; }
+      .main { padding: 14px; }
+      .product-card { padding: 14px; }
+      .buy-btn, .wishlist-btn { padding: 8px 12px; }
     }
 
     /* ===================== THUMB BG COLORS ===================== */
@@ -1267,7 +1279,26 @@
     const searchParams = new URLSearchParams(window.location.search);
     const next = searchParams.get('next');
     const mode = searchParams.get('mode');
-    const fallback = mode === 'admin' ? '/admin' : '/dashboard';
+    let intent = null;
+
+    try {
+      const intentResponse = await fetch('/api/auth/intent', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+
+      if (intentResponse.ok) {
+        intent = await intentResponse.json();
+      }
+    } catch (error) {
+      console.warn('Unable to load auth intent fallback', error);
+    }
+
+    const fallbackMode = mode || intent?.mode || 'user';
+    const fallback = intent?.next || (fallbackMode === 'admin' ? '/admin' : '/dashboard');
     const redirectTarget = next && next.startsWith('/') ? next : fallback;
 
     try {

@@ -759,10 +759,32 @@
        RESPONSIVE
     ============================================================ */
     @media (max-width: 768px) {
-      .sidebar { position: fixed; top: var(--topbar-h); left: 0; bottom: 0; z-index: 150; }
-      .main { padding: 20px; }
-      .stats-row { grid-template-columns: 1fr 1fr; }
+      .sidebar {
+        position: fixed;
+        top: var(--topbar-h);
+        left: 0;
+        bottom: 0;
+        z-index: 220;
+        width: min(84vw, 320px);
+        transform: translateX(-102%);
+        box-shadow: 6px 0 0 var(--shadow);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .main { padding: 14px; }
+      .stats-row { grid-template-columns: 1fr; }
       .topbar-search { display: none; }
+      .filter-row { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+      .filter-row .filter-select,
+      .filter-row .filter-input { flex: 0 0 auto; }
+      .data-table th,
+      .data-table td { padding-left: 10px; padding-right: 10px; }
+    }
+
+    @media (max-width: 600px) {
+      .main { padding: 12px; }
+      .panel-header { padding: 12px 14px; }
+      .panel-body { padding: 14px; }
+      .btn { padding: 7px 14px; }
     }
 
     /* ============================================================
@@ -1374,6 +1396,11 @@
   const toggle = document.getElementById('sidebarToggle');
 
   toggle.addEventListener('click', () => {
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      sidebar.classList.toggle('open');
+      return;
+    }
+
     sidebar.classList.toggle('collapsed');
     // close submenu when collapsing
     if (sidebar.classList.contains('collapsed')) {
@@ -1447,7 +1474,17 @@
     if (pathMap[page]) {
       window.history.replaceState({ page }, '', pathMap[page]);
     }
+
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      sidebar.classList.remove('open');
+    }
   }
+
+  document.querySelector('.main')?.addEventListener('click', () => {
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      sidebar.classList.remove('open');
+    }
+  });
 
   /* ===================== DROPLET ACTIONS ===================== */
   function dropletAction(id, action) {

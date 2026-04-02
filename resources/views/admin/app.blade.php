@@ -485,11 +485,29 @@ body::before{
 
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;}}
 @media(max-width:900px){
-  .sidebar{position:fixed;top:var(--topbar-h);left:0;bottom:0;z-index:200;}
-  .main{padding:18px;}
+  .sidebar{
+    position:fixed;top:var(--topbar-h);left:0;bottom:0;z-index:260;
+    width:min(84vw,320px);
+    transform:translateX(-102%);
+    box-shadow:6px 0 0 var(--shadow);
+  }
+  .sidebar.open{transform:translateX(0);}
+  .main{padding:14px;}
   .grid-2,.grid-3{grid-template-columns:1fr;}
-  .stats-grid{grid-template-columns:1fr 1fr;}
+  .stats-grid{grid-template-columns:1fr;}
   .topbar-center{display:none;}
+  .ph-actions{width:100%;}
+  .filter-bar{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px;}
+  .filter-input,.filter-select{flex:0 0 auto;}
+  .filter-input{min-width:170px;}
+  .nav-item[data-tip]:hover::after{display:none;}
+}
+@media(max-width:600px){
+  .main{padding:12px;}
+  .panel-hd{padding:12px 14px;}
+  .tbl th,.tbl td{padding-top:8px;padding-bottom:8px;}
+  .tbl th:first-child,.tbl td:first-child{padding-left:10px;}
+  .tbl th:last-child,.tbl td:last-child{padding-right:10px;}
 }
 </style>
 </head>
@@ -2792,12 +2810,29 @@ function nav(page,el){
       showToast('⚠️ Failed to load full dashboard data.','fail');
     });
   }
+
+  if(window.matchMedia('(max-width:900px)').matches){
+    document.getElementById('sidebar')?.classList.remove('open');
+  }
 }
 
 /* ============================================================ SIDEBAR TOGGLE */
 document.getElementById('sbToggle').addEventListener('click',()=>{
-  document.getElementById('sidebar').classList.toggle('collapsed');
-  document.getElementById('app').classList.toggle('collapsed');
+  const sidebar = document.getElementById('sidebar');
+  const app = document.getElementById('app');
+  if(window.matchMedia('(max-width:900px)').matches){
+    sidebar.classList.toggle('open');
+    return;
+  }
+
+  sidebar.classList.toggle('collapsed');
+  app.classList.toggle('collapsed');
+});
+
+document.querySelector('.main')?.addEventListener('click',()=>{
+  if(window.matchMedia('(max-width:900px)').matches){
+    document.getElementById('sidebar')?.classList.remove('open');
+  }
 });
 
 /* ============================================================ INIT */
