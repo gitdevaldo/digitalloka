@@ -1,6 +1,18 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Added admin dashboard IA PRD with all modules required now.
+- What you do:
+  - Created a dedicated admin dashboard requirements document with no optional scope.
+  - Defined required admin navigation, including Products, Orders, Users, Entitlements, Droplets, Audit Logs, and Settings.
+  - Required bottom-sticky Admin Account and Support navigation.
+  - Declared required now-available admin routes including `/admin/entitlements`, `/admin/droplets`, and `/admin/audit-logs`.
+  - Added module-level requirements, route requirements, data contracts, security rules, UX states, and acceptance criteria.
+- File path that changes:
+  - `docs/prds/2026-04-01-admin-dashboard-information-architecture-prd.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Tightened user dashboard IA PRD to remove optional scope and enforce bottom-sticky nav.
 - What you do:
   - Removed optional wording from dashboard route/navigation scope.
