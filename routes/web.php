@@ -14,7 +14,10 @@ Route::get('/products/{slug}', [CatalogPageController::class, 'show']);
 Route::get('/dashboard', [DashboardPageController::class, 'overview']);
 Route::get('/dashboard/droplets', [DashboardPageController::class, 'droplets']);
 Route::get('/dashboard/products', [DashboardPageController::class, 'products']);
+Route::get('/dashboard/products/droplets', [DashboardPageController::class, 'productDroplets']);
 Route::get('/dashboard/orders', [DashboardPageController::class, 'orders']);
+Route::get('/dashboard/account', [DashboardPageController::class, 'account']);
+Route::get('/dashboard/support', [DashboardPageController::class, 'support']);
 
 Route::get('/admin', [AdminPageController::class, 'overview']);
 Route::get('/admin/products', [AdminPageController::class, 'products']);

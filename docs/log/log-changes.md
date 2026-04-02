@@ -1,6 +1,19 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Wired user dashboard routes to the provided reference HTML layout.
+- What you do:
+  - Copied `docs/references/digitalloka-dashboard.html` into a new Blade entry view at `resources/views/dashboard/app.blade.php`.
+  - Wired all user dashboard controller endpoints to render the reference-based view with route-specific initial page state.
+  - Added support for direct route access to nested dashboard sections, including `/dashboard/products/droplets`, `/dashboard/account`, and `/dashboard/support`.
+  - Added URL synchronization in dashboard navigation so each section updates browser path while preserving the reference layout behavior.
+- File path that changes:
+  - `resources/views/dashboard/app.blade.php`
+  - `app/Http/Controllers/Web/DashboardPageController.php`
+  - `routes/web.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Added admin dashboard IA PRD with all modules required now.
 - What you do:
   - Created a dedicated admin dashboard requirements document with no optional scope.
