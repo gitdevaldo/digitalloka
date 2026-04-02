@@ -54,4 +54,8 @@ return [
         'allowed_origin' => env('ALLOWED_ORIGIN', env('APP_URL')),
     ],
 
+    'payment' => [
+        'webhook_secret' => env('PAYMENT_WEBHOOK_SECRET'),
+    ],
+
 ];

@@ -4,6 +4,7 @@ namespace App\Services\Auth;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -27,6 +28,13 @@ class SupabaseAuthService
 
             return is_string($userId) && $userId !== '' ? $userId : null;
         }
+
+        Log::warning('supabase_auth_user_lookup_failed', [
+            'status' => $response->status(),
+            'path' => '/auth/v1/user',
+            'has_cookie_token' => is_string($request->cookie('sb-access-token')),
+            'has_bearer_token' => is_string($request->bearerToken()),
+        ]);
 
         if ((bool) config('services.supabase.local_jwt_fallback', false)) {
             return $this->extractUserIdFromJwt($token);

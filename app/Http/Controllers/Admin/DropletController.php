@@ -10,6 +10,7 @@ use App\Services\Access\AdminAccessService;
 use App\Services\Audit\AuditLogService;
 use App\Services\Auth\SupabaseAuthService;
 use App\Services\DigitalOcean\DigitalOceanService;
+use App\Support\DropletIdValidator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
@@ -37,11 +38,11 @@ class DropletController extends Controller
         foreach ($users as $user) {
             $dropletIds = is_array($user->droplet_ids) ? $user->droplet_ids : [];
             foreach ($dropletIds as $dropletId) {
-                $numericId = filter_var($dropletId, FILTER_VALIDATE_INT);
-                if ($numericId === false) {
+                $numericId = DropletIdValidator::parse((string) $dropletId);
+                if ($numericId === null) {
                     continue;
                 }
-                $ownersByDropletId[(int) $numericId] = [
+                $ownersByDropletId[$numericId] = [
                     'id' => $user->id,
                     'email' => $user->email,
                 ];
@@ -92,14 +93,14 @@ class DropletController extends Controller
             return response()->json(['error' => 'Forbidden'], 403);
         }
 
-        $dropletId = filter_var($id, FILTER_VALIDATE_INT);
-        if ($dropletId === false) {
+        $dropletId = DropletIdValidator::parse($id);
+        if ($dropletId === null) {
             return response()->json(['error' => 'Invalid droplet ID'], 400);
         }
 
         try {
             $action = $this->digitalOceanService->performAction(
-                (int) $dropletId,
+                $dropletId,
                 (string) $request->validated('type'),
                 $adminUserId
             );

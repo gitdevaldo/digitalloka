@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\Access\DropletAccessService;
 use App\Services\Auth\SupabaseAuthService;
 use App\Services\DigitalOcean\DigitalOceanService;
+use App\Support\DropletIdValidator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
@@ -43,17 +44,17 @@ class DropletController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $dropletId = filter_var($id, FILTER_VALIDATE_INT);
-        if ($dropletId === false) {
+        $dropletId = DropletIdValidator::parse($id);
+        if ($dropletId === null) {
             return response()->json(['error' => 'Invalid droplet ID'], 400);
         }
 
-        if (!$this->accessService->canAccessDroplet($userId, (int) $dropletId)) {
+        if (!$this->accessService->canAccessDroplet($userId, $dropletId)) {
             return response()->json(['error' => 'Access denied'], 403);
         }
 
         try {
-            $droplet = $this->digitalOceanService->getDroplet((int) $dropletId, $userId);
+            $droplet = $this->digitalOceanService->getDroplet($dropletId, $userId);
         } catch (RuntimeException $exception) {
             return response()->json(['error' => $exception->getMessage()], 502);
         }

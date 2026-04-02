@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\Payments\WebhookController as PaymentWebhookController;
 use App\Http\Controllers\Catalog\ProductController as CatalogProductController;
 use App\Http\Controllers\Droplets\DropletController;
 use App\Http\Controllers\Droplets\DropletActionController;
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('/auth/login', [LoginController::class, 'store'])->middleware(EnsureSameOrigin::class);
 Route::post('/auth/session', [LoginController::class, 'storeSession'])->middleware(EnsureSameOrigin::class);
 Route::post('/auth/logout', [LogoutController::class, 'store'])->middleware(EnsureSameOrigin::class);
+Route::post('/payments/webhook', [PaymentWebhookController::class, 'store']);
 
 Route::get('/droplets', [DropletController::class, 'index']);
 Route::get('/droplets/{id}', [DropletController::class, 'show']);
@@ -32,6 +34,7 @@ Route::get('/products/{slug}', [CatalogProductController::class, 'show']);
 
 Route::get('/user/products', [UserProductController::class, 'index']);
 Route::post('/user/products/{id}/actions', [UserProductController::class, 'action'])->middleware(EnsureSameOrigin::class);
+Route::get('/user/products/{id}/actions/{actionId}', [UserProductController::class, 'actionStatus']);
 Route::get('/user/orders', [UserOrderController::class, 'index']);
 Route::get('/user/orders/{id}', [UserOrderController::class, 'show']);
 Route::post('/user/checkout', [UserCheckoutController::class, 'store'])->middleware(EnsureSameOrigin::class);

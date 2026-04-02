@@ -11,16 +11,19 @@ class Transaction extends Model
         'order_id',
         'provider',
         'provider_ref',
+        'idempotency_key',
         'status',
         'amount',
         'currency',
         'paid_at',
+        'verified_at',
         'payload',
     ];
 
     protected $casts = [
         'amount' => 'float',
         'paid_at' => 'datetime',
+        'verified_at' => 'datetime',
         'payload' => 'array',
     ];
 

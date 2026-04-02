@@ -9,13 +9,13 @@ Status: Execution-ready
 
 | Track | Scope | Status | Priority | Target Output | Exit Criteria |
 |---|---|---|---|---|---|
-| T1 | Auth/session hardening and regression | Not Started | P0 | Stable login/callback/session lifecycle | No relogin loops, auth tests pass |
-| T2 | User surface completion | Not Started | P0 | Reliable droplets/orders/entitlements/product-actions behavior | Ownership-safe user APIs and real action execution |
-| T3 | Admin surface completion | Not Started | P0 | Full admin operations with strict audits | Admin APIs complete and audited |
-| T4 | Commerce hardening | Not Started | P0 | Payment-confirmed order lifecycle and entitlement automation | No manual-only paid transitions |
-| T5 | Security and policy verification | In Progress | P0 | App+DB defense-in-depth with repeatable checks | Same-origin, role, ownership, and RLS verified |
-| T6 | Observability and operations | Not Started | P1 | Actionable logs, runbooks, and alarms | Incidents diagnosable without ad-hoc debugging |
-| T7 | Testing and release readiness | Not Started | P0 | Integration and regression confidence | Release checklist satisfied |
+| T1 | Auth/session hardening and regression | Done | P0 | Stable login/callback/session lifecycle | No relogin loops, auth tests pass |
+| T2 | User surface completion | Done | P0 | Reliable droplets/orders/entitlements/product-actions behavior | Ownership-safe user APIs and real action execution |
+| T3 | Admin surface completion | Done | P0 | Full admin operations with strict audits | Admin APIs complete and audited |
+| T4 | Commerce hardening | Done | P0 | Payment-confirmed order lifecycle and entitlement automation | No manual-only paid transitions |
+| T5 | Security and policy verification | Done | P0 | App+DB defense-in-depth with repeatable checks | Same-origin, role, ownership, and RLS verified |
+| T6 | Observability and operations | Done | P1 | Actionable logs, runbooks, and alarms | Incidents diagnosable without ad-hoc debugging |
+| T7 | Testing and release readiness | Done | P0 | Integration and regression confidence | Release checklist satisfied |
 
 Status legend:
 - `Not Started`: no implementation merged

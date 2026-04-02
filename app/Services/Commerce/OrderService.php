@@ -84,12 +84,36 @@ class OrderService
 
         $order->status = $newStatus;
         if ($newStatus === 'paid') {
+            $hasVerifiedPayment = Transaction::query()
+                ->where('order_id', $order->id)
+                ->where('status', 'paid')
+                ->exists();
+
+            if (!$hasVerifiedPayment) {
+                abort(422, 'Paid transition requires verified payment transaction');
+            }
+
             $order->payment_status = 'paid';
             $this->ensureEntitlementsForPaidOrder($order);
         }
         $order->save();
 
         return $order;
+    }
+
+    public function markPaidFromVerifiedPayment(Order $order): Order
+    {
+        if ((string) $order->status === 'paid' && (string) $order->payment_status === 'paid') {
+            return $order;
+        }
+
+        $order->status = 'paid';
+        $order->payment_status = 'paid';
+        $order->save();
+
+        $this->ensureEntitlementsForPaidOrder($order);
+
+        return $order->fresh() ?? $order;
     }
 
     public function createCheckoutOrder(string $userId, array $payload): Order

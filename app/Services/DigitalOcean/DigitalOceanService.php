@@ -3,6 +3,8 @@
 namespace App\Services\DigitalOcean;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use RuntimeException;
 
 class DigitalOceanService
@@ -47,6 +49,7 @@ class DigitalOceanService
 
     private function request(string $method, string $endpoint, array $payload = []): array
     {
+        $correlationId = (string) Str::uuid();
         $token = (string) config('services.digitalocean.token');
         $baseUrl = rtrim((string) config('services.digitalocean.base_url'), '/');
 
@@ -57,13 +60,28 @@ class DigitalOceanService
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
             'Content-Type' => 'application/json',
+            'X-Correlation-ID' => $correlationId,
         ])->send($method, $baseUrl . $endpoint, [
             'json' => $payload,
+        ]);
+
+        Log::info('digitalocean_request', [
+            'correlation_id' => $correlationId,
+            'method' => $method,
+            'endpoint' => $endpoint,
+            'status' => $response->status(),
         ]);
 
         if (!$response->successful()) {
             $body = $response->json();
             $message = is_array($body) ? ($body['message'] ?? 'DigitalOcean API error') : 'DigitalOcean API error';
+            Log::warning('digitalocean_request_failed', [
+                'correlation_id' => $correlationId,
+                'method' => $method,
+                'endpoint' => $endpoint,
+                'status' => $response->status(),
+                'message' => $message,
+            ]);
             throw new RuntimeException((string) $message, $response->status());
         }
 

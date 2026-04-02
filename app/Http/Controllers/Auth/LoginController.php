@@ -7,6 +7,7 @@ use App\Services\Auth\SupabaseAuthService;
 use Illuminate\Contracts\Cookie\Factory as CookieFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use RuntimeException;
 
 class LoginController extends Controller
@@ -19,6 +20,17 @@ class LoginController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $rateLimitKey = $this->rateLimitKey($request);
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 5)) {
+            $retryAfter = RateLimiter::availableIn($rateLimitKey);
+
+            return response()->json([
+                'error' => 'Too many login attempts. Please try again later.',
+                'kind' => 'rate_limited',
+                'retry_after' => $retryAfter,
+            ], 429);
+        }
+
         $payload = $request->validate([
             'email' => ['required', 'email'],
             'next' => ['nullable', 'string'],
@@ -36,11 +48,15 @@ class LoginController extends Controller
         try {
             $result = $this->authService->startMagicLinkLogin($payload['email'], $next, $mode);
         } catch (RuntimeException $exception) {
+            RateLimiter::hit($rateLimitKey, 60);
+
             return response()->json([
                 'error' => $exception->getMessage(),
                 'kind' => 'service',
             ], 503);
         }
+
+        RateLimiter::clear($rateLimitKey);
 
         return response()->json($result, 200);
     }
@@ -88,5 +104,12 @@ class LoginController extends Controller
         }
 
         return $response;
+    }
+
+    private function rateLimitKey(Request $request): string
+    {
+        $email = (string) $request->input('email', 'unknown');
+
+        return 'auth:magic-link:' . strtolower($email) . '|' . (string) $request->ip();
     }
 }

@@ -1,5 +1,57 @@
 # Change Log
 
+## 2026-04-02 11:05
+- Short description: Implemented full backend integration plan (T1-T7) with tests, security checks, and production hardening.
+- What you do:
+  - Implemented T1 auth hardening: login rate limiting, auth/session/middleware regression tests, and stable cookie/session behavior.
+  - Implemented T2 user surface completion: shared droplet ID validator, queued user product actions with persistence, queue processing job, action status endpoint, and queue storage migrations.
+  - Implemented T3 admin completion: stricter site-setting key validation and admin audit coverage tests.
+  - Implemented T4 commerce hardening: payment webhook verification service with signature checks and idempotency, enforced paid-transition gating by verified transactions, transaction verification fields, payment events table, and entitlement expiration command/schedule.
+  - Implemented T5 security verification: live DB policy verification command (`security:verify-db-policies`), same-origin coverage test for mutating API routes, and deployment security checklist.
+  - Implemented T6 observability: structured auth failure logs, DigitalOcean provider correlation logging, and auth/provider observability runbook.
+  - Implemented T7 release readiness: smoke integration tests, integration test matrix, and release-readiness checklist.
+  - Re-ran targeted feature suites and verified all pass; executed live policy verification command successfully against DATABASE_URL.
+  - Applied new migrations directly to live Supabase via `php artisan migrate --force` to create queue/action/payment tables and transaction verification fields.
+  - Updated implementation plan tracker statuses to Done across T1-T7.
+- File path that changes:
+  - `app/Http/Controllers/Auth/LoginController.php`
+  - `app/Http/Controllers/User/ProductController.php`
+  - `app/Http/Controllers/Droplets/DropletController.php`
+  - `app/Http/Controllers/Droplets/DropletActionController.php`
+  - `app/Http/Controllers/Admin/DropletController.php`
+  - `app/Http/Controllers/Payments/WebhookController.php`
+  - `app/Http/Requests/Admin/UpsertSiteSettingRequest.php`
+  - `app/Jobs/ProcessUserProductAction.php`
+  - `app/Models/Transaction.php`
+  - `app/Models/UserProductAction.php`
+  - `app/Models/PaymentEvent.php`
+  - `app/Services/Auth/SupabaseAuthService.php`
+  - `app/Services/Commerce/OrderService.php`
+  - `app/Services/Commerce/PaymentVerificationService.php`
+  - `app/Services/DigitalOcean/DigitalOceanService.php`
+  - `app/Support/DropletIdValidator.php`
+  - `config/services.php`
+  - `routes/api.php`
+  - `routes/console.php`
+  - `database/migrations/2026_04_02_101000_create_jobs_table.php`
+  - `database/migrations/2026_04_02_101100_create_user_product_actions_table.php`
+  - `database/migrations/2026_04_02_102000_add_payment_verification_fields_to_transactions_table.php`
+  - `database/migrations/2026_04_02_102100_create_payment_events_table.php`
+  - `tests/Feature/AuthLoginRateLimitTest.php`
+  - `tests/Feature/AuthSessionCookiesTest.php`
+  - `tests/Feature/AuthMiddlewareRedirectTest.php`
+  - `tests/Feature/UserProductActionQueueTest.php`
+  - `tests/Feature/AdminAuditCoverageTest.php`
+  - `tests/Feature/PaymentWebhookAndEntitlementExpiryTest.php`
+  - `tests/Feature/SameOriginCoverageTest.php`
+  - `tests/Feature/SmokeIntegrationFlowsTest.php`
+  - `docs/plans/2026-04-02-backend-integration-implementation-plan.md`
+  - `docs/plans/2026-04-02-integration-test-matrix.md`
+  - `docs/audits/2026-04-02-backend-deployment-security-checklist.md`
+  - `docs/audits/2026-04-02-auth-provider-observability-runbook.md`
+  - `docs/audits/2026-04-02-release-readiness-checklist.md`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-02 10:23
 - Short description: Added canonical PHP path and DATABASE_URL-only caution to project instruction files.
 - What you do:
