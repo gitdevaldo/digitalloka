@@ -2,6 +2,7 @@
 
 - Date: 2026-04-01
 - Mistake: Failed to consistently follow instruction-file behavior after loading it; introduced avoidable confusion by creating/renaming extra instruction files.
+- Discovered PHP path (verified now): `C:\Users\Administrator\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.2_Microsoft.Winget.Source_8wekyb3d8bbwe\php.exe`
 - Rule: Treat `.github/copilot-instructions.md` as canonical and keep changes tightly scoped to the exact user request.
 - Rule: On every user correction, immediately record the lesson and apply it in the next action.
 
