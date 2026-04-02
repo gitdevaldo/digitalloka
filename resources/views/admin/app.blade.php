@@ -312,6 +312,19 @@ body::before{
 .psm-form-grid{display:grid;gap:12px;}
 .psm-form-actions{display:flex;justify-content:flex-end;gap:8px;}
 
+.create-product-form{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  padding:20px;
+}
+
+.cp-type-fields{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
 .psm-import-wrap .setting-input{
   padding:10px 12px;
 }
@@ -501,6 +514,10 @@ body::before{
   .filter-input,.filter-select{flex:0 0 auto;}
   .filter-input{min-width:170px;}
   .nav-item[data-tip]:hover::after{display:none;}
+  .create-product-form{grid-template-columns:1fr;padding:14px;}
+  .cp-type-fields{grid-template-columns:1fr;}
+  .psm-import-wrap{margin:12px;}
+  .panel-body{padding:14px;}
 }
 @media(max-width:600px){
   .main{padding:12px;}
@@ -700,7 +717,7 @@ body::before{
   </x-layout.page-header>
 
   <x-ui.panel variant="admin">
-    <form id="create-product-form" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:20px" onsubmit="submitCreateProduct(event)">
+    <form id="create-product-form" class="create-product-form" onsubmit="submitCreateProduct(event)">
       <label style="display:flex;flex-direction:column;gap:6px;grid-column:1 / span 2">
         <span style="font-weight:700;font-size:0.8rem">Product Name</span>
         <input id="cp-name" class="setting-input" required maxlength="150" placeholder="NovaDash UI Kit" />
@@ -745,7 +762,7 @@ body::before{
 
       <div style="grid-column:1 / span 2;border-top:1px solid var(--border);padding-top:10px">
         <div style="font-family:var(--font-h);font-size:0.95rem;font-weight:800;margin-bottom:8px">Type-Specific Fields</div>
-        <div id="cp-type-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
+        <div id="cp-type-fields" class="cp-type-fields"></div>
       </div>
 
       <div style="grid-column:1 / span 2;display:flex;justify-content:flex-end;gap:10px;margin-top:8px">

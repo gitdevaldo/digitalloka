@@ -377,6 +377,8 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
       margin-bottom: 20px;
     }
     .toolbar-left {
@@ -605,6 +607,8 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .price-block { display: flex; flex-direction: column; }
@@ -678,6 +682,8 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px 16px;
       font-size: 0.8rem;
       font-weight: 500;
       color: var(--muted-foreground);
@@ -724,6 +730,8 @@
       .topbar-right { gap: 8px; }
       .topbar-right .btn { padding: 8px 12px; font-size: 0.78rem; }
       .topbar-right .tb-cart-count { font-weight: 800; }
+      .toolbar > div:last-child { width: 100%; }
+      .sort-select { width: 100%; }
     }
 
     @media (max-width: 560px) {
@@ -738,6 +746,10 @@
       .topbar-right .btn .tb-label { display: none; }
       .topbar-right .btn .tb-cart-count { display: inline; }
       .topbar-right .btn svg { margin-right: 0; }
+      .topbar-right .btn-ghost { display: none; }
+      .card-footer { align-items: flex-start; }
+      .buy-btn { width: 100%; justify-content: center; }
+      .footer { padding: 18px 14px; }
     }
 
     /* ===================== THUMB BG COLORS ===================== */

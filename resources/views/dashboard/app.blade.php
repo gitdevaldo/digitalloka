@@ -436,6 +436,38 @@
     .main::-webkit-scrollbar { width: 4px; }
     .main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
 
+    .table-shell {
+      width: 100%;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .overview-two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .account-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .support-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .products-filter-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     /* ============================================================
        PAGE VIEWS
     ============================================================ */
@@ -778,6 +810,11 @@
       .filter-row .filter-input { flex: 0 0 auto; }
       .data-table th,
       .data-table td { padding-left: 10px; padding-right: 10px; }
+      .overview-two-col,
+      .account-grid,
+      .support-grid { grid-template-columns: 1fr; }
+      .products-filter-actions { width: 100%; }
+      .products-filter-actions select { flex: 1 1 170px; min-width: 0; }
     }
 
     @media (max-width: 600px) {
@@ -946,7 +983,7 @@
       </div>
 
       <!-- Two columns -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+      <div class="overview-two-col">
 
         <!-- VPS Health -->
         <x-ui.panel variant="dashboard" title="VPS Health Summary">
@@ -1025,7 +1062,7 @@
     <div class="page-view" id="page-products-all">
       <x-layout.page-header variant="dashboard" title="Products" subtitle="All your owned and assigned products.">
         <x-slot:actions>
-          <div style="display:flex;gap:8px;">
+          <div class="products-filter-actions">
           <select style="border:2px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-family:var(--font-body);font-size:0.8rem;font-weight:600;background:var(--card);cursor:pointer;">
             <option>All Types</option><option>VPS Droplet</option><option>Digital</option>
           </select>
@@ -1316,7 +1353,7 @@
     <!-- ==================== ACCOUNT ==================== -->
     <div class="page-view" id="page-account">
       <x-layout.page-header variant="dashboard" title="Account" subtitle="Manage your profile and billing information." />
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div class="account-grid">
         <div class="panel">
           <div class="panel-header"><div class="panel-title">Profile</div><button class="btn btn-sm">Edit</button></div>
           <div class="panel-body">
@@ -1354,7 +1391,7 @@
           <x-ui.button variant="accent">+ New Ticket</x-ui.button>
         </x-slot:actions>
       </x-layout.page-header>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px;">
+      <div class="support-grid">
         <div class="stat-card" style="cursor:pointer;">
           <div class="stat-icon">📚</div>
           <div style="font-family:var(--font-heading);font-size:0.95rem;font-weight:800;margin-top:4px;">Documentation</div>

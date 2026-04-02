@@ -1,5 +1,19 @@
 # Change Log
 
+## 2026-04-02 23:55
+- Short description: Completed file-by-file responsive hardening across admin, dashboard, and catalog view surfaces.
+- What you do:
+  - Added responsive grid-collapse rules for admin Create Product and type-specific schema fields to prevent cramped two-column forms on small screens.
+  - Improved admin stock-management panel spacing on narrow devices and reduced overflow risk in import/form sections.
+  - Replaced dashboard fixed inline grid layouts with dedicated responsive classes for overview, account, and support sections.
+  - Added horizontal-safe table wrapper behavior in dashboard pages and improved filter-action wrapping on smaller screens.
+  - Tuned catalog toolbar/card-footer/footer behavior to wrap cleanly, avoid control collisions, and improve small-screen CTA/button ergonomics.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `resources/views/dashboard/app.blade.php`
+  - `resources/views/catalog/index.blade.php`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-02 23:35
 - Short description: Refined mobile catalog topbar and 400px narrow-width layout behavior.
 - What you do:
