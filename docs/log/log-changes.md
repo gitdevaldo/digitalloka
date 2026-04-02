@@ -1,6 +1,17 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Added user dashboard IA PRD with Products-parent and Droplets-submenu rules.
+- What you do:
+  - Created a dedicated requirements document for user dashboard information architecture.
+  - Defined Droplets as a product subtype under Products, not a top-level navigation item.
+  - Added submenu requirements for Products > VPS Droplets and mapped ownership/action rules.
+  - Included route guidance, data contract requirements, permissions, UX states, and acceptance criteria.
+- File path that changes:
+  - `docs/prds/2026-04-01-user-dashboard-information-architecture-prd.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Wired exact reference catalog UI to live backend filters and added regression guards.
 - What you do:
   - Added product catalog metadata fields (`rating`, `reviews_count`, `tags`, `badges`) and migration support.
