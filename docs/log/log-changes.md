@@ -1,6 +1,16 @@
 # Change Log
 
 ## 2026-04-02 00:00
+- Short description: Reorganized `.env.example` sections and clarified Supabase TLS/JWT fallback usage.
+- What you do:
+  - Grouped `.env.example` into clear categories (Application, Logging, Database, Session/Cache/Queue, Mail, Supabase, Provider APIs, Security).
+  - Standardized example database URL variable to `DATABASE_URL`.
+  - Added explicit production/local guidance comments for `SUPABASE_HTTP_VERIFY_SSL`, `SUPABASE_HTTP_CA_BUNDLE`, and `SUPABASE_LOCAL_JWT_FALLBACK`.
+- File path that changes:
+  - `.env.example`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 00:00
 - Short description: Standardized DB connection URL to `DATABASE_URL` and removed duplicate `DB_URL` usage.
 - What you do:
   - Removed `DB_URL` from local `.env` to avoid duplicate database URL variables.
