@@ -1,5 +1,25 @@
 # Change Log
 
+## 2026-04-02 00:00
+- Short description: Wired admin dashboard to the exact provided reference layout with backend integration.
+- What you do:
+  - Added the provided admin reference HTML file under docs references.
+  - Copied reference layout into `resources/views/admin/app.blade.php` as the primary admin dashboard view.
+  - Routed all admin web pages to the single reference-based dashboard view with route-driven initial page state.
+  - Added missing admin web routes for entitlements, droplets, audit logs, account, and support.
+  - Added admin API endpoints for droplets and audit logs and wired them to new controllers.
+  - Updated dashboard client-side logic to fetch live backend data for products, orders, users, entitlements, droplets, and audit logs.
+  - Wired droplet actions to backend endpoint `/api/admin/droplets/{id}/actions`.
+- File path that changes:
+  - `docs/references/digitalloka-admin-light.html`
+  - `resources/views/admin/app.blade.php`
+  - `app/Http/Controllers/Web/AdminPageController.php`
+  - `app/Http/Controllers/Admin/DropletController.php`
+  - `app/Http/Controllers/Admin/AuditLogController.php`
+  - `routes/web.php`
+  - `routes/api.php`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-01 00:00
 - Short description: Added dashboard HTML reference file to repository tracking.
 - What you do:

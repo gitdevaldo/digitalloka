@@ -13,6 +13,8 @@ use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\EntitlementController as AdminEntitlementController;
 use App\Http\Controllers\Admin\SiteSettingController as AdminSiteSettingController;
+use App\Http\Controllers\Admin\DropletController as AdminDropletController;
+use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
 use App\Http\Middleware\EnsureSameOrigin;
 use Illuminate\Support\Facades\Route;
 
@@ -44,5 +46,8 @@ Route::get('/admin/users/{id}', [AdminUserController::class, 'show']);
 Route::put('/admin/users/{id}/access', [AdminUserController::class, 'updateAccess'])->middleware(EnsureSameOrigin::class);
 Route::get('/admin/entitlements', [AdminEntitlementController::class, 'index']);
 Route::put('/admin/entitlements/{id}/status', [AdminEntitlementController::class, 'updateStatus'])->middleware(EnsureSameOrigin::class);
+Route::get('/admin/droplets', [AdminDropletController::class, 'index']);
+Route::post('/admin/droplets/{id}/actions', [AdminDropletController::class, 'storeAction'])->middleware(EnsureSameOrigin::class);
+Route::get('/admin/audit-logs', [AdminAuditLogController::class, 'index']);
 Route::get('/admin/settings', [AdminSiteSettingController::class, 'index']);
 Route::put('/admin/settings', [AdminSiteSettingController::class, 'upsert'])->middleware(EnsureSameOrigin::class);

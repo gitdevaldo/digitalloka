@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>DigitalLoka — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ============================================================ TOKENS */
+:root {
+  --background: #FFFDF5;
+  --foreground: #1E293B;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #8B5CF6;
+  --accent-foreground: #FFFFFF;
+  --secondary: #F472B6;
+  --tertiary: #FBBF24;
+  --quaternary: #34D399;
+  --border: #E2E8F0;
+  --input: #FFFFFF;
+  --card: #FFFFFF;
+  --shadow: #1E293B;
+  --font-h: 'Outfit', sans-serif;
+  --font-b: 'Plus Jakarta Sans', sans-serif;
+  --r-sm: 8px; --r-md: 16px; --r-lg: 24px; --r-xl: 32px;
+  --ease: cubic-bezier(0.34,1.56,0.64,1);
+  --sidebar-w: 240px;
+  --sidebar-c: 64px;
+  --topbar-h: 64px;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:var(--font-b);background:var(--background);color:var(--foreground);}
+
+/* dot bg */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:radial-gradient(circle,rgba(30,41,59,0.1) 1px,transparent 1px);
+  background-size:22px 22px;
+}
+
+/* ============================================================ SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:999px;}
+
+/* ============================================================ TOPBAR */
+.topbar{
+  position:fixed;top:0;left:0;right:0;height:var(--topbar-h);
+  background:var(--card);border-bottom:2px solid var(--foreground);
+  box-shadow:0 4px 0 var(--shadow);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px 0 0;z-index:300;
+}
+.topbar-brand{
+  width:var(--sidebar-w);flex-shrink:0;
+  display:flex;align-items:center;padding:0 16px;gap:10px;
+  border-right:2px solid var(--foreground);height:100%;
+  transition:width 0.25s var(--ease);overflow:hidden;
+}
+.app.collapsed .topbar-brand{width:var(--sidebar-c);}
+
+.brand-logo{
+  display:flex;align-items:center;text-decoration:none;
+  font-family:var(--font-h);font-weight:900;font-size:1.05rem;letter-spacing:-0.03em;flex-shrink:0;
+}
+.brand-box{
+  background:var(--accent);color:#fff;
+  border:2px solid var(--foreground);
+  box-shadow:3px 3px 0 var(--shadow);
+  padding:3px 9px;border-radius:var(--r-sm);white-space:nowrap;
+}
+.brand-box .loka{color:var(--tertiary);}
+.admin-pill{
+  background:rgba(244,114,182,0.12);border:2px solid var(--secondary);
+  color:var(--secondary);font-size:0.6rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:0.08em;
+  padding:2px 8px;border-radius:999px;flex-shrink:0;white-space:nowrap;
+  box-shadow:2px 2px 0 var(--shadow);
+  transition:opacity 0.15s,width 0.25s;
+}
+.app.collapsed .admin-pill{opacity:0;width:0;overflow:hidden;padding:0;border:none;}
+
+.topbar-center{flex:1;padding:0 20px;}
+.search-wrap{
+  display:flex;align-items:center;gap:8px;
+  background:var(--input);border:2px solid var(--border);
+  border-radius:999px;padding:7px 14px;max-width:300px;
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+.search-wrap:focus-within{border-color:var(--accent);box-shadow:3px 3px 0 var(--accent);}
+.search-wrap input{
+  border:none;outline:none;background:transparent;
+  font-family:var(--font-b);font-size:0.8rem;font-weight:500;color:var(--foreground);width:200px;
+}
+.search-wrap input::placeholder{color:var(--muted-foreground);}
+
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.icon-btn{
+  width:36px;height:36px;border-radius:50%;
+  border:2px solid var(--border);background:var(--card);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--muted-foreground);transition:all 0.15s var(--ease);position:relative;
+}
+.icon-btn:hover{border-color:var(--foreground);box-shadow:2px 2px 0 var(--shadow);color:var(--foreground);transform:translate(-1px,-1px);}
+.notif-dot{
+  position:absolute;top:2px;right:2px;width:8px;height:8px;
+  background:var(--secondary);border:2px solid var(--card);border-radius:50%;
+}
+.avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--secondary));
+  border:2px solid var(--foreground);box-shadow:2px 2px 0 var(--shadow);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-h);font-weight:800;font-size:0.85rem;color:#fff;
+  cursor:pointer;transition:all 0.15s var(--ease);
+}
+.avatar:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--shadow);}
+
+/* ============================================================ APP LAYOUT */
+.app{display:flex;height:100vh;padding-top:var(--topbar-h);position:relative;z-index:1;}
+
+/* ============================================================ SIDEBAR */
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  height:calc(100vh - var(--topbar-h));
+  border-right:2px solid var(--foreground);
+  background:var(--card);
+  display:flex;flex-direction:column;
+  transition:width 0.25s var(--ease);overflow:hidden;
+  position:relative;z-index:100;
+}
+.sidebar.collapsed{width:var(--sidebar-c);}
+
+.sidebar-toggle{
+  position:absolute;top:16px;right:-14px;
+  width:28px;height:28px;border-radius:50%;
+  background:var(--card);border:2px solid var(--foreground);
+  box-shadow:2px 2px 0 var(--shadow);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:110;color:var(--foreground);
+  transition:all 0.2s var(--ease);
+}
+.sidebar-toggle:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+.sidebar-toggle svg{transition:transform 0.25s var(--ease);}
+.sidebar.collapsed .sidebar-toggle svg{transform:rotate(180deg);}
+
+.sidebar-nav{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  padding:14px 10px 10px;display:flex;flex-direction:column;gap:2px;
+}
+
+.nav-group-label{
+  font-size:0.62rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:0.1em;color:var(--muted-foreground);padding:10px 8px 4px;
+  white-space:nowrap;transition:opacity 0.15s;
+}
+.sidebar.collapsed .nav-group-label{opacity:0;}
+
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;
+  border-radius:var(--r-md);cursor:pointer;border:2px solid transparent;
+  transition:all 0.15s var(--ease);white-space:nowrap;overflow:hidden;
+  min-height:42px;position:relative;text-decoration:none;
+  color:var(--foreground);font-size:0.83rem;font-weight:600;
+}
+.nav-item:hover{background:var(--muted);border-color:var(--border);}
+.nav-item.active{
+  background:var(--accent);color:#fff;
+  border-color:var(--foreground);
+  box-shadow:3px 3px 0 var(--shadow);
+  transform:translate(-1px,-1px);
+}
+.nav-item.active .nav-ico{color:#fff;}
+.nav-item.active .nav-txt{color:#fff;}
+
+.nav-ico{
+  width:18px;height:18px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--muted-foreground);transition:color 0.15s;
+}
+.nav-item:hover .nav-ico{color:var(--foreground);}
+
+.nav-txt{flex:1;transition:opacity 0.15s;overflow:hidden;color:var(--foreground);}
+.sidebar.collapsed .nav-txt{opacity:0;width:0;}
+
+/* count badge on nav */
+.nav-badge{
+  flex-shrink:0;background:var(--secondary);color:#fff;
+  border:2px solid var(--foreground);border-radius:999px;
+  font-size:0.6rem;font-weight:800;padding:0px 6px;
+  box-shadow:1px 1px 0 var(--shadow);
+  transition:opacity 0.15s;
+}
+.sidebar.collapsed .nav-badge{opacity:0;width:0;overflow:hidden;padding:0;border:none;}
+
+/* warning dot on nav */
+.nav-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--tertiary);
+  border:2px solid var(--foreground);flex-shrink:0;
+  transition:opacity 0.15s;
+}
+.sidebar.collapsed .nav-dot{opacity:0;width:0;border:none;}
+
+/* tooltip when collapsed */
+.nav-item[data-tip]:hover::after{
+  content:attr(data-tip);
+  position:absolute;left:calc(100% + 12px);top:50%;transform:translateY(-50%);
+  background:var(--foreground);color:#fff;font-size:0.72rem;font-weight:700;
+  padding:5px 10px;border-radius:var(--r-sm);white-space:nowrap;
+  pointer-events:none;z-index:999;box-shadow:2px 2px 0 rgba(0,0,0,0.2);
+}
+
+/* bottom sticky */
+.sidebar-bottom{
+  border-top:2px solid var(--border);padding:10px 10px 14px;
+  display:flex;flex-direction:column;gap:2px;flex-shrink:0;
+}
+
+/* ============================================================ MAIN */
+.main{
+  flex:1;height:calc(100vh - var(--topbar-h));
+  overflow-y:auto;overflow-x:hidden;padding:32px;min-width:0;
+}
+
+/* ============================================================ PAGES */
+.page{display:none;}
+.page.active{display:block;animation:fadeUp 0.28s var(--ease);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* ============================================================ PAGE HEADER */
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+.ph-title{font-family:var(--font-h);font-size:1.75rem;font-weight:900;color:var(--foreground);line-height:1.1;}
+.ph-sub{font-size:0.8rem;font-weight:500;color:var(--muted-foreground);margin-top:4px;}
+.ph-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+
+/* ============================================================ BUTTONS */
+.btn{
+  font-family:var(--font-b);font-weight:700;font-size:0.8rem;
+  border:2px solid var(--foreground);border-radius:999px;
+  padding:8px 18px;cursor:pointer;
+  transition:all 0.15s var(--ease);
+  display:inline-flex;align-items:center;gap:6px;
+  text-decoration:none;background:var(--card);color:var(--foreground);
+  box-shadow:3px 3px 0 var(--shadow);
+}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--shadow);}
+.btn:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--shadow);}
+.btn:disabled{opacity:0.4;cursor:not-allowed;transform:none !important;box-shadow:none !important;}
+.btn-accent{background:var(--accent);color:#fff;}
+.btn-danger{background:var(--secondary);color:#fff;}
+.btn-success{background:var(--quaternary);color:var(--foreground);}
+.btn-warn{background:var(--tertiary);color:var(--foreground);}
+.btn-ghost{background:var(--muted);border-color:var(--border);box-shadow:2px 2px 0 var(--border);}
+.btn-ghost:hover{box-shadow:3px 3px 0 var(--border);}
+.btn-sm{padding:5px 12px;font-size:0.72rem;box-shadow:2px 2px 0 var(--shadow);}
+.btn-sm:hover{box-shadow:3px 3px 0 var(--shadow);}
+
+/* ============================================================ STATS GRID */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;margin-bottom:24px;}
+.stat-card{
+  background:var(--card);border:2px solid var(--foreground);border-radius:var(--r-xl);
+  padding:20px;position:relative;overflow:hidden;
+  transition:all 0.15s var(--ease);
+  box-shadow:4px 4px 0 var(--shadow);
+  animation:fadeUp 0.3s var(--ease) both;
+}
+.stat-card:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--shadow);}
+.stat-card::after{
+  content:'';position:absolute;top:-16px;right:-16px;
+  width:56px;height:56px;border-radius:50%;border:2px solid var(--foreground);opacity:0.06;
+}
+.stat-icon{
+  width:36px;height:36px;border-radius:var(--r-sm);border:2px solid var(--foreground);
+  display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:1rem;
+  box-shadow:2px 2px 0 var(--shadow);
+}
+.stat-lbl{font-size:0.62rem;font-weight:800;text-transform:uppercase;letter-spacing:0.09em;color:var(--muted-foreground);margin-bottom:3px;}
+.stat-val{font-family:var(--font-h);font-size:1.8rem;font-weight:900;color:var(--foreground);line-height:1;}
+.stat-sub{font-size:0.68rem;font-weight:600;color:var(--muted-foreground);margin-top:4px;}
+
+/* ============================================================ PANEL */
+.panel{
+  background:var(--card);border:2px solid var(--foreground);border-radius:var(--r-xl);
+  overflow:hidden;margin-bottom:20px;box-shadow:4px 4px 0 var(--shadow);
+}
+.panel-hd{
+  padding:14px 20px;border-bottom:2px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.panel-title{font-family:var(--font-h);font-size:1rem;font-weight:800;color:var(--foreground);}
+.panel-body{padding:20px;}
+
+/* ============================================================ TABLE */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{
+  text-align:left;font-size:0.62rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:0.09em;color:var(--muted-foreground);padding:9px 12px;
+  border-bottom:2px solid var(--border);white-space:nowrap;
+}
+.tbl td{
+  padding:11px 12px;font-size:0.8rem;font-weight:500;
+  border-bottom:1px solid var(--border);vertical-align:middle;color:var(--foreground);
+}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--muted);}
+.tbl .mono{font-family:monospace;font-size:0.72rem;color:var(--muted-foreground);}
+.tbl .fw{font-weight:700;color:var(--foreground);}
+
+/* ============================================================ BADGES */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;padding:3px 9px;
+  border-radius:999px;font-size:0.62rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:0.05em;border:2px solid var(--foreground);white-space:nowrap;
+  box-shadow:2px 2px 0 var(--shadow);
+}
+.badge .dot{width:6px;height:6px;border-radius:50%;}
+.b-green{background:var(--quaternary);color:var(--foreground);}
+.b-green .dot{background:#065f46;}
+.b-pink{background:var(--secondary);color:#fff;}
+.b-pink .dot{background:#9f1239;}
+.b-amber{background:var(--tertiary);color:var(--foreground);}
+.b-amber .dot{background:#78350f;}
+.b-purple{background:var(--accent);color:#fff;}
+.b-purple .dot{background:#ede9fe;}
+.b-muted{background:var(--muted);color:var(--muted-foreground);border-color:var(--border);box-shadow:none;}
+.b-muted .dot{background:var(--muted-foreground);}
+
+/* type pill */
+.tag{
+  display:inline-flex;align-items:center;padding:2px 8px;
+  background:var(--muted);border:1.5px solid var(--border);
+  border-radius:999px;font-size:0.65rem;font-weight:700;color:var(--muted-foreground);
+}
+
+/* ============================================================ FILTER BAR */
+.filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.filter-select{
+  border:2px solid var(--border);border-radius:var(--r-sm);padding:6px 10px;
+  font-family:var(--font-b);font-size:0.75rem;font-weight:600;
+  background:var(--input);color:var(--foreground);cursor:pointer;
+}
+.filter-select:focus{outline:none;border-color:var(--accent);box-shadow:2px 2px 0 var(--accent);}
+.filter-input{
+  border:2px solid var(--border);border-radius:var(--r-sm);padding:6px 12px;
+  font-family:var(--font-b);font-size:0.75rem;font-weight:500;
+  background:var(--input);color:var(--foreground);
+}
+.filter-input:focus{outline:none;border-color:var(--accent);box-shadow:2px 2px 0 var(--accent);}
+.filter-input::placeholder{color:var(--muted-foreground);}
+
+/* ============================================================ ACT GROUP */
+.act-group{display:flex;gap:4px;flex-wrap:wrap;}
+
+/* ============================================================ GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;}
+
+/* ============================================================ AUDIT ROW */
+.audit-row td:first-child{border-left:3px solid transparent;padding-left:9px;}
+.audit-row.ok td:first-child{border-left-color:var(--quaternary);}
+.audit-row.fail td:first-child{border-left-color:var(--secondary);}
+.audit-row.warn td:first-child{border-left-color:var(--tertiary);}
+
+/* ============================================================ SETTINGS */
+.setting-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 0;border-bottom:1px solid var(--border);gap:16px;
+}
+.setting-row:last-child{border-bottom:none;}
+.setting-key{font-size:0.83rem;font-weight:700;color:var(--foreground);}
+.setting-desc{font-size:0.72rem;font-weight:500;color:var(--muted-foreground);margin-top:2px;}
+.setting-input{
+  border:2px solid var(--border);border-radius:var(--r-sm);padding:6px 10px;
+  font-family:var(--font-b);font-size:0.78rem;font-weight:600;
+  background:var(--input);color:var(--foreground);
+}
+.setting-input:focus{outline:none;border-color:var(--accent);box-shadow:2px 2px 0 var(--accent);}
+.setting-select{
+  border:2px solid var(--border);border-radius:var(--r-sm);padding:6px 10px;
+  font-family:var(--font-b);font-size:0.78rem;font-weight:600;
+  background:var(--input);color:var(--foreground);cursor:pointer;
+}
+
+/* ============================================================ TOGGLE */
+.toggle{position:relative;width:38px;height:22px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{
+  position:absolute;inset:0;background:var(--border);border-radius:999px;
+  cursor:pointer;transition:background 0.2s;border:2px solid var(--foreground);
+}
+.toggle-slider::before{
+  content:'';position:absolute;width:14px;height:14px;
+  left:2px;top:2px;background:var(--muted-foreground);border-radius:50%;
+  transition:transform 0.2s var(--ease);
+}
+.toggle input:checked+.toggle-slider{background:var(--quaternary);}
+.toggle input:checked+.toggle-slider::before{transform:translateX(14px);background:var(--foreground);}
+
+/* ============================================================ EMPTY */
+.empty{
+  text-align:center;padding:52px 24px;
+  border:2px dashed var(--border);border-radius:var(--r-xl);
+  background:var(--muted);
+}
+.empty-ico{font-size:2.4rem;margin-bottom:10px;}
+.empty-ttl{font-family:var(--font-h);font-size:1.05rem;font-weight:800;margin-bottom:6px;}
+.empty-txt{font-size:0.8rem;color:var(--muted-foreground);font-weight:500;}
+
+/* ============================================================ MODAL */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(30,41,59,0.45);z-index:500;
+  display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px);
+}
+.modal-bg.open{display:flex;}
+.modal{
+  background:var(--card);border:2px solid var(--foreground);border-radius:var(--r-xl);
+  box-shadow:8px 8px 0 var(--shadow);
+  padding:24px;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;
+  animation:fadeUp 0.25s var(--ease);
+}
+.modal-title{font-family:var(--font-h);font-size:1rem;font-weight:800;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.modal pre{
+  background:var(--muted);border:2px solid var(--border);border-radius:var(--r-sm);
+  padding:14px;font-size:0.72rem;color:var(--foreground);line-height:1.6;
+  overflow-x:auto;white-space:pre-wrap;
+}
+
+/* ============================================================ TOAST */
+#toast{
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  background:var(--foreground);color:#fff;
+  border:2px solid var(--foreground);border-radius:var(--r-md);
+  padding:12px 18px;font-size:0.8rem;font-weight:700;
+  box-shadow:4px 4px 0 rgba(0,0,0,0.2);
+  display:none;align-items:center;gap:8px;max-width:300px;
+  animation:fadeUp 0.25s var(--ease);
+}
+
+/* ============================================================ QUEUE CARDS */
+.queue-card{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border:2px solid var(--foreground);border-radius:var(--r-lg);
+  box-shadow:3px 3px 0 var(--shadow);margin-bottom:10px;
+  transition:all 0.15s var(--ease);
+}
+.queue-card:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--shadow);}
+.queue-card:last-child{margin-bottom:0;}
+
+/* ============================================================ ANIM DELAYS */
+.stat-card:nth-child(1){animation-delay:.03s;}
+.stat-card:nth-child(2){animation-delay:.06s;}
+.stat-card:nth-child(3){animation-delay:.09s;}
+.stat-card:nth-child(4){animation-delay:.12s;}
+.stat-card:nth-child(5){animation-delay:.15s;}
+.stat-card:nth-child(6){animation-delay:.18s;}
+.stat-card:nth-child(7){animation-delay:.21s;}
+.stat-card:nth-child(8){animation-delay:.24s;}
+
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;}}
+@media(max-width:900px){
+  .sidebar{position:fixed;top:var(--topbar-h);left:0;bottom:0;z-index:200;}
+  .main{padding:18px;}
+  .grid-2,.grid-3{grid-template-columns:1fr;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .topbar-center{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================ TOPBAR -->
+<header class="topbar">
+  <div class="topbar-brand" id="tbBrand">
+    <a href="#" class="brand-logo">
+      <div class="brand-box">Digital<span class="loka">Loka</span></div>
+    </a>
+    <span class="admin-pill">Admin</span>
+  </div>
+  <div class="topbar-center">
+    <div class="search-wrap">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search users, orders, products…"/>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button class="icon-btn">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <div class="notif-dot"></div>
+    </button>
+    <div class="avatar">AL</div>
+  </div>
+</header>
+
+<!-- ============================================================ APP -->
+<div class="app" id="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <button class="sidebar-toggle" id="sbToggle">
+    <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+
+  <nav class="sidebar-nav">
+    <div class="nav-group-label">Main</div>
+
+    <div class="nav-item active" data-page="overview" data-tip="Overview" onclick="nav('overview',this)">
+      <span class="nav-ico"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+      <span class="nav-txt">Overview</span>
+    </div>
+
+    <div class="nav-item" data-page="products" data-tip="Products" onclick="nav('products',this)">
+      <span class="nav-ico"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
+      <span class="nav-txt">Products</span>
+    </div>
+
+    <div class="nav-item" data-page="orders" data-tip="Orders" onclick="nav('orders',this)">
+      <span class="nav-ico"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+      <span class="nav-txt">Orders</span>
+      <span class="nav-badge">3</span>
+    </div>
+
+    <div class="nav-item" data-page="users" data-tip="Users" onclick="nav('users',this)">
+      <span class="nav-ico"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      <span class="nav-txt">Users</span>
+    </div>
+
+    <div class="nav-item" data-page="entitlements" data-tip="Entitlements" onclick="nav('entitlements',this)">
+      <span class="nav-ico"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
+      <span class="nav-txt">Entitlements</span>
+      <span class="nav-dot"></span>
+    </div>
+
+    <div class="nav-item" data-page="droplets" data-tip="Droplets" onclick="nav('droplets',this)">
+      <span class="nav-ico"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></span>
+      <span class="nav-txt">Droplets</span>
+    </div>
+
+    <div class="nav-item" data-page="audit" data-tip="Audit Logs" onclick="nav('audit',this)">
+      <span class="nav-ico"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="12" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+      <span class="nav-txt">Audit Logs</span>
+    </div>
+
+    <div class="nav-item" data-page="settings" data-tip="Settings" onclick="nav('settings',this)">
+      <span class="nav-ico"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+      <span class="nav-txt">Settings</span>
+    </div>
+  </nav>
+
+  <!-- BOTTOM STICKY -->
+  <div class="sidebar-bottom">
+    <div class="nav-item" data-page="account" data-tip="Admin Account" onclick="nav('account',this)">
+      <span class="nav-ico"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+      <span class="nav-txt">Admin Account</span>
+    </div>
+    <div class="nav-item" data-page="support" data-tip="Support" onclick="nav('support',this)">
+      <span class="nav-ico"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+      <span class="nav-txt">Support</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ============================================================ MAIN -->
+<main class="main">
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="page active" id="page-overview">
+  <div class="ph">
+    <div>
+      <div class="ph-title">Admin Overview</div>
+      <div class="ph-sub">System health and operational snapshot · /admin</div>
+    </div>
+    <div class="ph-actions">
+      <button class="btn btn-accent" onclick="nav('audit',document.querySelector('[data-page=audit]'))">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        View Audit Logs
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(139,92,246,0.1)">📦</div><div class="stat-lbl">Total Products</div><div class="stat-val">24</div><div class="stat-sub">18 active</div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(52,211,153,0.12)">✅</div><div class="stat-lbl">Active Entitlements</div><div class="stat-val">341</div><div class="stat-sub">12 expiring soon</div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(244,114,182,0.12)">👥</div><div class="stat-lbl">Total Users</div><div class="stat-val">1,284</div><div class="stat-sub">7 blocked</div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(251,191,36,0.15)">🛒</div><div class="stat-lbl">Total Orders</div><div class="stat-val">2,091</div><div class="stat-sub">3 pending</div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(139,92,246,0.1)">🖥️</div><div class="stat-lbl">Managed Droplets</div><div class="stat-val">47</div><div class="stat-sub">3 in action</div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(244,114,182,0.12)">⚡</div><div class="stat-lbl">Actions In Progress</div><div class="stat-val">3</div><div class="stat-sub">across 2 users</div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(52,211,153,0.12)">💰</div><div class="stat-lbl">Revenue (MTD)</div><div class="stat-val">$8.4k</div><div class="stat-sub">+12% vs last mo</div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(251,191,36,0.15)">📊</div><div class="stat-lbl">Audit Events (24h)</div><div class="stat-val">128</div><div class="stat-sub">2 failures</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-hd">
+        <div class="panel-title">🚨 Critical Audit Events</div>
+        <button class="btn btn-sm" onclick="nav('audit',document.querySelector('[data-page=audit]'))">All logs →</button>
+      </div>
+      <div style="padding:0">
+        <table class="tbl">
+          <thead><tr><th>Actor</th><th>Action</th><th>Result</th><th>Time</th></tr></thead>
+          <tbody>
+            <tr class="audit-row fail"><td class="mono">admin@dl.dev</td><td class="fw">droplet.power_off</td><td><span class="badge b-pink"><span class="dot"></span>Fail</span></td><td style="color:var(--muted-foreground);font-size:0.72rem">2m ago</td></tr>
+            <tr class="audit-row ok"><td class="mono">admin@dl.dev</td><td class="fw">entitlement.revoke</td><td><span class="badge b-green"><span class="dot"></span>OK</span></td><td style="color:var(--muted-foreground);font-size:0.72rem">11m ago</td></tr>
+            <tr class="audit-row warn"><td class="mono">system</td><td class="fw">entitlement.expire_warn</td><td><span class="badge b-amber"><span class="dot"></span>Warn</span></td><td style="color:var(--muted-foreground);font-size:0.72rem">1h ago</td></tr>
+            <tr class="audit-row ok"><td class="mono">admin@dl.dev</td><td class="fw">user.status_update</td><td><span class="badge b-green"><span class="dot"></span>OK</span></td><td style="color:var(--muted-foreground);font-size:0.72rem">3h ago</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-hd"><div class="panel-title">⏳ High-Priority Queues</div></div>
+      <div class="panel-body">
+        <div class="queue-card" style="background:rgba(244,114,182,0.08);">
+          <div><div style="font-weight:700;font-size:0.85rem">Pending Orders</div><div style="font-size:0.72rem;color:var(--muted-foreground);margin-top:2px">Awaiting fulfillment</div></div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-family:var(--font-h);font-size:1.5rem;font-weight:900;color:var(--secondary)">3</span>
+            <button class="btn btn-sm" onclick="nav('orders',document.querySelector('[data-page=orders]'))">Review →</button>
+          </div>
+        </div>
+        <div class="queue-card" style="background:rgba(251,191,36,0.08);">
+          <div><div style="font-weight:700;font-size:0.85rem">Expiring Entitlements</div><div style="font-size:0.72rem;color:var(--muted-foreground);margin-top:2px">Expire within 7 days</div></div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-family:var(--font-h);font-size:1.5rem;font-weight:900;color:var(--tertiary)">12</span>
+            <button class="btn btn-sm" onclick="nav('entitlements',document.querySelector('[data-page=entitlements]'))">Review →</button>
+          </div>
+        </div>
+        <div class="queue-card" style="background:rgba(139,92,246,0.07);">
+          <div><div style="font-weight:700;font-size:0.85rem">Droplets In Action</div><div style="font-size:0.72rem;color:var(--muted-foreground);margin-top:2px">Processing or stuck</div></div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-family:var(--font-h);font-size:1.5rem;font-weight:900;color:var(--accent)">3</span>
+            <button class="btn btn-sm" onclick="nav('droplets',document.querySelector('[data-page=droplets]'))">Review →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PRODUCTS ==================== -->
+<div class="page" id="page-products">
+  <div class="ph">
+    <div><div class="ph-title">Products</div><div class="ph-sub">/admin/products — full catalog management</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-accent" onclick="showToast('✅ Create product flow — connect to backend.','ok')">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Create Product
+      </button>
+    </div>
+  </div>
+  <div class="filter-bar">
+    <select class="filter-select"><option>All Types</option><option>vps_droplet</option><option>digital</option><option>course</option><option>template</option></select>
+    <select class="filter-select"><option>All Statuses</option><option>Active</option><option>Draft</option><option>Archived</option></select>
+    <input class="filter-input" placeholder="Search product name or slug…"/>
+  </div>
+  <div class="panel">
+    <div style="padding:0"><table class="tbl"><thead><tr><th>ID</th><th>Product Name</th><th>Type</th><th>Category</th><th>Visibility</th><th>Pricing</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="products-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ==================== ORDERS ==================== -->
+<div class="page" id="page-orders">
+  <div class="ph">
+    <div><div class="ph-title">Orders</div><div class="ph-sub">/admin/orders — order management and fulfillment</div></div>
+  </div>
+  <div class="filter-bar">
+    <select class="filter-select"><option>All Fulfillment</option><option>Pending</option><option>Active</option><option>Completed</option></select>
+    <select class="filter-select"><option>All Payment</option><option>Paid</option><option>Pending</option><option>Refunded</option></select>
+    <input class="filter-input" placeholder="Search order ID or user email…"/>
+  </div>
+  <div class="panel">
+    <div style="padding:0"><table class="tbl"><thead><tr><th>Order ID</th><th>User</th><th>Items</th><th>Total</th><th>Payment</th><th>Fulfillment</th><th>Created</th><th>Actions</th></tr></thead><tbody id="orders-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ==================== USERS ==================== -->
+<div class="page" id="page-users">
+  <div class="ph">
+    <div><div class="ph-title">Users</div><div class="ph-sub">/admin/users — user management and access control</div></div>
+  </div>
+  <div class="filter-bar">
+    <select class="filter-select"><option>All Roles</option><option>user</option><option>admin</option></select>
+    <select class="filter-select"><option>All Statuses</option><option>Active</option><option>Blocked</option><option>Pending</option></select>
+    <input class="filter-input" placeholder="Search email or user ID…"/>
+  </div>
+  <div class="panel">
+    <div style="padding:0"><table class="tbl"><thead><tr><th>User ID</th><th>Email</th><th>Role</th><th>Status</th><th>Products</th><th>Last Active</th><th>Actions</th></tr></thead><tbody id="users-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ==================== ENTITLEMENTS ==================== -->
+<div class="page" id="page-entitlements">
+  <div class="ph">
+    <div><div class="ph-title">Entitlements</div><div class="ph-sub">/admin/entitlements — license and access lifecycle</div></div>
+  </div>
+  <div class="filter-bar">
+    <select class="filter-select"><option>All Statuses</option><option>Active</option><option>Expiring</option><option>Suspended</option><option>Revoked</option></select>
+    <input class="filter-input" placeholder="Search user email or product name…"/>
+  </div>
+  <div class="panel">
+    <div style="padding:0"><table class="tbl"><thead><tr><th>ID</th><th>User</th><th>Product</th><th>Order</th><th>Status</th><th>Starts</th><th>Expires</th><th>Actions</th></tr></thead><tbody id="ent-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ==================== DROPLETS ==================== -->
+<div class="page" id="page-droplets">
+  <div class="ph">
+    <div><div class="ph-title">Droplets</div><div class="ph-sub">/admin/droplets — server resource administration</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-sm" onclick="refreshAll()">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Refresh All
+      </button>
+    </div>
+  </div>
+  <div class="filter-bar">
+    <select class="filter-select"><option>All Statuses</option><option>Running</option><option>Stopped</option><option>Starting</option></select>
+    <select class="filter-select"><option>All Regions</option><option>SGP1</option><option>NYC1</option><option>FRA1</option></select>
+    <input class="filter-input" placeholder="Search droplet ID or owner…"/>
+  </div>
+  <div class="panel">
+    <div style="padding:0"><table class="tbl"><thead><tr><th>Droplet ID</th><th>Owner</th><th>Entitlement</th><th>Region</th><th>Plan</th><th>Status</th><th>IP</th><th>Last Action</th><th>Actions</th></tr></thead><tbody id="droplets-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ==================== AUDIT LOGS ==================== -->
+<div class="page" id="page-audit">
+  <div class="ph">
+    <div><div class="ph-title">Audit Logs</div><div class="ph-sub">/admin/audit-logs — full event history</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-sm btn-ghost">Export CSV</button>
+    </div>
+  </div>
+  <div class="filter-bar">
+    <select class="filter-select"><option>All Actors</option><option>admin@dl.dev</option><option>system</option></select>
+    <select class="filter-select"><option>All Actions</option><option>droplet.*</option><option>entitlement.*</option><option>user.*</option><option>product.*</option><option>order.*</option></select>
+    <select class="filter-select"><option>All Results</option><option>ok</option><option>fail</option><option>warn</option></select>
+    <input class="filter-input" placeholder="Search target ID or actor…"/>
+    <input class="filter-input" type="date" style="width:auto"/>
+    <input class="filter-input" type="date" style="width:auto"/>
+  </div>
+  <div class="panel">
+    <div style="padding:0"><table class="tbl"><thead><tr><th>Event ID</th><th>Actor</th><th>Action</th><th>Target Type</th><th>Target ID</th><th>Result</th><th>Timestamp</th><th>Payload</th></tr></thead><tbody id="audit-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ==================== SETTINGS ==================== -->
+<div class="page" id="page-settings">
+  <div class="ph">
+    <div><div class="ph-title">Settings</div><div class="ph-sub">/admin/settings — platform configuration</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-accent" onclick="showToast('✅ Settings saved and audit logged.','ok')">Save All Changes</button>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div>
+      <div class="panel">
+        <div class="panel-hd"><div class="panel-title">📦 Catalog Settings</div></div>
+        <div class="panel-body">
+          <div class="setting-row"><div><div class="setting-key">Default Product Visibility</div><div class="setting-desc">New products created as draft or published</div></div><select class="setting-select"><option>draft</option><option>published</option></select></div>
+          <div class="setting-row"><div><div class="setting-key">Product Slug Format</div><div class="setting-desc">Auto-generated slug style</div></div><input class="setting-input" value="kebab-case" style="width:130px"/></div>
+          <div class="setting-row"><div><div class="setting-key">Max Product Images</div><div class="setting-desc">Per product listing</div></div><input class="setting-input" type="number" value="8" style="width:70px"/></div>
+          <div class="setting-row"><div><div class="setting-key">Reviews Enabled</div><div class="setting-desc">Allow users to leave product reviews</div></div><label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-hd"><div class="panel-title">🔑 Entitlement Defaults</div></div>
+        <div class="panel-body">
+          <div class="setting-row"><div><div class="setting-key">Default Expiry (days)</div><div class="setting-desc">Applied when no custom expiry is set</div></div><input class="setting-input" type="number" value="365" style="width:70px"/></div>
+          <div class="setting-row"><div><div class="setting-key">Expiry Warning (days before)</div><div class="setting-desc">Notify user N days before expiry</div></div><input class="setting-input" type="number" value="7" style="width:70px"/></div>
+          <div class="setting-row"><div><div class="setting-key">Auto-suspend on Expiry</div><div class="setting-desc">Automatically suspend expired entitlements</div></div><label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
+          <div class="setting-row"><div><div class="setting-key">Grace Period (days)</div><div class="setting-desc">Days after expiry before full revocation</div></div><input class="setting-input" type="number" value="3" style="width:70px"/></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="panel-hd"><div class="panel-title">🛒 Order &amp; Fulfillment</div></div>
+        <div class="panel-body">
+          <div class="setting-row"><div><div class="setting-key">Auto-fulfill Digital Orders</div><div class="setting-desc">Grant access immediately after payment</div></div><label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
+          <div class="setting-row"><div><div class="setting-key">Currency</div><div class="setting-desc">Default storefront currency</div></div><select class="setting-select"><option>USD</option><option>IDR</option><option>EUR</option></select></div>
+          <div class="setting-row"><div><div class="setting-key">Refund Window (days)</div><div class="setting-desc">Days a customer can request a refund</div></div><input class="setting-input" type="number" value="14" style="width:70px"/></div>
+          <div class="setting-row"><div><div class="setting-key">Order ID Prefix</div><div class="setting-desc">Prefix for all generated order IDs</div></div><input class="setting-input" value="ORD-" style="width:90px"/></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-hd"><div class="panel-title">📧 Operational Contacts</div></div>
+        <div class="panel-body">
+          <div class="setting-row"><div><div class="setting-key">Billing Email</div><div class="setting-desc">Receives billing alerts and invoices</div></div><input class="setting-input" value="billing@digitalloka.dev" style="width:200px"/></div>
+          <div class="setting-row"><div><div class="setting-key">Ops Alert Email</div><div class="setting-desc">Receives droplet and critical alerts</div></div><input class="setting-input" value="ops@digitalloka.dev" style="width:200px"/></div>
+          <div class="setting-row"><div><div class="setting-key">Support Email</div><div class="setting-desc">User-facing support contact address</div></div><input class="setting-input" value="support@digitalloka.dev" style="width:200px"/></div>
+          <div class="setting-row"><div><div class="setting-key">Audit Webhooks</div><div class="setting-desc">POST critical events to external endpoint</div></div><label class="toggle"><input type="checkbox"/><span class="toggle-slider"></span></label></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ACCOUNT ==================== -->
+<div class="page" id="page-account">
+  <div class="ph"><div><div class="ph-title">Admin Account</div><div class="ph-sub">Your admin profile and session settings</div></div></div>
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-hd"><div class="panel-title">Profile</div><button class="btn btn-sm">Edit</button></div>
+      <div class="panel-body">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+          <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--secondary));border:2px solid var(--foreground);box-shadow:3px 3px 0 var(--shadow);display:flex;align-items:center;justify-content:center;font-family:var(--font-h);font-weight:900;font-size:1.2rem;color:#fff">AL</div>
+          <div><div style="font-family:var(--font-h);font-size:1.05rem;font-weight:800">Aldo</div><div style="font-size:0.78rem;color:var(--muted-foreground)">devaldo@index-now.dev</div></div>
+        </div>
+        <div class="setting-row"><div class="setting-key">Role</div><span class="badge b-pink">Admin</span></div>
+        <div class="setting-row"><div class="setting-key">Location</div><span style="font-weight:700;font-size:0.82rem">Jakarta, Indonesia</span></div>
+        <div class="setting-row"><div class="setting-key">Two-Factor Auth</div><label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
+        <div class="setting-row"><div class="setting-key">Session Timeout</div><input class="setting-input" value="30 min" style="width:100px"/></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-hd"><div class="panel-title">Recent Admin Sessions</div></div>
+      <div style="padding:0">
+        <table class="tbl">
+          <thead><tr><th>IP</th><th>Device</th><th>Started</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">103.x.x.x</td><td>Chrome / macOS</td><td style="font-size:0.72rem;color:var(--muted-foreground)">Now</td><td><span class="badge b-green"><span class="dot"></span>Active</span></td></tr>
+            <tr><td class="mono">103.x.x.x</td><td>Chrome / macOS</td><td style="font-size:0.72rem;color:var(--muted-foreground)">Yesterday</td><td><span class="badge b-muted">Expired</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SUPPORT ==================== -->
+<div class="page" id="page-support">
+  <div class="ph"><div><div class="ph-title">Support</div><div class="ph-sub">Internal support tools and documentation</div></div><div class="ph-actions"><button class="btn btn-accent">+ New Ticket</button></div></div>
+  <div class="grid-3">
+    <div class="panel" style="cursor:pointer" onclick="showToast('Opening docs…','ok')">
+      <div class="panel-body" style="text-align:center;padding:28px 16px"><div style="font-size:2rem;margin-bottom:8px">📚</div><div style="font-family:var(--font-h);font-weight:800;margin-bottom:4px">Documentation</div><div style="font-size:0.75rem;color:var(--muted-foreground)">Admin guides and API reference</div></div>
+    </div>
+    <div class="panel" style="cursor:pointer">
+      <div class="panel-body" style="text-align:center;padding:28px 16px"><div style="font-size:2rem;margin-bottom:8px">🔧</div><div style="font-family:var(--font-h);font-weight:800;margin-bottom:4px">System Status</div><div style="font-size:0.75rem;color:var(--muted-foreground)">Infra and provider health</div></div>
+    </div>
+    <div class="panel" style="cursor:pointer">
+      <div class="panel-body" style="text-align:center;padding:28px 16px"><div style="font-size:2rem;margin-bottom:8px">📧</div><div style="font-family:var(--font-h);font-weight:800;margin-bottom:4px">Contact Support</div><div style="font-size:0.75rem;color:var(--muted-foreground)">Escalation and billing disputes</div></div>
+    </div>
+  </div>
+  <div class="panel"><div class="panel-hd"><div class="panel-title">Open Tickets</div></div><div class="empty"><div class="empty-ico">🎉</div><div class="empty-ttl">No open tickets</div><div class="empty-txt">All clear. Open a ticket if you need escalation support.</div></div></div>
+</div>
+
+</main>
+</div><!-- /.app -->
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title">
+      <span>Event Payload</span>
+      <button class="btn btn-sm btn-ghost" onclick="document.getElementById('modal').classList.remove('open')">✕ Close</button>
+    </div>
+    <pre id="modal-body"></pre>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+/* ============================================================ DATA */
+const DATA = {
+  products:[
+    {id:'PRD-001',name:'NovaDash UI Kit',slug:'novadash-ui-kit',type:'digital',cat:'UI Kit',visible:true,price:'$49',updated:'Mar 20'},
+    {id:'PRD-002',name:'koncoweb VPS SGP1',slug:'vps-sgp1-2vcpu',type:'vps_droplet',cat:'VPS',visible:true,price:'$24/mo',updated:'Apr 1'},
+    {id:'PRD-003',name:'AI Prompt Course',slug:'ai-prompt-course',type:'course',cat:'Education',visible:true,price:'$99',updated:'Mar 28'},
+    {id:'PRD-004',name:'Indie Notion Pack',slug:'indie-notion-pack',type:'template',cat:'Productivity',visible:true,price:'$15',updated:'Feb 10'},
+    {id:'PRD-005',name:'DataViz Pro Kit',slug:'dataviz-pro-kit',type:'digital',cat:'UI Kit',visible:false,price:'$69',updated:'Jan 30'},
+    {id:'PRD-006',name:'SaaSify Landing Kit',slug:'saasify-landing',type:'template',cat:'Template',visible:true,price:'$39',updated:'Mar 15'},
+  ],
+  orders:[
+    {id:'ORD-0042',user:'aldo@dl.dev',items:1,total:'$49',pay:'paid',fulfill:'active',created:'Feb 14'},
+    {id:'ORD-0041',user:'aldo@dl.dev',items:1,total:'$24',pay:'paid',fulfill:'running',created:'Mar 1'},
+    {id:'ORD-0040',user:'aldo@dl.dev',items:1,total:'$99',pay:'paid',fulfill:'pending',created:'Apr 1'},
+    {id:'ORD-0039',user:'budi@test.com',items:2,total:'$88',pay:'paid',fulfill:'active',created:'Mar 22'},
+    {id:'ORD-0038',user:'sari@demo.com',items:1,total:'$15',pay:'paid',fulfill:'active',created:'Dec 5'},
+    {id:'ORD-0037',user:'rudi@corp.id',items:1,total:'$99',pay:'pending',fulfill:'pending',created:'Apr 2'},
+  ],
+  users:[
+    {id:'USR-001',email:'aldo@dl.dev',role:'admin',status:'active',prods:5,last:'1h ago'},
+    {id:'USR-002',email:'budi@test.com',role:'user',status:'active',prods:2,last:'3h ago'},
+    {id:'USR-003',email:'sari@demo.com',role:'user',status:'active',prods:1,last:'2d ago'},
+    {id:'USR-004',email:'rudi@corp.id',role:'user',status:'active',prods:0,last:'Just now'},
+    {id:'USR-005',email:'spam@bad.io',role:'user',status:'blocked',prods:0,last:'1w ago'},
+    {id:'USR-006',email:'dewi@startup.id',role:'user',status:'pending',prods:0,last:'Never'},
+  ],
+  entitlements:[
+    {id:'ENT-001',user:'aldo@dl.dev',prod:'NovaDash UI Kit',order:'ORD-0042',status:'active',starts:'Feb 14',expires:'Feb 2027'},
+    {id:'ENT-002',user:'aldo@dl.dev',prod:'VPS SGP1',order:'ORD-0041',status:'active',starts:'Mar 1',expires:'Apr 2027'},
+    {id:'ENT-003',user:'aldo@dl.dev',prod:'DataViz Pro Kit',order:'ORD-0039',status:'expiring',starts:'Jan 10',expires:'Apr 9'},
+    {id:'ENT-004',user:'budi@test.com',prod:'NovaDash UI Kit',order:'ORD-0039',status:'active',starts:'Mar 22',expires:'Mar 2027'},
+    {id:'ENT-005',user:'sari@demo.com',prod:'Indie Notion Pack',order:'ORD-0038',status:'active',starts:'Dec 5',expires:'Dec 2026'},
+    {id:'ENT-006',user:'spam@bad.io',prod:'SaaSify Kit',order:'ORD-0035',status:'revoked',starts:'Jan 1',expires:'—'},
+  ],
+  droplets:[
+    {id:'DO-11223',user:'aldo@dl.dev',ent:'ENT-002',region:'SGP1',plan:'2vCPU/4GB',status:'running',ip:'192.168.1.10',last:'2h ago'},
+    {id:'DO-11224',user:'aldo@dl.dev',ent:'ENT-002',region:'SGP1',plan:'1vCPU/2GB',status:'running',ip:'192.168.1.11',last:'5h ago'},
+    {id:'DO-11225',user:'aldo@dl.dev',ent:'ENT-002',region:'SGP1',plan:'1vCPU/1GB',status:'stopped',ip:'—',last:'2d ago'},
+    {id:'DO-11300',user:'budi@test.com',ent:'ENT-004',region:'NYC1',plan:'1vCPU/1GB',status:'running',ip:'10.0.0.5',last:'1h ago'},
+    {id:'DO-11301',user:'dewi@startup.id',ent:'ENT-007',region:'FRA1',plan:'2vCPU/4GB',status:'starting',ip:'—',last:'5m ago'},
+  ],
+  audit:[
+    {id:'EVT-0128',actor:'admin@dl.dev',action:'droplet.power_off',ttype:'droplet',tid:'DO-11225',result:'fail',ts:'2m ago',payload:{droplet_id:'DO-11225',reason:'timeout_after_30s',retried:false}},
+    {id:'EVT-0127',actor:'admin@dl.dev',action:'entitlement.revoke',ttype:'entitlement',tid:'ENT-006',result:'ok',ts:'11m ago',payload:{entitlement_id:'ENT-006',user:'spam@bad.io',reason:'abuse_detected'}},
+    {id:'EVT-0126',actor:'system',action:'entitlement.expire_warn',ttype:'entitlement',tid:'ENT-003',result:'warn',ts:'1h ago',payload:{entitlement_id:'ENT-003',expires_in_days:7}},
+    {id:'EVT-0125',actor:'admin@dl.dev',action:'user.status_update',ttype:'user',tid:'USR-005',result:'ok',ts:'3h ago',payload:{user_id:'USR-005',old:'active',new:'blocked'}},
+    {id:'EVT-0124',actor:'admin@dl.dev',action:'product.toggle_visibility',ttype:'product',tid:'PRD-005',result:'ok',ts:'4h ago',payload:{product_id:'PRD-005',is_visible:false}},
+    {id:'EVT-0123',actor:'system',action:'order.auto_fulfill',ttype:'order',tid:'ORD-0042',result:'ok',ts:'6h ago',payload:{order_id:'ORD-0042',entitlement_created:'ENT-001'}},
+    {id:'EVT-0122',actor:'admin@dl.dev',action:'droplet.reboot',ttype:'droplet',tid:'DO-11223',result:'ok',ts:'8h ago',payload:{droplet_id:'DO-11223',requested_by:'admin@dl.dev'}},
+    {id:'EVT-0121',actor:'admin@dl.dev',action:'settings.update',ttype:'settings',tid:'catalog.default_visibility',result:'ok',ts:'1d ago',payload:{key:'default_visibility',old:'published',new:'draft'}},
+  ]
+};
+
+/* ============================================================ BADGE HELPER */
+function badge(status){
+  const m={active:'b-green',running:'b-green',ok:'b-green',paid:'b-green',visible:'b-green',
+    expiring:'b-amber',warn:'b-amber',pending:'b-amber',starting:'b-amber',
+    stopped:'b-pink',blocked:'b-pink',fail:'b-pink',failed:'b-pink',revoked:'b-pink',suspended:'b-pink',hidden:'b-pink',
+    draft:'b-muted',archived:'b-muted',expired:'b-muted',
+    admin:'b-purple'};
+  const cls=m[status]||'b-muted';
+  return `<span class="badge ${cls}"><span class="dot"></span>${status}</span>`;
+}
+
+/* ============================================================ RENDER */
+function renderProducts(){
+  document.getElementById('products-body').innerHTML = DATA.products.map(p=>`<tr>
+    <td class="mono">${p.id}</td>
+    <td><div class="fw">${p.name}</div><div style="font-size:0.68rem;color:var(--muted-foreground);margin-top:1px">${p.slug}</div></td>
+    <td><span class="tag">${p.type}</span></td>
+    <td style="color:var(--muted-foreground)">${p.cat}</td>
+    <td>${badge(p.visible?'visible':'hidden')}</td>
+    <td style="font-family:var(--font-h);font-weight:800">${p.price}</td>
+    <td style="color:var(--muted-foreground);font-size:0.72rem">${p.updated}</td>
+    <td><div class="act-group">
+      <button class="btn btn-sm" onclick="showToast('✏️ Edit product — connect backend.','ok')">Edit</button>
+      <button class="btn btn-sm btn-ghost" onclick="showToast('👁️ Visibility toggled.','ok')">${p.visible?'Hide':'Show'}</button>
+      <button class="btn btn-sm btn-ghost" onclick="showToast('🏷️ Manage tags.','ok')">Tags</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function renderOrders(){
+  document.getElementById('orders-body').innerHTML = DATA.orders.map(o=>`<tr>
+    <td class="fw">${o.id}</td>
+    <td class="mono">${o.user}</td>
+    <td style="text-align:center;font-weight:700">${o.items}</td>
+    <td style="font-family:var(--font-h);font-weight:800">${o.total}</td>
+    <td>${badge(o.pay)}</td>
+    <td>${badge(o.fulfill)}</td>
+    <td style="color:var(--muted-foreground);font-size:0.72rem">${o.created}</td>
+    <td><div class="act-group">
+      <button class="btn btn-sm" onclick="showToast('📦 View order details.','ok')">View</button>
+      <button class="btn btn-sm btn-ghost" onclick="showToast('✅ Status updated.','ok')">Update</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function renderUsers(){
+  document.getElementById('users-body').innerHTML = DATA.users.map(u=>`<tr>
+    <td class="mono">${u.id}</td>
+    <td class="fw">${u.email}</td>
+    <td><span class="tag">${u.role}</span></td>
+    <td>${badge(u.status)}</td>
+    <td style="text-align:center;font-weight:700">${u.prods}</td>
+    <td style="color:var(--muted-foreground);font-size:0.72rem">${u.last}</td>
+    <td><div class="act-group">
+      <button class="btn btn-sm" onclick="showToast('👤 View user detail.','ok')">View</button>
+      <button class="btn btn-sm ${u.status==='blocked'?'btn-success':'btn-danger'}" onclick="showToast('${u.status==='blocked'?'✅ User unblocked.':'🚫 User blocked.'}','ok')">${u.status==='blocked'?'Unblock':'Block'}</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function renderEntitlements(){
+  document.getElementById('ent-body').innerHTML = DATA.entitlements.map(e=>`<tr>
+    <td class="mono">${e.id}</td>
+    <td class="fw">${e.user}</td>
+    <td>${e.prod}</td>
+    <td class="mono">${e.order}</td>
+    <td>${badge(e.status)}</td>
+    <td style="color:var(--muted-foreground);font-size:0.72rem">${e.starts}</td>
+    <td style="font-weight:700;font-size:0.8rem;color:${e.status==='expiring'?'var(--secondary)':'var(--foreground)'}">${e.expires}</td>
+    <td><div class="act-group">
+      <button class="btn btn-sm btn-success" onclick="showToast('✅ Entitlement activated.','ok')">Activate</button>
+      <button class="btn btn-sm btn-warn" onclick="showToast('⏸ Entitlement suspended.','ok')">Suspend</button>
+      <button class="btn btn-sm btn-danger" onclick="showToast('🚫 Entitlement revoked.','ok')">Revoke</button>
+      <button class="btn btn-sm" onclick="showToast('📅 Extended by 30 days.','ok')">+30d</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function renderDroplets(){
+  document.getElementById('droplets-body').innerHTML = DATA.droplets.map(d=>`<tr id="dr-${d.id.replace('-','_')}">
+    <td class="mono">${d.id}</td>
+    <td class="fw">${d.user}</td>
+    <td class="mono">${d.ent}</td>
+    <td><span class="tag">${d.region}</span></td>
+    <td style="font-size:0.75rem;color:var(--muted-foreground)">${d.plan}</td>
+    <td id="dst-${d.id.replace('-','_')}">${badge(d.status)}</td>
+    <td id="dip-${d.id.replace('-','_')}" class="mono">${d.ip}</td>
+    <td style="color:var(--muted-foreground);font-size:0.72rem">${d.last}</td>
+    <td><div class="act-group">
+      <button class="btn btn-sm btn-success" onclick="dropletOp('${d.id}','on')">On</button>
+      <button class="btn btn-sm btn-danger" onclick="dropletOp('${d.id}','off')">Off</button>
+      <button class="btn btn-sm btn-warn" onclick="dropletOp('${d.id}','reboot')">Reboot</button>
+      <button class="btn btn-sm" onclick="dropletOp('${d.id}','refresh')">↺</button>
+      <button class="btn btn-sm btn-ghost" onclick="showToast('📋 Action log for ${d.id}.','ok')">Log</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function renderAudit(){
+  document.getElementById('audit-body').innerHTML = DATA.audit.map(e=>`<tr class="audit-row ${e.result}">
+    <td class="mono">${e.id}</td>
+    <td class="fw">${e.actor}</td>
+    <td style="font-weight:700">${e.action}</td>
+    <td><span class="tag">${e.ttype}</span></td>
+    <td class="mono">${e.tid}</td>
+    <td>${badge(e.result)}</td>
+    <td style="color:var(--muted-foreground);font-size:0.72rem">${e.ts}</td>
+    <td><button class="btn btn-sm btn-ghost" onclick="openPayload(${JSON.stringify(JSON.stringify(e.payload))})">Payload</button></td>
+  </tr>`).join('');
+}
+
+/* ============================================================ DROPLET OPS */
+function dropletOp(id,action){
+  const key=id.replace('-','_');
+  const row=document.getElementById('dr-'+key);
+  if(!row)return;
+  const btns=row.querySelectorAll('button');
+  btns.forEach(b=>b.disabled=true);
+  const msgs={on:'⚡ Powering on…',off:'🔌 Powering off…',reboot:'🔄 Rebooting…',refresh:'🔍 Refreshing…'};
+  showToast(msgs[action],'warn');
+  setTimeout(()=>{
+    btns.forEach(b=>b.disabled=false);
+    const sc=document.getElementById('dst-'+key);
+    const ic=document.getElementById('dip-'+key);
+    if(action==='on'){
+      if(sc)sc.innerHTML=badge('running');
+      if(ic)ic.textContent='192.168.x.x';
+      showToast('✅ Droplet is running.','ok');
+    } else if(action==='off'){
+      if(sc)sc.innerHTML=badge('stopped');
+      if(ic)ic.textContent='—';
+      showToast('✅ Droplet stopped.','ok');
+    } else if(action==='reboot'){
+      showToast('✅ Reboot complete.','ok');
+    } else {
+      showToast('✅ Status refreshed.','ok');
+    }
+  }, action==='reboot'?2500:1800);
+}
+
+function refreshAll(){
+  showToast('🔄 Refreshing all droplets…','warn');
+  setTimeout(()=>showToast('✅ All statuses updated.','ok'),2000);
+}
+
+/* ============================================================ MODAL */
+function openPayload(json){
+  document.getElementById('modal-body').textContent=JSON.stringify(JSON.parse(json),null,2);
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(e){
+  if(e.target===document.getElementById('modal'))
+    document.getElementById('modal').classList.remove('open');
+}
+
+/* ============================================================ TOAST */
+let toastT;
+function showToast(msg,type){
+  const el=document.getElementById('toast');
+  const bg={ok:getComputedStyle(document.documentElement).getPropertyValue('--quaternary').trim(),warn:'#FBBF24',fail:'#F472B6'};
+  el.style.background=bg[type]||'var(--foreground)';
+  el.style.color=type?'var(--foreground)':'#fff';
+  el.style.borderColor='var(--foreground)';
+  el.textContent=msg;
+  el.style.display='flex';
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>el.style.display='none',3000);
+}
+
+/* ============================================================ NAVIGATION */
+function nav(page,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const t=document.getElementById('page-'+page);
+  if(t)t.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el)el.classList.add('active');
+  else{const f=document.querySelector(`[data-page="${page}"]`);if(f)f.classList.add('active');}
+  document.querySelector('.main').scrollTop=0;
+}
+
+/* ============================================================ SIDEBAR TOGGLE */
+document.getElementById('sbToggle').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.toggle('collapsed');
+  document.getElementById('app').classList.toggle('collapsed');
+});
+
+/* ============================================================ INIT */
+renderProducts();
+renderOrders();
+renderUsers();
+renderEntitlements();
+renderDroplets();
+renderAudit();
+</script>
+</body>
+</html>
