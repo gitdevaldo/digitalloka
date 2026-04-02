@@ -1235,8 +1235,37 @@
     loadProducts();
   }
 
+  function setAuthCookie(name, value, maxAgeSeconds) {
+    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
+  }
+
+  function handleSupabaseHashAuth() {
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const accessToken = hashParams.get('access_token');
+    if (!accessToken) {
+      return false;
+    }
+
+    const refreshToken = hashParams.get('refresh_token');
+    const expiresIn = Number(hashParams.get('expires_in') || '3600');
+    const searchParams = new URLSearchParams(window.location.search);
+    const next = searchParams.get('next');
+    const redirectTarget = next && next.startsWith('/') ? next : '/dashboard';
+
+    setAuthCookie('sb-access-token', accessToken, Number.isFinite(expiresIn) ? expiresIn : 3600);
+    if (refreshToken) {
+      setAuthCookie('sb-refresh-token', refreshToken, 60 * 60 * 24 * 30);
+    }
+
+    window.location.replace(redirectTarget);
+    return true;
+  }
+
   // ===================== INIT =====================
-  loadProducts();
+  if (!handleSupabaseHashAuth()) {
+    loadProducts();
+  }
 </script>
 </body>
 </html>

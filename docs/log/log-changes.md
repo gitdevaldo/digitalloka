@@ -1,6 +1,16 @@
 # Change Log
 
 ## 2026-04-02 00:00
+- Short description: Fixed magic-link login persistence when Supabase redirects to localhost root.
+- What you do:
+  - Added hash-token handling on catalog root page to process Supabase magic-link fragments (`access_token`, `refresh_token`, `expires_in`).
+  - Persisted auth cookies (`sb-access-token`, `sb-refresh-token`) from root-page hash callback flow.
+  - Added automatic redirect to dashboard (or `next` query path when provided) after token persistence so protected routes keep session state.
+- File path that changes:
+  - `resources/views/catalog/index.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 00:00
 - Short description: Added dev-safe Supabase TLS configuration to unblock localhost magic-link login.
 - What you do:
   - Added configurable Supabase HTTP TLS options (`SUPABASE_HTTP_VERIFY_SSL`, `SUPABASE_HTTP_CA_BUNDLE`) in service config.
