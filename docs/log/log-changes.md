@@ -1,6 +1,18 @@
 # Change Log
 
 ## 2026-04-02 00:00
+- Short description: Added live actor-behavior verification evidence for Supabase RLS/RBAC hardening.
+- What you do:
+  - Executed direct PostgreSQL actor simulation checks for `anon`, `authenticated`, and simulated `admin` paths.
+  - Verified denial cases for anonymous order access and authenticated site-settings writes.
+  - Verified cross-user isolation for order visibility.
+  - Verified admin-path access on `site_settings` with temporary in-transaction role elevation and rollback.
+  - Added pass/fail evidence matrix to Supabase audit documentation.
+- File path that changes:
+  - `docs/audits/2026-04-02-supabase-policy-matrix.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 00:00
 - Short description: Implemented Supabase database hardening with RLS/RBAC policy pack and verification artifacts.
 - What you do:
   - Created and executed a Supabase SQL hardening script that defines RBAC helper functions, enables RLS on all app tables, recreates policy coverage, and tightens grants for `anon` and `authenticated` roles.
