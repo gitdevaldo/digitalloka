@@ -1,6 +1,21 @@
 # Change Log
 
 ## 2026-04-02 00:00
+- Short description: Fixed post-magic-link relogin loop by persisting session cookies through backend endpoint.
+- What you do:
+  - Added `/api/auth/session` endpoint to persist Supabase access/refresh tokens into server-set cookies.
+  - Updated root-page hash handler and callback page to call backend session endpoint before redirecting to dashboard.
+  - Updated logout endpoint to clear auth cookies server-side.
+  - Kept same-origin protection on session persistence endpoint.
+- File path that changes:
+  - `app/Http/Controllers/Auth/LoginController.php`
+  - `app/Http/Controllers/Auth/LogoutController.php`
+  - `routes/api.php`
+  - `resources/views/auth/callback.blade.php`
+  - `resources/views/catalog/index.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 00:00
 - Short description: Fixed magic-link login persistence when Supabase redirects to localhost root.
 - What you do:
   - Added hash-token handling on catalog root page to process Supabase magic-link fragments (`access_token`, `refresh_token`, `expires_in`).

@@ -1235,12 +1235,27 @@
     loadProducts();
   }
 
-  function setAuthCookie(name, value, maxAgeSeconds) {
-    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
-    document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
+  async function persistSupabaseSession(accessToken, refreshToken, expiresIn) {
+    const response = await fetch('/api/auth/session', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        expires_in: expiresIn,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Unable to persist session cookie');
+    }
   }
 
-  function handleSupabaseHashAuth() {
+  async function handleSupabaseHashAuth() {
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
     const accessToken = hashParams.get('access_token');
     if (!accessToken) {
@@ -1253,9 +1268,11 @@
     const next = searchParams.get('next');
     const redirectTarget = next && next.startsWith('/') ? next : '/dashboard';
 
-    setAuthCookie('sb-access-token', accessToken, Number.isFinite(expiresIn) ? expiresIn : 3600);
-    if (refreshToken) {
-      setAuthCookie('sb-refresh-token', refreshToken, 60 * 60 * 24 * 30);
+    try {
+      await persistSupabaseSession(accessToken, refreshToken, Number.isFinite(expiresIn) ? expiresIn : 3600);
+    } catch (error) {
+      console.error('Supabase session persistence failed', error);
+      return false;
     }
 
     window.location.replace(redirectTarget);
@@ -1263,9 +1280,11 @@
   }
 
   // ===================== INIT =====================
-  if (!handleSupabaseHashAuth()) {
-    loadProducts();
-  }
+  (async () => {
+    if (!await handleSupabaseHashAuth()) {
+      loadProducts();
+    }
+  })();
 </script>
 </body>
 </html>

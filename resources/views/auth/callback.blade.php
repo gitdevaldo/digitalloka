@@ -35,16 +35,27 @@
       statusEl.textContent = message;
     }
 
-    function setCookie(name, value, maxAgeSeconds) {
-      const secure = window.location.protocol === 'https:' ? '; Secure' : '';
-      document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
+    async function persistSession(accessToken, refreshToken, expiresIn) {
+      const response = await fetch('/api/auth/session', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          expires_in: expiresIn
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Unable to persist session cookie');
+      }
     }
 
-    function clearCookie(name) {
-      document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=Lax`;
-    }
-
-    (function handleCallback() {
+    (async function handleCallback() {
       const searchParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
 
@@ -60,12 +71,11 @@
         return;
       }
 
-      setCookie('sb-access-token', accessToken, Number.isFinite(expiresIn) ? expiresIn : 3600);
-
-      if (refreshToken) {
-        setCookie('sb-refresh-token', refreshToken, 60 * 60 * 24 * 30);
-      } else {
-        clearCookie('sb-refresh-token');
+      try {
+        await persistSession(accessToken, refreshToken, Number.isFinite(expiresIn) ? expiresIn : 3600);
+      } catch (error) {
+        setStatus('Sign in failed while saving session. Please request a new magic link.');
+        return;
       }
 
       setStatus('Sign in complete. Redirecting...');

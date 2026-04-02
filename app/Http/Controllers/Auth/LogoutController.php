@@ -9,7 +9,8 @@ class LogoutController extends Controller
 {
     public function store(): JsonResponse
     {
-        // Placeholder for session invalidation logic.
-        return response()->json(['success' => true], 200);
+        return response()->json(['success' => true], 200)
+            ->withoutCookie('sb-access-token', '/')
+            ->withoutCookie('sb-refresh-token', '/');
     }
 }

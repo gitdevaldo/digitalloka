@@ -19,6 +19,7 @@ use App\Http\Middleware\EnsureSameOrigin;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/login', [LoginController::class, 'store'])->middleware(EnsureSameOrigin::class);
+Route::post('/auth/session', [LoginController::class, 'storeSession'])->middleware(EnsureSameOrigin::class);
 Route::post('/auth/logout', [LogoutController::class, 'store'])->middleware(EnsureSameOrigin::class);
 
 Route::get('/droplets', [DropletController::class, 'index']);
