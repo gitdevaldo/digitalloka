@@ -1,5 +1,16 @@
 # Change Log
 
+## 2026-04-02 10:23
+- Short description: Added canonical PHP path and DATABASE_URL-only caution to project instruction files.
+- What you do:
+  - Added explicit local PHP executable path guidance for command execution consistency.
+  - Added strict caution to use direct `DATABASE_URL` PostgreSQL access for live Supabase DB inspection.
+  - Added explicit prohibition against using Supabase service URL or service role key for live DB inspection tasks.
+- File path that changes:
+  - `.github/copilot-instructions.md`
+  - `.claude/CLAUDE.md`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-02 10:15
 - Short description: Added full backend implementation plan with top tracker based on PRD and live DATABASE_URL inspection.
 - What you do:
