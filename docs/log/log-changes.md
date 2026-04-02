@@ -1,6 +1,17 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Tightened user dashboard IA PRD to remove optional scope and enforce bottom-sticky nav.
+- What you do:
+  - Removed optional wording from dashboard route/navigation scope.
+  - Required Products > VPS Droplets route to be available now at `/dashboard/products/droplets`.
+  - Defined Account and Support as bottom-sticky navigation items.
+  - Added acceptance criteria for bottom-sticky nav and required droplet submenu route.
+- File path that changes:
+  - `docs/prds/2026-04-01-user-dashboard-information-architecture-prd.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Added user dashboard IA PRD with Products-parent and Droplets-submenu rules.
 - What you do:
   - Created a dedicated requirements document for user dashboard information architecture.

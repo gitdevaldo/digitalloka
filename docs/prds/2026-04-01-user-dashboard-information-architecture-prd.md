@@ -18,8 +18,15 @@ Define a clear user dashboard structure where droplets are treated as owned prod
 - Overview
 - Products
 - Orders
-- Optional: Account
-- Optional: Support
+
+### Bottom Sticky Navigation
+- Account
+- Support
+
+### Navigation Behavior Requirements
+- Account and Support must be pinned at the bottom of the sidebar navigation.
+- Top navigation group must contain only Overview, Products, and Orders.
+- Bottom sticky navigation must remain visible while the main navigation list scrolls.
 
 ### Products Submenu
 - All Products
@@ -81,14 +88,14 @@ Define a clear user dashboard structure where droplets are treated as owned prod
 - If line item is VPS droplet product, user can open Products > VPS Droplets from that line item.
 
 ## Route and IA Requirements
-- Keep existing top-level user routes for now:
+- Keep existing top-level user routes:
   - /dashboard
   - /dashboard/products
   - /dashboard/orders
 - Add submenu UX under Products for VPS droplets.
-- Optional future route split if needed:
+- Add route for Products > VPS Droplets now:
   - /dashboard/products/droplets
-- If split route is added, it must keep Products as parent nav and Droplets as child/submenu nav.
+- Products must stay as parent nav and VPS Droplets must stay as child/submenu nav.
 
 ## Data Contract Requirements
 
@@ -125,7 +132,9 @@ Define a clear user dashboard structure where droplets are treated as owned prod
 ## Acceptance Criteria
 - Dashboard nav does not show Droplets as top-level item.
 - Products exists as top-level item with submenu.
+- Account and Support are pinned in a bottom sticky navigation section.
 - VPS droplet resources are visible under Products > VPS Droplets.
+- /dashboard/products/droplets route is available now.
 - User can manage droplet actions from VPS product context.
 - Orders link users back to product context, including VPS droplet products.
 - Ownership checks block access to unassigned droplet resources.
