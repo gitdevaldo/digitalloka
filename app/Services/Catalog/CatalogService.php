@@ -28,6 +28,33 @@ class CatalogService
             $query->where('status', $filters['availability']);
         }
 
+        if (!empty($filters['search'])) {
+            $keyword = (string) $filters['search'];
+            $query->where(function ($builder) use ($keyword) {
+                $builder->where('name', 'like', '%' . $keyword . '%')
+                    ->orWhere('short_description', 'like', '%' . $keyword . '%')
+                    ->orWhere('description', 'like', '%' . $keyword . '%');
+            });
+        }
+
+        if (isset($filters['rating_min'])) {
+            $query->where('rating', '>=', (float) $filters['rating_min']);
+        }
+
+        if (!empty($filters['tags'])) {
+            $tags = array_values(array_filter(array_map('trim', explode(',', (string) $filters['tags']))));
+            foreach ($tags as $tag) {
+                $query->whereJsonContains('tags', $tag);
+            }
+        }
+
+        if (!empty($filters['badges'])) {
+            $badges = array_values(array_filter(array_map('trim', explode(',', (string) $filters['badges']))));
+            foreach ($badges as $badge) {
+                $query->whereJsonContains('badges', $badge);
+            }
+        }
+
         if (isset($filters['min_price']) || isset($filters['max_price'])) {
             $query->whereHas('prices', function ($builder) use ($filters) {
                 if (isset($filters['min_price'])) {
@@ -46,6 +73,8 @@ class CatalogService
             $query->orderByRaw('(select min(amount) from product_prices where product_prices.product_id = products.id and product_prices.status = ?) asc', ['active']);
         } elseif ($sort === 'price_desc') {
             $query->orderByRaw('(select max(amount) from product_prices where product_prices.product_id = products.id and product_prices.status = ?) desc', ['active']);
+        } elseif ($sort === 'rating') {
+            $query->orderByDesc('rating')->orderByDesc('reviews_count');
         } else {
             $query->orderByDesc('is_visible')->orderBy('name');
         }

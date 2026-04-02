@@ -17,11 +17,19 @@ class Product extends Model
         'description',
         'status',
         'is_visible',
+        'rating',
+        'reviews_count',
+        'tags',
+        'badges',
         'faq_items',
     ];
 
     protected $casts = [
         'is_visible' => 'boolean',
+        'rating' => 'float',
+        'reviews_count' => 'integer',
+        'tags' => 'array',
+        'badges' => 'array',
         'faq_items' => 'array',
     ];
 

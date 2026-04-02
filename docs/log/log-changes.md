@@ -1,6 +1,24 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Wired exact reference catalog UI to live backend filters and added regression guards.
+- What you do:
+  - Added product catalog metadata fields (`rating`, `reviews_count`, `tags`, `badges`) and migration support.
+  - Extended catalog request validation and service filtering for `search`, `rating_min`, `tags`, `badges`, and `rating` sort.
+  - Replaced static sample-data logic in catalog page script with live `/api/products` fetching while preserving reference HTML/CSS layout.
+  - Added feature tests for API filtering/sorting and a reference checksum guard to detect catalog UI drift.
+  - Could not execute Laravel tests in this shell because `php` is unavailable on PATH.
+- File path that changes:
+  - `app/Models/Product.php`
+  - `app/Http/Requests/Catalog/ListProductsRequest.php`
+  - `app/Services/Catalog/CatalogService.php`
+  - `database/migrations/2026_04_01_000200_add_catalog_metadata_to_products_table.php`
+  - `resources/views/catalog/index.blade.php`
+  - `tests/Feature/CatalogProductsApiTest.php`
+  - `tests/Feature/CatalogReferenceGuardTest.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Rebuilt catalog sidebar to match reference structure directly.
 - What you do:
   - Replaced catalog page with reference-equivalent composition including sidebar sections: Category, Price Range, Rating, Tags, Status, and Reset All Filters.
