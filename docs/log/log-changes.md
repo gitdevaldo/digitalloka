@@ -1,6 +1,18 @@
 # Change Log
 
 ## 2026-04-02 00:00
+- Short description: Standardized DB connection URL to `DATABASE_URL` and removed duplicate `DB_URL` usage.
+- What you do:
+  - Removed `DB_URL` from local `.env` to avoid duplicate database URL variables.
+  - Updated Laravel database config to read connection URL from `DATABASE_URL` for all supported drivers.
+  - Updated `phpunit.xml` to use `DATABASE_URL` in test environment settings.
+- File path that changes:
+  - `.env`
+  - `config/database.php`
+  - `phpunit.xml`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 00:00
 - Short description: Added mode-aware magic-link fallback redirects so admin login defaults to `/admin`.
 - What you do:
   - Extended login request payload to include auth mode (`user` or `admin`).
