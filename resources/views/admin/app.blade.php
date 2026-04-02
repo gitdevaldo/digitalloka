@@ -539,6 +539,10 @@ body::before{
       <span class="nav-ico"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
       <span class="nav-txt">Support</span>
     </div>
+    <div class="nav-item" data-tip="Logout" onclick="handleLogout('/admin/login?next=/admin')">
+      <span class="nav-ico"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
+      <span class="nav-txt">Logout</span>
+    </div>
   </div>
 </x-layout.sidebar-shell>
 
@@ -1179,6 +1183,22 @@ function refreshAll(){
   loadBackendData()
     .then(()=>showToast('✅ All statuses updated.','ok'))
     .catch(()=>showToast('⚠️ Refresh failed.','fail'));
+}
+
+async function handleLogout(redirectTo){
+  try {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    });
+  } catch (error) {
+    console.error('Logout request failed', error);
+  }
+
+  document.cookie = 'sb-access-token=; Path=/; Max-Age=0; SameSite=Lax';
+  document.cookie = 'sb-refresh-token=; Path=/; Max-Age=0; SameSite=Lax';
+  window.location.href = redirectTo;
 }
 
 /* ============================================================ MODAL */

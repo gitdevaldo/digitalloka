@@ -144,22 +144,6 @@
     .message.success { background: #DCFCE7; border-color: #16A34A; color: #166534; }
     .message.error { background: #FEE2E2; border-color: #DC2626; color: #991B1B; }
 
-    .links {
-      margin-top: 18px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .links a {
-      font-size: 0.83rem;
-      color: var(--foreground);
-      text-decoration: none;
-      border-bottom: 2px dashed var(--border);
-      font-weight: 700;
-    }
-
-    .links a:hover { border-color: var(--accent); }
   </style>
 </head>
 <body>
@@ -176,14 +160,6 @@
       <div id="message" class="message"></div>
     </form>
 
-    <div class="links">
-      <a href="/">Back to Catalog</a>
-      @if ($mode === 'admin')
-        <a href="/login?next=/dashboard">User Login</a>
-      @else
-        <a href="/admin/login?next=/admin">Admin Login</a>
-      @endif
-    </div>
   </main>
 
   <script>

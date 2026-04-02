@@ -1,6 +1,19 @@
 # Change Log
 
 ## 2026-04-02 00:00
+- Short description: Removed extra login-page navigation and added sticky logout action in dashboard sidebars.
+- What you do:
+  - Removed additional link navigation from auth login form so only the login form remains visible.
+  - Added sticky `Logout` button at sidebar bottom in user dashboard layout.
+  - Added sticky `Logout` button at sidebar bottom in admin dashboard layout.
+  - Implemented frontend logout handler in both dashboard pages to call `/api/auth/logout`, clear auth cookies, and redirect to the relevant login page.
+- File path that changes:
+  - `resources/views/auth/login.blade.php`
+  - `resources/views/dashboard/app.blade.php`
+  - `resources/views/admin/app.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 00:00
 - Short description: Added dedicated user/admin authentication pages with protected dashboard route guards.
 - What you do:
   - Added dedicated web login pages for user dashboard (`/login`) and admin dashboard (`/admin/login`) with magic-link submission to `/api/auth/login`.

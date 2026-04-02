@@ -861,6 +861,12 @@
         </span>
         <span class="nav-label">Support</span>
       </div>
+      <div class="nav-item" data-tip="Logout" onclick="handleLogout('/login?next=/dashboard')">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </span>
+        <span class="nav-label">Logout</span>
+      </div>
     </div>
 
   </x-layout.sidebar-shell>
@@ -1501,6 +1507,22 @@
   function refreshAll() {
     showToast('🔄 Refreshing all droplets…', 'neutral');
     setTimeout(() => showToast('✅ All statuses updated.', 'success'), 1800);
+  }
+
+  async function handleLogout(redirectTo) {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { Accept: 'application/json' }
+      });
+    } catch (error) {
+      console.error('Logout request failed', error);
+    }
+
+    document.cookie = 'sb-access-token=; Path=/; Max-Age=0; SameSite=Lax';
+    document.cookie = 'sb-refresh-token=; Path=/; Max-Age=0; SameSite=Lax';
+    window.location.href = redirectTo;
   }
 
   /* ===================== TOAST ===================== */
