@@ -9,3 +9,8 @@
 - Mistake: After making edits, I did not immediately follow the required post-edit chain (verification, changelog update, git status/diff review, explicit staging, commit, and push).
 - Rule: Every edit session must end with the required chain in order: verify -> update `docs/log/log-changes.md` -> `git status` + `git diff` -> explicit `git add` -> conventional `git commit` -> `git push`.
 - Enforcement: Do not send completion unless the chain is finished or a concrete blocker is reported.
+
+- Date: 2026-04-02
+- Mistake: Replied in Indonesian without user requesting it.
+- Rule: Use English by default in all responses unless the user explicitly asks for another language.
+- Enforcement: Before sending a response, confirm language follows the latest explicit user preference.

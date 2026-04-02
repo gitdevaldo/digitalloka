@@ -1,6 +1,43 @@
 # Change Log
 
 ## 2026-04-02 00:00
+- Short description: Started shared Blade component rollout and replaced duplicated topbar/badge/empty-state blocks.
+- What you do:
+  - Added reusable Blade UI components for buttons, avatar chips, status badges, and empty states.
+  - Added shared layout topbar component with catalog, dashboard, and admin variants.
+  - Added shared page-header layout component with dashboard/admin variants and action slots.
+  - Added shared panel and table-shell UI components and wired representative overview sections to use them.
+  - Replaced duplicated topbar markup in catalog, user dashboard, and admin dashboard with the shared topbar component.
+  - Replaced representative repeated status-badge blocks in dashboard and admin sections with the shared status-badge component.
+  - Replaced dashboard support empty-state block with the shared empty-state component variant.
+  - Added shared sidebar shell component and adopted it in catalog/dashboard/admin (catalog toggle disabled).
+  - Added shared modal and toast components and replaced duplicated admin modal and dashboard/admin toast wrappers.
+  - Added shared filter-bar component and replaced repeated admin filter bar wrappers in orders/users/entitlements/droplets/audit sections.
+  - Replaced representative dashboard/admin static action buttons with shared `x-ui.button` in overview and panel action areas.
+  - Completed bulk conversion of remaining dashboard/admin page headers to shared `x-layout.page-header`.
+  - Completed bulk conversion of remaining dashboard/admin table-panel sections to shared `x-ui.panel` and `x-ui.table-shell` wrappers.
+  - Replaced remaining admin products filter wrapper with shared `x-ui.filter-bar`.
+  - Ran workspace error checks on all modified Blade component and page files.
+  - Attempted to run Laravel tests, but `php` is not available in this shell PATH.
+- File path that changes:
+  - `resources/views/components/ui/button.blade.php`
+  - `resources/views/components/ui/avatar-chip.blade.php`
+  - `resources/views/components/ui/status-badge.blade.php`
+  - `resources/views/components/ui/empty-state.blade.php`
+  - `resources/views/components/ui/panel.blade.php`
+  - `resources/views/components/ui/table-shell.blade.php`
+  - `resources/views/components/layout/topbar.blade.php`
+  - `resources/views/components/layout/page-header.blade.php`
+  - `resources/views/components/layout/sidebar-shell.blade.php`
+  - `resources/views/components/ui/modal.blade.php`
+  - `resources/views/components/ui/toast.blade.php`
+  - `resources/views/components/ui/filter-bar.blade.php`
+  - `resources/views/catalog/index.blade.php`
+  - `resources/views/dashboard/app.blade.php`
+  - `resources/views/admin/app.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 00:00
 - Short description: Wired admin dashboard to the exact provided reference layout with backend integration.
 - What you do:
   - Added the provided admin reference HTML file under docs references.

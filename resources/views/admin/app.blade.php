@@ -475,36 +475,13 @@ body::before{
 @endphp
 
 <!-- ============================================================ TOPBAR -->
-<header class="topbar">
-  <div class="topbar-brand" id="tbBrand">
-    <a href="#" class="brand-logo">
-      <div class="brand-box">Digital<span class="loka">Loka</span></div>
-    </a>
-    <span class="admin-pill">Admin</span>
-  </div>
-  <div class="topbar-center">
-    <div class="search-wrap">
-      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" placeholder="Search users, orders, products…"/>
-    </div>
-  </div>
-  <div class="topbar-right">
-    <button class="icon-btn">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      <div class="notif-dot"></div>
-    </button>
-    <div class="avatar">AL</div>
-  </div>
-</header>
+<x-layout.topbar variant="admin" />
 
 <!-- ============================================================ APP -->
 <div class="app" id="app">
 
 <!-- SIDEBAR -->
-<aside class="sidebar" id="sidebar">
-  <button class="sidebar-toggle" id="sbToggle">
-    <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-  </button>
+<x-layout.sidebar-shell id="sidebar" toggle-id="sbToggle" toggle-title="Toggle sidebar" toggle-size="11">
 
   <nav class="sidebar-nav">
     <div class="nav-group-label">Main</div>
@@ -563,25 +540,25 @@ body::before{
       <span class="nav-txt">Support</span>
     </div>
   </div>
-</aside>
+</x-layout.sidebar-shell>
 
 <!-- ============================================================ MAIN -->
 <main class="main">
 
 <!-- ==================== OVERVIEW ==================== -->
 <div class="page active" id="page-overview">
-  <div class="ph">
-    <div>
-      <div class="ph-title">Admin Overview</div>
-      <div class="ph-sub">System health and operational snapshot · /admin</div>
-    </div>
-    <div class="ph-actions">
-      <button class="btn btn-accent" onclick="nav('audit',document.querySelector('[data-page=audit]'))">
+  <x-layout.page-header
+    variant="admin"
+    title="Admin Overview"
+    subtitle="System health and operational snapshot · /admin"
+  >
+    <x-slot:actions>
+      <x-ui.button variant="accent" onclick="nav('audit',document.querySelector('[data-page=audit]'))">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         View Audit Logs
-      </button>
-    </div>
-  </div>
+      </x-ui.button>
+    </x-slot:actions>
+  </x-layout.page-header>
 
   <div class="stats-grid">
     <div class="stat-card"><div class="stat-icon" style="background:rgba(139,92,246,0.1)">📦</div><div class="stat-lbl">Total Products</div><div class="stat-val">24</div><div class="stat-sub">18 active</div></div>
@@ -595,23 +572,20 @@ body::before{
   </div>
 
   <div class="grid-2">
-    <div class="panel">
-      <div class="panel-hd">
-        <div class="panel-title">🚨 Critical Audit Events</div>
-        <button class="btn btn-sm" onclick="nav('audit',document.querySelector('[data-page=audit]'))">All logs →</button>
-      </div>
-      <div style="padding:0">
-        <table class="tbl">
+    <x-ui.panel variant="admin" title="🚨 Critical Audit Events">
+      <x-slot:actions>
+        <x-ui.button variant="sm" onclick="nav('audit',document.querySelector('[data-page=audit]'))">All logs →</x-ui.button>
+      </x-slot:actions>
+      <x-ui.table-shell variant="admin">
           <thead><tr><th>Actor</th><th>Action</th><th>Result</th><th>Time</th></tr></thead>
           <tbody>
-            <tr class="audit-row fail"><td class="mono">admin@dl.dev</td><td class="fw">droplet.power_off</td><td><span class="badge b-pink"><span class="dot"></span>Fail</span></td><td style="color:var(--muted-foreground);font-size:0.72rem">2m ago</td></tr>
-            <tr class="audit-row ok"><td class="mono">admin@dl.dev</td><td class="fw">entitlement.revoke</td><td><span class="badge b-green"><span class="dot"></span>OK</span></td><td style="color:var(--muted-foreground);font-size:0.72rem">11m ago</td></tr>
-            <tr class="audit-row warn"><td class="mono">system</td><td class="fw">entitlement.expire_warn</td><td><span class="badge b-amber"><span class="dot"></span>Warn</span></td><td style="color:var(--muted-foreground);font-size:0.72rem">1h ago</td></tr>
-            <tr class="audit-row ok"><td class="mono">admin@dl.dev</td><td class="fw">user.status_update</td><td><span class="badge b-green"><span class="dot"></span>OK</span></td><td style="color:var(--muted-foreground);font-size:0.72rem">3h ago</td></tr>
+            <tr class="audit-row fail"><td class="mono">admin@dl.dev</td><td class="fw">droplet.power_off</td><td><x-ui.status-badge baseClass="badge" class="b-pink" variant="" label="Fail" /></td><td style="color:var(--muted-foreground);font-size:0.72rem">2m ago</td></tr>
+            <tr class="audit-row ok"><td class="mono">admin@dl.dev</td><td class="fw">entitlement.revoke</td><td><x-ui.status-badge baseClass="badge" class="b-green" variant="" label="OK" /></td><td style="color:var(--muted-foreground);font-size:0.72rem">11m ago</td></tr>
+            <tr class="audit-row warn"><td class="mono">system</td><td class="fw">entitlement.expire_warn</td><td><x-ui.status-badge baseClass="badge" class="b-amber" variant="" label="Warn" /></td><td style="color:var(--muted-foreground);font-size:0.72rem">1h ago</td></tr>
+            <tr class="audit-row ok"><td class="mono">admin@dl.dev</td><td class="fw">user.status_update</td><td><x-ui.status-badge baseClass="badge" class="b-green" variant="" label="OK" /></td><td style="color:var(--muted-foreground);font-size:0.72rem">3h ago</td></tr>
           </tbody>
-        </table>
-      </div>
-    </div>
+      </x-ui.table-shell>
+    </x-ui.panel>
 
     <div class="panel">
       <div class="panel-hd"><div class="panel-title">⏳ High-Priority Queues</div></div>
@@ -644,109 +618,100 @@ body::before{
 
 <!-- ==================== PRODUCTS ==================== -->
 <div class="page" id="page-products">
-  <div class="ph">
-    <div><div class="ph-title">Products</div><div class="ph-sub">/admin/products — full catalog management</div></div>
-    <div class="ph-actions">
-      <button class="btn btn-accent" onclick="showToast('✅ Create product flow — connect to backend.','ok')">
+  <x-layout.page-header variant="admin" title="Products" subtitle="/admin/products — full catalog management">
+    <x-slot:actions>
+      <x-ui.button variant="accent" onclick="showToast('✅ Create product flow — connect to backend.','ok')">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Create Product
-      </button>
-    </div>
-  </div>
-  <div class="filter-bar">
+      </x-ui.button>
+    </x-slot:actions>
+  </x-layout.page-header>
+  <x-ui.filter-bar>
     <select class="filter-select"><option>All Types</option><option>vps_droplet</option><option>digital</option><option>course</option><option>template</option></select>
     <select class="filter-select"><option>All Statuses</option><option>Active</option><option>Draft</option><option>Archived</option></select>
     <input class="filter-input" placeholder="Search product name or slug…"/>
-  </div>
-  <div class="panel">
-    <div style="padding:0"><table class="tbl"><thead><tr><th>ID</th><th>Product Name</th><th>Type</th><th>Category</th><th>Visibility</th><th>Pricing</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="products-body"></tbody></table></div>
-  </div>
+  </x-ui.filter-bar>
+  <x-ui.panel variant="admin">
+    <x-ui.table-shell variant="admin"><thead><tr><th>ID</th><th>Product Name</th><th>Type</th><th>Category</th><th>Visibility</th><th>Pricing</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="products-body"></tbody></x-ui.table-shell>
+  </x-ui.panel>
 </div>
 
 <!-- ==================== ORDERS ==================== -->
 <div class="page" id="page-orders">
-  <div class="ph">
-    <div><div class="ph-title">Orders</div><div class="ph-sub">/admin/orders — order management and fulfillment</div></div>
-  </div>
-  <div class="filter-bar">
+  <x-layout.page-header variant="admin" title="Orders" subtitle="/admin/orders — order management and fulfillment" />
+  <x-ui.filter-bar>
     <select class="filter-select"><option>All Fulfillment</option><option>Pending</option><option>Active</option><option>Completed</option></select>
     <select class="filter-select"><option>All Payment</option><option>Paid</option><option>Pending</option><option>Refunded</option></select>
     <input class="filter-input" placeholder="Search order ID or user email…"/>
-  </div>
-  <div class="panel">
-    <div style="padding:0"><table class="tbl"><thead><tr><th>Order ID</th><th>User</th><th>Items</th><th>Total</th><th>Payment</th><th>Fulfillment</th><th>Created</th><th>Actions</th></tr></thead><tbody id="orders-body"></tbody></table></div>
-  </div>
+  </x-ui.filter-bar>
+  <x-ui.panel variant="admin">
+    <x-ui.table-shell variant="admin"><thead><tr><th>Order ID</th><th>User</th><th>Items</th><th>Total</th><th>Payment</th><th>Fulfillment</th><th>Created</th><th>Actions</th></tr></thead><tbody id="orders-body"></tbody></x-ui.table-shell>
+  </x-ui.panel>
 </div>
 
 <!-- ==================== USERS ==================== -->
 <div class="page" id="page-users">
-  <div class="ph">
-    <div><div class="ph-title">Users</div><div class="ph-sub">/admin/users — user management and access control</div></div>
-  </div>
-  <div class="filter-bar">
+  <x-layout.page-header variant="admin" title="Users" subtitle="/admin/users — user management and access control" />
+  <x-ui.filter-bar>
     <select class="filter-select"><option>All Roles</option><option>user</option><option>admin</option></select>
     <select class="filter-select"><option>All Statuses</option><option>Active</option><option>Blocked</option><option>Pending</option></select>
     <input class="filter-input" placeholder="Search email or user ID…"/>
-  </div>
-  <div class="panel">
-    <div style="padding:0"><table class="tbl"><thead><tr><th>User ID</th><th>Email</th><th>Role</th><th>Status</th><th>Products</th><th>Last Active</th><th>Actions</th></tr></thead><tbody id="users-body"></tbody></table></div>
-  </div>
+  </x-ui.filter-bar>
+  <x-ui.panel variant="admin">
+    <x-ui.table-shell variant="admin"><thead><tr><th>User ID</th><th>Email</th><th>Role</th><th>Status</th><th>Products</th><th>Last Active</th><th>Actions</th></tr></thead><tbody id="users-body"></tbody></x-ui.table-shell>
+  </x-ui.panel>
 </div>
 
 <!-- ==================== ENTITLEMENTS ==================== -->
 <div class="page" id="page-entitlements">
-  <div class="ph">
-    <div><div class="ph-title">Entitlements</div><div class="ph-sub">/admin/entitlements — license and access lifecycle</div></div>
-  </div>
-  <div class="filter-bar">
+  <x-layout.page-header variant="admin" title="Entitlements" subtitle="/admin/entitlements — license and access lifecycle" />
+  <x-ui.filter-bar>
     <select class="filter-select"><option>All Statuses</option><option>Active</option><option>Expiring</option><option>Suspended</option><option>Revoked</option></select>
     <input class="filter-input" placeholder="Search user email or product name…"/>
-  </div>
-  <div class="panel">
-    <div style="padding:0"><table class="tbl"><thead><tr><th>ID</th><th>User</th><th>Product</th><th>Order</th><th>Status</th><th>Starts</th><th>Expires</th><th>Actions</th></tr></thead><tbody id="ent-body"></tbody></table></div>
-  </div>
+  </x-ui.filter-bar>
+  <x-ui.panel variant="admin">
+    <x-ui.table-shell variant="admin"><thead><tr><th>ID</th><th>User</th><th>Product</th><th>Order</th><th>Status</th><th>Starts</th><th>Expires</th><th>Actions</th></tr></thead><tbody id="ent-body"></tbody></x-ui.table-shell>
+  </x-ui.panel>
 </div>
 
 <!-- ==================== DROPLETS ==================== -->
 <div class="page" id="page-droplets">
-  <div class="ph">
-    <div><div class="ph-title">Droplets</div><div class="ph-sub">/admin/droplets — server resource administration</div></div>
-    <div class="ph-actions">
-      <button class="btn btn-sm" onclick="refreshAll()">
+  <x-layout.page-header variant="admin" title="Droplets" subtitle="/admin/droplets — server resource administration">
+    <x-slot:actions>
+      <x-ui.button variant="sm" onclick="refreshAll()">
         <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
         Refresh All
-      </button>
-    </div>
-  </div>
-  <div class="filter-bar">
+      </x-ui.button>
+    </x-slot:actions>
+  </x-layout.page-header>
+  <x-ui.filter-bar>
     <select class="filter-select"><option>All Statuses</option><option>Running</option><option>Stopped</option><option>Starting</option></select>
     <select class="filter-select"><option>All Regions</option><option>SGP1</option><option>NYC1</option><option>FRA1</option></select>
     <input class="filter-input" placeholder="Search droplet ID or owner…"/>
-  </div>
-  <div class="panel">
-    <div style="padding:0"><table class="tbl"><thead><tr><th>Droplet ID</th><th>Owner</th><th>Entitlement</th><th>Region</th><th>Plan</th><th>Status</th><th>IP</th><th>Last Action</th><th>Actions</th></tr></thead><tbody id="droplets-body"></tbody></table></div>
-  </div>
+  </x-ui.filter-bar>
+  <x-ui.panel variant="admin">
+    <x-ui.table-shell variant="admin"><thead><tr><th>Droplet ID</th><th>Owner</th><th>Entitlement</th><th>Region</th><th>Plan</th><th>Status</th><th>IP</th><th>Last Action</th><th>Actions</th></tr></thead><tbody id="droplets-body"></tbody></x-ui.table-shell>
+  </x-ui.panel>
 </div>
 
 <!-- ==================== AUDIT LOGS ==================== -->
 <div class="page" id="page-audit">
-  <div class="ph">
-    <div><div class="ph-title">Audit Logs</div><div class="ph-sub">/admin/audit-logs — full event history</div></div>
-    <div class="ph-actions">
-      <button class="btn btn-sm btn-ghost">Export CSV</button>
-    </div>
-  </div>
-  <div class="filter-bar">
+  <x-layout.page-header variant="admin" title="Audit Logs" subtitle="/admin/audit-logs — full event history">
+    <x-slot:actions>
+      <x-ui.button variant="sm" class="btn-ghost">Export CSV</x-ui.button>
+    </x-slot:actions>
+  </x-layout.page-header>
+  <x-ui.filter-bar>
     <select class="filter-select"><option>All Actors</option><option>admin@dl.dev</option><option>system</option></select>
     <select class="filter-select"><option>All Actions</option><option>droplet.*</option><option>entitlement.*</option><option>user.*</option><option>product.*</option><option>order.*</option></select>
     <select class="filter-select"><option>All Results</option><option>ok</option><option>fail</option><option>warn</option></select>
     <input class="filter-input" placeholder="Search target ID or actor…"/>
     <input class="filter-input" type="date" style="width:auto"/>
     <input class="filter-input" type="date" style="width:auto"/>
-  </div>
-  <div class="panel">
-    <div style="padding:0"><table class="tbl"><thead><tr><th>Event ID</th><th>Actor</th><th>Action</th><th>Target Type</th><th>Target ID</th><th>Result</th><th>Timestamp</th><th>Payload</th></tr></thead><tbody id="audit-body"></tbody></table></div>
-  </div>
+  </x-ui.filter-bar>
+  <x-ui.panel variant="admin">
+    <x-ui.table-shell variant="admin"><thead><tr><th>Event ID</th><th>Actor</th><th>Action</th><th>Target Type</th><th>Target ID</th><th>Result</th><th>Timestamp</th><th>Payload</th></tr></thead><tbody id="audit-body"></tbody></x-ui.table-shell>
+  </x-ui.panel>
 </div>
 
 <!-- ==================== SETTINGS ==================== -->
@@ -854,18 +819,10 @@ body::before{
 </div><!-- /.app -->
 
 <!-- MODAL -->
-<div class="modal-bg" id="modal" onclick="closeModal(event)">
-  <div class="modal">
-    <div class="modal-title">
-      <span>Event Payload</span>
-      <button class="btn btn-sm btn-ghost" onclick="document.getElementById('modal').classList.remove('open')">✕ Close</button>
-    </div>
-    <pre id="modal-body"></pre>
-  </div>
-</div>
+<x-ui.modal id="modal" title="Event Payload" body-id="modal-body" backdrop-click="closeModal(event)" />
 
 <!-- TOAST -->
-<div id="toast"></div>
+<x-ui.toast id="toast" variant="admin" />
 
 <script>
 /* ============================================================ DATA */

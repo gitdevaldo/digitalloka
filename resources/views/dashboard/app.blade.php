@@ -792,28 +792,7 @@
 <!-- ============================================================
      TOPBAR
 ============================================================ -->
-<header class="topbar" id="topbar">
-  <div class="topbar-brand" id="topbarBrand">
-    <a href="#" class="brand-logo">
-      <div class="box">Digital<span class="loka">Loka</span></div>
-    </a>
-  </div>
-
-  <div class="topbar-right" style="flex:1;padding-left:20px;">
-    <div class="topbar-search">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" placeholder="Search products, orders…" />
-    </div>
-  </div>
-
-  <div class="topbar-right">
-    <button class="icon-btn" title="Notifications">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      <div class="notif-dot"></div>
-    </button>
-    <div class="avatar" title="Account">AL</div>
-  </div>
-</header>
+<x-layout.topbar variant="dashboard" />
 
 <!-- ============================================================
      APP LAYOUT
@@ -823,14 +802,7 @@
   <!-- ============================================================
        SIDEBAR
   ============================================================ -->
-  <aside class="sidebar" id="sidebar">
-
-    <!-- Toggle button -->
-    <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="15 18 9 12 15 6"/>
-      </svg>
-    </button>
+  <x-layout.sidebar-shell id="sidebar" toggle-id="sidebarToggle" toggle-title="Toggle sidebar" toggle-size="12">
 
     <!-- Main nav -->
     <nav class="sidebar-nav" id="sidebarNav">
@@ -891,7 +863,7 @@
       </div>
     </div>
 
-  </aside>
+  </x-layout.sidebar-shell>
 
   <!-- ============================================================
        MAIN CONTENT
@@ -900,16 +872,18 @@
 
     <!-- ==================== OVERVIEW ==================== -->
     <div class="page-view active" id="page-overview">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Good morning, Aldo 👋</div>
-          <div class="page-subtitle">Here's what's happening with your products today.</div>
-        </div>
-        <button class="btn btn-accent" onclick="navigate('products-all', document.querySelector('[data-page=products-all]'))">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add Product
-        </button>
-      </div>
+      <x-layout.page-header
+        variant="dashboard"
+        title="Good morning, Aldo 👋"
+        subtitle="Here's what's happening with your products today."
+      >
+        <x-slot:actions>
+          <x-ui.button variant="accent" onclick="navigate('products-all', document.querySelector('[data-page=products-all]'))">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Product
+          </x-ui.button>
+        </x-slot:actions>
+      </x-layout.page-header>
 
       <!-- Stats -->
       <div class="stats-row">
@@ -947,74 +921,64 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
 
         <!-- VPS Health -->
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">VPS Health Summary</div>
-            <button class="btn btn-sm" onclick="navigate('products-droplets', document.querySelector('[data-page=products-droplets]'))">View all</button>
-          </div>
-          <div class="panel-body" style="padding:0;">
-            <table class="data-table">
+        <x-ui.panel variant="dashboard" title="VPS Health Summary">
+          <x-slot:actions>
+            <x-ui.button variant="sm" onclick="navigate('products-droplets', document.querySelector('[data-page=products-droplets]'))">View all</x-ui.button>
+          </x-slot:actions>
+          <x-ui.table-shell variant="dashboard">
               <thead><tr><th>Droplet</th><th>Status</th><th>IP</th></tr></thead>
               <tbody>
                 <tr>
                   <td><strong>koncoweb-prod</strong></td>
-                  <td><span class="status-badge badge-running"><span class="dot"></span>Running</span></td>
+                  <td><x-ui.status-badge variant="running" label="Running" /></td>
                   <td class="meta-val mono">192.168.1.10</td>
                 </tr>
                 <tr>
                   <td><strong>api-staging</strong></td>
-                  <td><span class="status-badge badge-running"><span class="dot"></span>Running</span></td>
+                  <td><x-ui.status-badge variant="running" label="Running" /></td>
                   <td class="meta-val mono">192.168.1.11</td>
                 </tr>
                 <tr>
                   <td><strong>dev-sandbox</strong></td>
-                  <td><span class="status-badge badge-stopped"><span class="dot"></span>Stopped</span></td>
+                  <td><x-ui.status-badge variant="stopped" label="Stopped" /></td>
                   <td class="meta-val mono">—</td>
                 </tr>
               </tbody>
-            </table>
-          </div>
-        </div>
+          </x-ui.table-shell>
+        </x-ui.panel>
 
         <!-- Recent Orders -->
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">Recent Orders</div>
-            <button class="btn btn-sm" onclick="navigate('orders', document.querySelector('[data-page=orders]'))">View all</button>
-          </div>
-          <div class="panel-body" style="padding:0;">
-            <table class="data-table">
+        <x-ui.panel variant="dashboard" title="Recent Orders">
+          <x-slot:actions>
+            <x-ui.button variant="sm" onclick="navigate('orders', document.querySelector('[data-page=orders]'))">View all</x-ui.button>
+          </x-slot:actions>
+          <x-ui.table-shell variant="dashboard">
               <thead><tr><th>Order</th><th>Status</th><th>Amount</th></tr></thead>
               <tbody>
                 <tr>
                   <td><div style="font-weight:700;font-size:0.82rem;">#ORD-0042</div><div style="font-size:0.72rem;color:var(--muted-foreground);">NovaDash UI Kit</div></td>
-                  <td><span class="status-badge badge-active"><span class="dot"></span>Active</span></td>
+                  <td><x-ui.status-badge variant="active" label="Active" /></td>
                   <td class="order-amount">$49</td>
                 </tr>
                 <tr>
                   <td><div style="font-weight:700;font-size:0.82rem;">#ORD-0041</div><div style="font-size:0.72rem;color:var(--muted-foreground);">VPS — SGP1 2vCPU</div></td>
-                  <td><span class="status-badge badge-running"><span class="dot"></span>Active</span></td>
+                  <td><x-ui.status-badge variant="running" label="Active" /></td>
                   <td class="order-amount">$24/mo</td>
                 </tr>
                 <tr>
                   <td><div style="font-weight:700;font-size:0.82rem;">#ORD-0040</div><div style="font-size:0.72rem;color:var(--muted-foreground);">AI Prompt Course</div></td>
-                  <td><span class="status-badge badge-starting"><span class="dot"></span>Pending</span></td>
+                  <td><x-ui.status-badge variant="starting" label="Pending" /></td>
                   <td class="order-amount">$99</td>
                 </tr>
               </tbody>
-            </table>
-          </div>
-        </div>
+          </x-ui.table-shell>
+        </x-ui.panel>
 
       </div>
 
       <!-- Expiring entitlements -->
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">⚠️ Expiring / Blocked Entitlements</div>
-        </div>
-        <div class="panel-body" style="padding:0;">
-          <table class="data-table">
+      <x-ui.panel variant="dashboard" title="⚠️ Expiring / Blocked Entitlements">
+        <x-ui.table-shell variant="dashboard">
             <thead><tr><th>Product</th><th>Type</th><th>Status</th><th>Expires</th><th></th></tr></thead>
             <tbody>
               <tr>
@@ -1025,31 +989,27 @@
                 <td><button class="btn btn-sm btn-accent">Renew</button></td>
               </tr>
             </tbody>
-          </table>
-        </div>
-      </div>
+        </x-ui.table-shell>
+      </x-ui.panel>
     </div>
 
     <!-- ==================== PRODUCTS ALL ==================== -->
     <div class="page-view" id="page-products-all">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Products</div>
-          <div class="page-subtitle">All your owned and assigned products.</div>
-        </div>
-        <div style="display:flex;gap:8px;">
+      <x-layout.page-header variant="dashboard" title="Products" subtitle="All your owned and assigned products.">
+        <x-slot:actions>
+          <div style="display:flex;gap:8px;">
           <select style="border:2px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-family:var(--font-body);font-size:0.8rem;font-weight:600;background:var(--card);cursor:pointer;">
             <option>All Types</option><option>VPS Droplet</option><option>Digital</option>
           </select>
           <select style="border:2px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-family:var(--font-body);font-size:0.8rem;font-weight:600;background:var(--card);cursor:pointer;">
             <option>All Statuses</option><option>Active</option><option>Expiring</option><option>Blocked</option>
           </select>
-        </div>
-      </div>
+          </div>
+        </x-slot:actions>
+      </x-layout.page-header>
 
-      <div class="panel">
-        <div class="panel-body" style="padding:0;">
-          <table class="data-table">
+      <x-ui.panel variant="dashboard">
+        <x-ui.table-shell variant="dashboard">
             <thead>
               <tr>
                 <th>Product Name</th>
@@ -1102,9 +1062,8 @@
                 <td><button class="btn btn-sm">Download</button></td>
               </tr>
             </tbody>
-          </table>
-        </div>
-      </div>
+        </x-ui.table-shell>
+      </x-ui.panel>
     </div>
 
     <!-- ==================== PRODUCTS > VPS DROPLETS ==================== -->
@@ -1205,15 +1164,9 @@
 
     <!-- ==================== PRODUCTS > DIGITAL ==================== -->
     <div class="page-view" id="page-products-digital">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Digital Products</div>
-          <div class="page-subtitle">Your downloadable files, templates, and kits.</div>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="panel-body" style="padding:0;">
-          <table class="data-table">
+      <x-layout.page-header variant="dashboard" title="Digital Products" subtitle="Your downloadable files, templates, and kits." />
+      <x-ui.panel variant="dashboard">
+        <x-ui.table-shell variant="dashboard">
             <thead><tr><th>Product</th><th>Format</th><th>Status</th><th>Purchased</th><th></th></tr></thead>
             <tbody>
               <tr>
@@ -1238,22 +1191,15 @@
                 <td><button class="btn btn-sm btn-accent">⬇ Download</button></td>
               </tr>
             </tbody>
-          </table>
-        </div>
-      </div>
+        </x-ui.table-shell>
+      </x-ui.panel>
     </div>
 
     <!-- ==================== PRODUCTS > ACCESS ==================== -->
     <div class="page-view" id="page-products-access">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Product Access</div>
-          <div class="page-subtitle">Manage licenses and entitlements for your products.</div>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="panel-body" style="padding:0;">
-          <table class="data-table">
+      <x-layout.page-header variant="dashboard" title="Product Access" subtitle="Manage licenses and entitlements for your products." />
+      <x-ui.panel variant="dashboard">
+        <x-ui.table-shell variant="dashboard">
             <thead><tr><th>Product</th><th>License Key</th><th>Entitlement</th><th>Expires</th><th></th></tr></thead>
             <tbody>
               <tr>
@@ -1278,22 +1224,15 @@
                 <td><button class="btn btn-sm btn-warning">Renew</button></td>
               </tr>
             </tbody>
-          </table>
-        </div>
-      </div>
+        </x-ui.table-shell>
+      </x-ui.panel>
     </div>
 
     <!-- ==================== ORDERS ==================== -->
     <div class="page-view" id="page-orders">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Orders</div>
-          <div class="page-subtitle">Your full purchase history and order details.</div>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="panel-body" style="padding:0;">
-          <table class="data-table">
+      <x-layout.page-header variant="dashboard" title="Orders" subtitle="Your full purchase history and order details." />
+      <x-ui.panel variant="dashboard">
+        <x-ui.table-shell variant="dashboard">
             <thead><tr><th>Order ID</th><th>Product</th><th>Type</th><th>Status</th><th>Date</th><th>Amount</th><th></th></tr></thead>
             <tbody>
               <tr>
@@ -1342,19 +1281,13 @@
                 <td><a class="order-link" href="#">View →</a></td>
               </tr>
             </tbody>
-          </table>
-        </div>
-      </div>
+        </x-ui.table-shell>
+      </x-ui.panel>
     </div>
 
     <!-- ==================== ACCOUNT ==================== -->
     <div class="page-view" id="page-account">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Account</div>
-          <div class="page-subtitle">Manage your profile and billing information.</div>
-        </div>
-      </div>
+      <x-layout.page-header variant="dashboard" title="Account" subtitle="Manage your profile and billing information." />
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
         <div class="panel">
           <div class="panel-header"><div class="panel-title">Profile</div><button class="btn btn-sm">Edit</button></div>
@@ -1388,13 +1321,11 @@
 
     <!-- ==================== SUPPORT ==================== -->
     <div class="page-view" id="page-support">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Support</div>
-          <div class="page-subtitle">Get help or open a ticket.</div>
-        </div>
-        <button class="btn btn-accent">+ New Ticket</button>
-      </div>
+      <x-layout.page-header variant="dashboard" title="Support" subtitle="Get help or open a ticket.">
+        <x-slot:actions>
+          <x-ui.button variant="accent">+ New Ticket</x-ui.button>
+        </x-slot:actions>
+      </x-layout.page-header>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px;">
         <div class="stat-card" style="cursor:pointer;">
           <div class="stat-icon">📚</div>
@@ -1414,11 +1345,12 @@
       </div>
       <div class="panel">
         <div class="panel-header"><div class="panel-title">Your Tickets</div></div>
-        <div class="empty-state">
-          <div class="empty-icon">🎉</div>
-          <div class="empty-title">No open tickets</div>
-          <div class="empty-desc">Everything looks good. Open a ticket if you need help.</div>
-        </div>
+        <x-ui.empty-state
+          variant="dashboard"
+          icon="🎉"
+          title="No open tickets"
+          description="Everything looks good. Open a ticket if you need help."
+        />
       </div>
     </div>
 
@@ -1428,18 +1360,7 @@
 <!-- ============================================================
      TOAST NOTIFICATION
 ============================================================ -->
-<div id="toast" style="
-  position:fixed;bottom:24px;right:24px;z-index:9999;
-  background:var(--foreground);color:white;
-  border:2px solid var(--foreground);border-radius:var(--radius-md);
-  padding:12px 18px;
-  font-family:var(--font-body);font-size:0.82rem;font-weight:600;
-  box-shadow:4px 4px 0 rgba(0,0,0,0.3);
-  display:none;
-  align-items:center;gap:8px;
-  max-width:300px;
-  animation: popIn 0.3s var(--ease-bounce);
-"></div>
+<x-ui.toast id="toast" variant="dashboard" />
 
 <script>
   /* ===================== SIDEBAR TOGGLE ===================== */
