@@ -40,6 +40,8 @@ return [
         'anon_key' => env('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
         'service_role_key' => env('SUPABASE_SERVICE_ROLE_KEY'),
         'redirect_url' => env('SUPABASE_AUTH_REDIRECT_URL', env('APP_URL').'/auth/callback'),
+        'http_verify_ssl' => env('SUPABASE_HTTP_VERIFY_SSL', env('APP_ENV') !== 'local'),
+        'http_ca_bundle' => env('SUPABASE_HTTP_CA_BUNDLE'),
     ],
 
     'digitalocean' => [

@@ -1,6 +1,20 @@
 # Change Log
 
 ## 2026-04-02 00:00
+- Short description: Added dev-safe Supabase TLS configuration to unblock localhost magic-link login.
+- What you do:
+  - Added configurable Supabase HTTP TLS options (`SUPABASE_HTTP_VERIFY_SSL`, `SUPABASE_HTTP_CA_BUNDLE`) in service config.
+  - Refactored Supabase auth HTTP calls to use a shared client that applies CA bundle path when provided, or verify toggle otherwise.
+  - Set local `.env` to disable SSL verification for development (`SUPABASE_HTTP_VERIFY_SSL=false`) so local login no longer fails with cURL error 60.
+  - Updated `.env.example` to document the new TLS env variables for local setup.
+- File path that changes:
+  - `config/services.php`
+  - `app/Services/Auth/SupabaseAuthService.php`
+  - `.env.example`
+  - `.env`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 00:00
 - Short description: Removed extra login-page navigation and added sticky logout action in dashboard sidebars.
 - What you do:
   - Removed additional link navigation from auth login form so only the login form remains visible.

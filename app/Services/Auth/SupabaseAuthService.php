@@ -2,6 +2,7 @@
 
 namespace App\Services\Auth;
 
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -15,7 +16,7 @@ class SupabaseAuthService
             return null;
         }
 
-        $response = Http::withHeaders([
+        $response = $this->supabaseClient([
             'apikey' => (string) config('services.supabase.anon_key'),
             'Authorization' => 'Bearer ' . $token,
         ])->get(rtrim((string) config('services.supabase.url'), '/') . '/auth/v1/user');
@@ -47,7 +48,7 @@ class SupabaseAuthService
             ],
         ];
 
-        $response = Http::withHeaders([
+        $response = $this->supabaseClient([
             'apikey' => (string) config('services.supabase.anon_key'),
             'Content-Type' => 'application/json',
         ])->post(rtrim((string) config('services.supabase.url'), '/') . '/auth/v1/otp', $payload);
@@ -68,6 +69,20 @@ class SupabaseAuthService
         }
 
         return str_starts_with($nextPath, '/') ? $nextPath : null;
+    }
+
+    private function supabaseClient(array $headers): PendingRequest
+    {
+        $client = Http::withHeaders($headers);
+
+        $caBundle = config('services.supabase.http_ca_bundle');
+        if (is_string($caBundle) && $caBundle !== '') {
+            return $client->withOptions(['verify' => $caBundle]);
+        }
+
+        return $client->withOptions([
+            'verify' => (bool) config('services.supabase.http_verify_ssl', true),
+        ]);
     }
 
     private function extractAccessToken(Request $request): ?string
