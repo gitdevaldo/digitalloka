@@ -1,5 +1,274 @@
 # Change Log
 
+## 2026-04-02 22:45
+- Short description: Standardized admin table spacing wrappers and fixed stock-management form visibility flow.
+- What you do:
+  - Unified Products and Product Types table wrapper spacing by introducing shared `table-panel-body` container usage.
+  - Removed custom stock table wrapper differences and aligned stock table rendering to shared `x-ui.table-shell` pattern.
+  - Tightened table corner radius and cell padding proportions for better visual consistency.
+  - Updated stock management page so import form is hidden by default and only appears when `Add Stock` is clicked.
+  - Added explicit show/hide handlers for stock form and ensured hidden state on stock page transitions.
+  - Repeatedly cleared compiled Blade views to ensure runtime behavior matched latest templates.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `resources/views/components/ui/table-shell.blade.php`
+  - `.claude/lessons/lessons.md`
+  - `.github/lessons.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 22:10
+- Short description: Moved stock management under Product flow and added dedicated Product Stocks CRUD/import/export with append-only dedupe behavior.
+- What you do:
+  - Removed fulfillment stock/template inputs from Create Product page as requested.
+  - Added Product -> Stocks flow with product-scoped route `/admin/products/{id}/stocks` and Stocks action button on each product row.
+  - Added Product Stocks API endpoints for list/create/update/delete/import/export.
+  - Added append-only batch import behavior that skips duplicate credentials for the same product instead of replacing old data.
+  - Added `credential_hash` storage + unique index `(product_id, credential_hash)` to enforce duplicate protection by credential content.
+  - Added Product Stocks feature tests for append+dedupe import and CRUD lifecycle.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `app/Http/Controllers/Web/AdminPageController.php`
+  - `routes/web.php`
+  - `app/Http/Controllers/Admin/ProductStockController.php`
+  - `app/Services/Commerce/ProductStockService.php`
+  - `app/Models/ProductStockItem.php`
+  - `routes/api.php`
+  - `database/migrations/2026_04_02_220000_add_credential_hash_to_product_stock_items_table.php`
+  - `app/Http/Requests/Admin/StoreProductStockItemRequest.php`
+  - `app/Http/Requests/Admin/UpdateProductStockItemRequest.php`
+  - `app/Http/Requests/Admin/ImportProductStocksRequest.php`
+  - `tests/Feature/AdminProductStockManagementTest.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 19:14
+- Short description: Added global API latency optimizations (auth/admin cache + parallel fast/heavy startup fetch).
+- What you do:
+  - Added short-lived token-to-user cache in Supabase auth service to avoid repeated `/auth/v1/user` lookups on every API request.
+  - Added short-lived admin role/access cache in admin access service to avoid repeated DB role checks across rapid calls.
+  - Updated admin frontend startup loading to run fast Product Types fetch and heavy bootstrap fetch in parallel when heavy data is required.
+  - Kept Product Types-only pages lightweight by avoiding heavy bootstrap blocking.
+- File path that changes:
+  - `app/Services/Auth/SupabaseAuthService.php`
+  - `app/Services/Access/AdminAccessService.php`
+  - `resources/views/admin/app.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 19:00
+- Short description: Improved Product Types perceived load speed by decoupling it from bootstrap.
+- What you do:
+  - Added fast prefetch flow for Product Types from `/api/admin/product-types` before waiting for heavy bootstrap payload.
+  - Applied Product Types data to UI immediately after fast fetch completes.
+  - Kept bootstrap/fallback flow as authoritative full-data load and retained compatibility.
+  - Adjusted fallback mapping order so users are mapped after entitlements in fallback mode.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 18:48
+- Short description: Replaced checkbox controls with dropdown selectors for Product Type status and Create Product visibility.
+- What you do:
+  - Changed Product Type editor status input from checkbox to dropdown (`active` / `inactive`).
+  - Changed Create Product visibility input from checkbox to dropdown (`visible` / `hidden`).
+  - Updated frontend create/edit handlers to map dropdown values to boolean payload fields (`is_active`, `is_visible`).
+  - Kept backend API contract unchanged.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 18:40
+- Short description: Added Product Type active/inactive status and delete capability (API + UI).
+- What you do:
+  - Added `is_active` support to Product Type schema payload and default type definitions.
+  - Added soft-delete semantics for Product Types using `deleted` flag in `site_settings` and filtering in list responses.
+  - Added `DELETE /api/admin/product-types/{type}` endpoint with audit logging.
+  - Updated Product Types list UI to show Status column and Delete action, and editor UI to include Active toggle.
+  - Updated create-product type dropdown to include only active Product Types.
+  - Updated bootstrap payload shaping so product type status/deleted flags remain consistent in one-call dashboard load.
+  - Extended feature tests to verify `is_active` persistence and delete behavior.
+- File path that changes:
+  - `app/Http/Controllers/Admin/ProductTypeController.php`
+  - `app/Http/Controllers/Admin/BootstrapController.php`
+  - `app/Http/Requests/Admin/UpsertProductTypeRequest.php`
+  - `routes/api.php`
+  - `resources/views/admin/app.blade.php`
+  - `tests/Feature/AdminProductTypeManagementTest.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 18:20
+- Short description: Fixed Product Types spacing with explicit content padding.
+- What you do:
+  - Added explicit inner padding around Product Types table container to avoid edge-clipped appearance.
+  - Increased Product Type editor form padding and vertical spacing for clearer field separation.
+  - Kept behavior/routes unchanged and focused only on layout spacing.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 18:15
+- Short description: Redesigned Product Types list UI to match Products page pattern.
+- What you do:
+  - Reworked Product Types list page structure to mirror Products page layout (header actions, filter bar, and tabular list view).
+  - Added Product Types table columns: type key, label, description, fields count, and edit action.
+  - Added lightweight client-side filtering (all/vps/custom + search by key/label).
+  - Preserved dedicated create/edit Product Type page flow introduced earlier.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 18:02
+- Short description: Split Product Types into dedicated list page and separate editor pages (create/edit).
+- What you do:
+  - Removed in-page Product Types editor from the list view and kept list page focused on browsing types.
+  - Added dedicated Product Type editor page state to match the create-product style workflow.
+  - Added Create and Edit routes for Product Types: `/admin/product-types/create` and `/admin/product-types/{type}/edit`.
+  - Added navigation actions from Product Types list to dedicated editor page for both create and edit flows.
+  - Preserved existing backend API payload format for `schema.fields`.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `app/Http/Controllers/Web/AdminPageController.php`
+  - `routes/web.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 17:36
+- Short description: Replaced Product Types raw JSON editor with visual schema builder UI.
+- What you do:
+  - Replaced Product Types "Schema JSON" textarea with a form-based field builder.
+  - Added add/remove field interactions with editable key, label, type, required flag, help text, and select options.
+  - Added client-side schema normalization/validation before save, including required options for select fields.
+  - Kept backend payload format unchanged (`schema.fields`) so API compatibility remains intact.
+  - Re-ran Product Types feature tests to confirm save/list behavior remains stable.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 17:10
+- Short description: Added VPS OS options, persisted default product types in DB, and accelerated admin dashboard loading with bootstrap API.
+- What you do:
+  - Added `operating_system` schema field for `vps_droplet` with OS options: Ubuntu 22/24 LTS, Fedora 42/43 x64, Debian 12/13 x64, CentOS 9/10 x64, AlmaLinux 8/9/10, RockyLinux 8/9/10 x64.
+  - Added migration to seed default product types directly into Supabase `site_settings` and patch existing `vps_droplet` schema to include the new OS field when missing.
+  - Added `GET /api/admin/bootstrap` to fetch admin dashboard datasets in a single request and reduced initial dashboard load waterfall.
+  - Updated admin dashboard loader to prefer bootstrap API and keep multi-endpoint fetch as fallback.
+  - Extended Product Types feature test to verify the new OS field/options exist.
+- File path that changes:
+  - `app/Http/Controllers/Admin/ProductTypeController.php`
+  - `app/Http/Controllers/Admin/BootstrapController.php`
+  - `database/migrations/2026_04_02_171000_seed_default_product_types.php`
+  - `routes/api.php`
+  - `resources/views/admin/app.blade.php`
+  - `tests/Feature/AdminProductTypeManagementTest.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 14:02
+- Short description: Added Product Types management submenu and schema-driven product type fields for admin create-product flow.
+- What you do:
+  - Added admin Product Types API with default schemas (including `vps_droplet` provider/region/datacenter/spec fields) and upsert capability.
+  - Added Product Types submenu/page under Products in admin dashboard with schema JSON editor and save/refresh actions.
+  - Added product `meta` JSON support (migration + model/request updates) to persist type-specific field values.
+  - Updated Create Product page to render dynamic type-specific fields from Product Types schema and submit them as `meta`.
+  - Added Product Types admin web route and page initialization mapping.
+  - Added feature tests for Product Types listing and upsert; re-ran product create tests.
+  - Included DigitalOcean regional availability reference link on Product Types page.
+- File path that changes:
+  - `app/Http/Controllers/Admin/ProductTypeController.php`
+  - `app/Http/Requests/Admin/UpsertProductTypeRequest.php`
+  - `app/Http/Requests/Admin/StoreProductRequest.php`
+  - `app/Http/Controllers/Web/AdminPageController.php`
+  - `app/Models/Product.php`
+  - `database/migrations/2026_04_02_133000_add_meta_to_products_table.php`
+  - `routes/api.php`
+  - `routes/web.php`
+  - `resources/views/admin/app.blade.php`
+  - `tests/Feature/AdminProductTypeManagementTest.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 13:24
+- Short description: Fixed admin OTP redirect when Supabase returns to root URL.
+- What you do:
+  - Deep-dived redirect behavior from Supabase verification link and confirmed fallback cases where callback query params are missing and browser returns to `/`.
+  - Added `GET /api/auth/intent` endpoint to resolve login intent (`mode` and `next`) from secure intent cookies.
+  - Updated root-page hash auth handler to load auth intent fallback before persisting session, ensuring admin logins redirect to `/admin` even when Supabase redirects to root.
+  - Hardened intent cookie parsing by adding raw-cookie-header fallback logic.
+  - Added regression tests for auth intent endpoint and re-ran callback/middleware redirect suites.
+- File path that changes:
+  - `app/Http/Controllers/Auth/LoginController.php`
+  - `routes/api.php`
+  - `resources/views/catalog/index.blade.php`
+  - `tests/Feature/AuthIntentEndpointTest.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 13:02
+- Short description: Fixed admin OTP callback redirect falling back to user dashboard.
+- What you do:
+  - Added short-lived login-intent cookies (`dl-login-mode`, `dl-login-next`) when sending magic-link OTP.
+  - Updated callback controller to recover mode/next from query first, then cookies, with strict safe-path fallback.
+  - Updated callback page script to use server-resolved mode/next defaults if query params are missing.
+  - Cleared login-intent cookies once session is persisted.
+  - Added callback regression tests for missing query params and invalid next-path handling.
+  - Re-ran auth-related feature tests and confirmed all pass.
+- File path that changes:
+  - `app/Http/Controllers/Auth/LoginController.php`
+  - `app/Http/Controllers/Auth/CallbackController.php`
+  - `resources/views/auth/callback.blade.php`
+  - `tests/Feature/AuthCallbackRedirectModeTest.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 12:36
+- Short description: Deep-cleaned admin dashboard placeholder artifacts and improved create-product page UI.
+- What you do:
+  - Reworked Create Product page form spacing/layout so fields no longer render clipped against panel border.
+  - Replaced hardcoded overview KPI numbers with runtime values derived from loaded backend data.
+  - Replaced hardcoded "Critical Audit Events" table rows with dynamic rows from live audit data.
+  - Replaced hardcoded high-priority queue counters with live counts from orders/entitlements/droplets data.
+  - Replaced static sidebar order badge and entitlement warning dot with dynamic signals.
+  - Added lessons for full-scope dashboard deep-dive handling and proactive placeholder cleanup.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `.claude/lessons/lessons.md`
+  - `.github/lessons.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 12:20
+- Short description: Removed dashboard placeholder flicker and moved product creation to dedicated page.
+- What you do:
+  - Removed hardcoded demo dataset initialization from admin dashboard client state to prevent first-paint placeholder flicker.
+  - Removed create-product modal popup flow and switched Create Product to dedicated page state (`/admin/products/create`) with full form UI.
+  - Added admin web route and controller mapping for create-product page initialization.
+  - Updated product create submit flow to return to products page after successful creation.
+  - Expanded lessons with explicit rules about placeholder flicker prevention and honoring page-based UX requests.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `routes/web.php`
+  - `app/Http/Controllers/Web/AdminPageController.php`
+  - `.claude/lessons/lessons.md`
+  - `.github/lessons.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 12:02
+- Short description: Replaced admin product prompt dialogs with proper create-product modal form.
+- What you do:
+  - Removed browser `window.prompt` flow from admin product creation.
+  - Added a dedicated in-page create-product modal with structured fields (name, slug, type, status, short description, visibility).
+  - Implemented modal submit handler with API request, button-disable during submit, validation feedback, and success refresh.
+  - Added backdrop-close handler for the create-product modal.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 11:42
+- Short description: Wired admin dashboard placeholder actions to real APIs and added entitlement expiry extension endpoint.
+- What you do:
+  - Replaced admin dashboard placeholder button handlers with real API-backed flows for product edit/toggle/view, order view/status update, user view/block-unblock, entitlement status updates, and droplet action logs.
+  - Bound settings UI controls to persisted site settings by loading values from `/api/admin/settings` and saving all changes via audited upsert requests.
+  - Added support-page action handlers for documentation, provider status, and support ticket/contact links.
+  - Added new admin API endpoint `PUT /api/admin/entitlements/{id}/extend` and controller logic to extend entitlement expiry by N days and audit-log the action, enabling working `+30d` entitlement action in dashboard.
+  - Added admin droplet action-log endpoint wiring usage in UI through `GET /api/admin/droplets/{id}/actions`.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `app/Http/Controllers/Admin/EntitlementController.php`
+  - `routes/api.php`
+  - `tests/Feature/AdminAuditCoverageTest.php`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-02 11:18
 - Short description: Fixed admin product creation flow end-to-end.
 - What you do:
