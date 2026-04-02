@@ -57,6 +57,13 @@ php artisan serve
 php artisan test
 ```
 
+### Local PHP Path and Supabase DB Access Caution
+
+- Canonical local PHP executable path:
+	- `C:\Users\Administrator\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.2_Microsoft.Winget.Source_8wekyb3d8bbwe\php.exe`
+- For live Supabase database inspection, use `DATABASE_URL` direct PostgreSQL access.
+- Do not use Supabase service URL or `SUPABASE_SERVICE_ROLE_KEY` for live DB inspection tasks.
+
 ## Tech Stack
 
 - **Framework:** Laravel 11+
