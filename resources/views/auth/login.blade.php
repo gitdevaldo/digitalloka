@@ -154,6 +154,7 @@
 
     <form id="login-form">
       <input type="hidden" id="next" value="{{ $next }}" />
+      <input type="hidden" id="mode" value="{{ $mode }}" />
       <label for="email">Email Address</label>
       <input id="email" type="email" placeholder="you@digitalloka.com" required />
       <button id="submit" class="btn" type="submit">Send Magic Link</button>
@@ -188,7 +189,8 @@
           },
           body: JSON.stringify({
             email: document.getElementById('email').value,
-            next: document.getElementById('next').value
+            next: document.getElementById('next').value,
+            mode: document.getElementById('mode').value
           })
         });
 

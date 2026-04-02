@@ -35,14 +35,18 @@ class SupabaseAuthService
         return null;
     }
 
-    public function startMagicLinkLogin(string $email, ?string $nextPath = null): array
+    public function startMagicLinkLogin(string $email, ?string $nextPath = null, string $mode = 'user'): array
     {
         $redirectUrl = (string) config('services.supabase.redirect_url');
+        $safeMode = in_array($mode, ['user', 'admin'], true) ? $mode : 'user';
         $safeNextPath = $this->sanitizeNextPath($nextPath);
+        $query = ['mode' => $safeMode];
         if ($safeNextPath !== null) {
-            $separator = str_contains($redirectUrl, '?') ? '&' : '?';
-            $redirectUrl .= $separator . http_build_query(['next' => $safeNextPath]);
+            $query['next'] = $safeNextPath;
         }
+
+        $separator = str_contains($redirectUrl, '?') ? '&' : '?';
+        $redirectUrl .= $separator . http_build_query($query);
 
         $payload = [
             'email' => $email,

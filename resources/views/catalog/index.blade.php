@@ -1266,7 +1266,9 @@
     const expiresIn = Number(hashParams.get('expires_in') || '3600');
     const searchParams = new URLSearchParams(window.location.search);
     const next = searchParams.get('next');
-    const redirectTarget = next && next.startsWith('/') ? next : '/dashboard';
+    const mode = searchParams.get('mode');
+    const fallback = mode === 'admin' ? '/admin' : '/dashboard';
+    const redirectTarget = next && next.startsWith('/') ? next : fallback;
 
     try {
       await persistSupabaseSession(accessToken, refreshToken, Number.isFinite(expiresIn) ? expiresIn : 3600);

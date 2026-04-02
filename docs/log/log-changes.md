@@ -1,6 +1,21 @@
 # Change Log
 
 ## 2026-04-02 00:00
+- Short description: Added mode-aware magic-link fallback redirects so admin login defaults to `/admin`.
+- What you do:
+  - Extended login request payload to include auth mode (`user` or `admin`).
+  - Added mode parameter to Supabase callback redirect URL generation.
+  - Updated callback and root hash handlers to use mode-aware fallback redirect when `next` is missing.
+  - Ensured admin mode falls back to `/admin`, user mode falls back to `/dashboard`.
+- File path that changes:
+  - `resources/views/auth/login.blade.php`
+  - `app/Http/Controllers/Auth/LoginController.php`
+  - `app/Services/Auth/SupabaseAuthService.php`
+  - `resources/views/auth/callback.blade.php`
+  - `resources/views/catalog/index.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 00:00
 - Short description: Hardened access-token extraction with raw cookie-header fallback to stop lingering relogin loops.
 - What you do:
   - Updated access-token extraction to first use bearer/cookie APIs, then fall back to parsing `sb-access-token` from raw `Cookie` header.

@@ -63,8 +63,10 @@
       const refreshToken = hashParams.get('refresh_token');
       const expiresIn = Number(hashParams.get('expires_in') || '3600');
       const next = searchParams.get('next');
+      const mode = searchParams.get('mode');
       const fallback = @json($next);
-      const redirectTarget = (next && next.startsWith('/')) ? next : fallback;
+      const modeFallback = mode === 'admin' ? '/admin' : '/dashboard';
+      const redirectTarget = (next && next.startsWith('/')) ? next : (fallback || modeFallback);
 
       if (!accessToken) {
         setStatus('Sign-in callback is missing token information. Please request a new magic link.');

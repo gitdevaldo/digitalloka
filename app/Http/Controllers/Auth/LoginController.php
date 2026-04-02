@@ -22,14 +22,19 @@ class LoginController extends Controller
         $payload = $request->validate([
             'email' => ['required', 'email'],
             'next' => ['nullable', 'string'],
+            'mode' => ['nullable', 'in:user,admin'],
         ]);
 
         $next = isset($payload['next']) && is_string($payload['next']) && str_starts_with($payload['next'], '/')
             ? $payload['next']
             : null;
 
+        $mode = isset($payload['mode']) && in_array($payload['mode'], ['user', 'admin'], true)
+            ? $payload['mode']
+            : 'user';
+
         try {
-            $result = $this->authService->startMagicLinkLogin($payload['email'], $next);
+            $result = $this->authService->startMagicLinkLogin($payload['email'], $next, $mode);
         } catch (RuntimeException $exception) {
             return response()->json([
                 'error' => $exception->getMessage(),
