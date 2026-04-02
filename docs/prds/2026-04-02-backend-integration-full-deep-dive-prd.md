@@ -2,337 +2,291 @@
 
 Date: 2026-04-02
 Owner: GitHub Copilot
-Status: Draft for implementation alignment
+Status: Fresh top-down deep dive baseline
 
 ## 1. Objective
 
-Define a complete backend integration product requirements document for this Laravel application, covering:
-- Homepage and public catalog integration
-- User dashboard integration
-- Admin dashboard integration
-- Authentication/session integration
-- Service boundaries, validation, error handling, and security
-- Database integration constraints and backend roadmap
+Produce one complete, implementation-grounded backend PRD for the current Laravel codebase that defines:
+- Homepage/catalog backend behavior
+- User dashboard backend behavior
+- Admin dashboard backend behavior
+- Authentication, authorization, and session handling
+- Integration boundaries for Supabase and DigitalOcean
+- Data model constraints, risks, and acceptance criteria
 
-This PRD is implementation-focused and references current code behavior and integration gaps.
+This document is based on current repository behavior, not future assumptions.
 
 ## 2. Product Scope
 
 ### In Scope
-- Laravel backend APIs and web routes
-- Supabase Auth integration (magic link + session handling)
-- Supabase Postgres integration via Eloquent
-- DigitalOcean API integration via service layer
-- Validation contracts and response contracts
-- Access control and middleware behavior
-- Integration gaps and acceptance criteria
+- Web routes and API routes in current Laravel app
+- Controller-to-service integration paths
+- Supabase auth and Postgres integrations
+- DigitalOcean droplet proxy integration
+- Validation, middleware, and error behavior
+- Schema and policy alignment requirements
 
 ### Out of Scope
 - Frontend visual redesign
-- Replacing Supabase Auth provider
-- Replacing Laravel framework
-- Rewriting archived legacy implementation
+- Replacing Supabase or DigitalOcean providers
+- Archive migration/rewrite work
 
-## 3. System Context
+## 3. Current System Architecture
 
-The platform has two major interaction surfaces:
-1. Public/catalog surface (homepage and product browsing)
-2. Authenticated surfaces:
-   - User dashboard
-   - Admin dashboard
+### 3.1 Layered Architecture
+- Route layer: `routes/web.php`, `routes/api.php`
+- Controller layer: domain handlers in `app/Http/Controllers/*`
+- Middleware layer: origin and auth guards in `app/Http/Middleware/*`
+- Service layer: `app/Services/*`
+- Persistence layer: Eloquent models and migrations
+- Provider layer: Supabase auth API + DigitalOcean API
 
-Backend architecture is service-oriented with controller -> service -> model/provider boundaries.
+### 3.2 Boundary Rules
+- All DigitalOcean calls must flow through `DigitalOceanService`
+- Session user identity must flow through `SupabaseAuthService`
+- Admin checks must flow through `AdminAccessService`
+- Droplet ownership checks must flow through `DropletAccessService`
+- Mutating routes must enforce same-origin checks
 
-## 4. Architecture and Module Boundaries
+## 4. Surface Requirements
 
-### 4.1 Layers
-- Routes: web and api route maps
-- Controllers: endpoint and page handlers by domain
-- Middleware: origin, auth, role enforcement
-- Services: auth, access, digitalocean, catalog, commerce, settings, audit
-- Models: users/orders/products/prices/entitlements/transactions/settings/audit logs
-- Database migrations: canonical schema source
+## 4.1 Homepage and Public Catalog
 
-### 4.2 Integration Boundary Rules
-- All DigitalOcean calls must go through DigitalOcean service layer
-- Auth/session user resolution must go through Supabase auth service
-- Access checks must be explicit in endpoint handlers
-- Mutating endpoints must enforce same-origin
-- Validation must use Laravel request validation rules
-
-## 5. Functional Requirements by Surface
-
-## 5.1 Homepage and Public Catalog
-
-### FR-HOME-01 Product list endpoint
-- Public endpoint must return visible catalog products with pagination and filter support.
-- Supported filters/sort include category/search/price/rating/tags/badges and ordering.
-- Product list payload must include category and active price context for card rendering.
+### FR-HOME-01 Public product listing
+- API must expose visible catalog products with pagination and filters.
+- Filtering supports category, type, availability, search, rating, tags, badges, price range, and sort.
 
 Acceptance:
-- Homepage can render product cards from API only.
-- Invalid query values return validation errors, not server errors.
+- Invalid query input returns validation errors.
+- Product cards can be rendered using API output only.
 
-### FR-HOME-02 Product detail endpoint
-- Public endpoint must return one visible product by slug.
-- Response must include category and active pricing options.
+### FR-HOME-02 Product detail by slug
+- API must return one product with category and active prices.
 
 Acceptance:
 - Unknown slug returns not found.
-- Hidden/unavailable products are not exposed through public route.
+- Non-visible/non-available products are not publicly exposed.
 
-### FR-HOME-03 Magic-link hash handling from root
-- If auth provider redirects to root with token hash, backend session must still be established and then redirect to intended destination.
-
-Acceptance:
-- Root hash login persists session and redirects correctly.
-- Missing next path falls back by mode-aware defaults.
-
-## 5.2 User Dashboard
-
-### FR-USER-01 Dashboard page protection
-- All dashboard web routes must require authenticated Supabase session.
-- Unauthenticated requests must redirect to user login with next path.
+### FR-HOME-03 Root/callback auth bridging
+- If provider redirect lands at root/callback with tokens, session cookies must be persisted before protected navigation.
 
 Acceptance:
-- Direct access to dashboard without session redirects to login.
-- With valid session, page resolves without re-login loop.
+- Successful login does not bounce back to login.
+- Missing `next` falls back by mode (`/dashboard` or `/admin`).
 
-### FR-USER-02 Orders integration
-- User orders list/detail endpoints must enforce ownership by user id.
-- Response should include items and transaction context.
+## 4.2 User Dashboard
 
-Acceptance:
-- User cannot retrieve another user orders.
-- Invalid ids return typed errors.
-
-### FR-USER-03 Entitlements integration
-- User products endpoint returns own entitlements with product context.
-- Status lifecycle must be reflected in payload.
+### FR-USER-01 Protected dashboard pages
+- All `/dashboard*` pages must require valid Supabase-authenticated session.
 
 Acceptance:
-- Only user-scoped records are returned.
-- Pagination works for large entitlement sets.
+- Unauthenticated request redirects to `/login` with `next`.
+- Valid session resolves dashboard page without loop.
 
-### FR-USER-04 Droplets integration
-- User droplets endpoint returns only assigned droplets.
-- Actions endpoint must enforce ownership and action validation.
-
-Acceptance:
-- Unauthorized droplet action returns forbidden.
-- Allowed actions map to provider action API correctly.
-
-### FR-USER-05 Checkout integration
-- Checkout endpoint must create order + item + transaction atomically.
-- Input validation must reject invalid product/price/quantity combinations.
+### FR-USER-02 User droplet operations
+- Users can list only assigned droplets.
+- Users can view/actions only on owned droplet IDs.
 
 Acceptance:
-- Order write is transactional.
-- Any failure rolls back all related writes.
+- Unauthorized droplet access returns forbidden.
+- Invalid droplet IDs return typed client errors.
 
-## 5.3 Admin Dashboard
-
-### FR-ADMIN-01 Admin web access
-- Admin web routes must require authenticated + active admin role.
-- Non-admin authenticated users must be redirected/blocked.
+### FR-USER-03 User commerce visibility
+- Users can list own orders, order details, and own entitlements.
 
 Acceptance:
-- Admin routes inaccessible for non-admin role.
-- Active role check enforced.
+- Cross-user order/entitlement reads are blocked.
+- Payloads include related item/transaction/product context.
 
-### FR-ADMIN-02 Users management
-- Admin users list/detail/update-access endpoints must support search and role/status updates.
-- Every mutating action must produce audit log entry.
-
-Acceptance:
-- Role and is_active updates persist correctly.
-- Audit log captures actor, target, and change diff.
-
-### FR-ADMIN-03 Orders operations
-- Admin can list/filter orders and change order status with transition guards.
-- Paid transition must trigger entitlement creation behavior.
+### FR-USER-04 Checkout write path
+- Checkout must write order, item, and transaction atomically.
 
 Acceptance:
-- Invalid transitions are rejected.
-- Valid transitions update order + dependent state.
+- Any write failure rolls back all transaction-scoped rows.
 
-### FR-ADMIN-04 Products operations
-- Admin products endpoints support list/create/update.
-- Validation for core product attributes is enforced.
+## 4.3 Admin Dashboard
 
-Acceptance:
-- Create/update fails on invalid payload.
-- Successful mutations are audited.
-
-### FR-ADMIN-05 Entitlements operations
-- Admin entitlements list and status update endpoints enforce lifecycle transitions.
-- Revoke must capture reason and timestamps.
+### FR-ADMIN-01 Protected admin pages
+- All `/admin*` pages must require authenticated active admin role.
 
 Acceptance:
-- Invalid status transitions rejected.
-- Revoke metadata persisted.
+- Non-admin users are redirected/blocked.
+- Inactive admins are blocked.
 
-### FR-ADMIN-06 Droplet operations
-- Admin droplets endpoint aggregates provider state and owner mapping.
-- Admin droplet actions route can trigger provider actions with typed error mapping.
-
-Acceptance:
-- Response includes owner linkage and infra metadata.
-- Provider failures return controlled service errors.
-
-### FR-ADMIN-07 Site settings and audit logs
-- Admin settings upsert/list endpoints must support grouped retrieval.
-- Admin audit endpoint supports filtering and pagination.
+### FR-ADMIN-02 Product management
+- Admin can list/create/update products with validation.
 
 Acceptance:
-- Settings writes validated and persisted.
-- Audit endpoint returns deterministic response shape.
+- Invalid payloads return validation/state errors.
+- Mutations are audit-logged.
 
-## 6. Authentication and Session Integration Requirements
-
-### FR-AUTH-01 Magic link initiation
-- Auth login endpoint accepts email and optional mode/next context.
-- Redirect URL to provider must preserve safe next and mode.
+### FR-ADMIN-03 User access management
+- Admin can list/show users and update role/active state.
 
 Acceptance:
-- Email link contains callback context for user/admin routing.
+- Role transitions are constrained to allowed role set.
+- Audit log captures actor, target, and changes.
 
-### FR-AUTH-02 Callback/session establishment
-- Callback flow must persist session via backend endpoint before redirect.
-- Cookies must be set with correct attributes for local/prod behavior.
-
-Acceptance:
-- Session cookie exists before protected route load.
-- No immediate relogin loop after successful callback.
-
-### FR-AUTH-03 Cookie compatibility
-- Supabase cookies must be excluded from Laravel encryption/decryption path where required.
-- Token extraction must support bearer, cookie API, and raw cookie header fallback.
+### FR-ADMIN-04 Orders and entitlements operations
+- Admin can list/show/update order status.
+- Admin can list/update entitlement status.
 
 Acceptance:
-- Token readable in authenticated middleware checks.
-- Cookie parsing edge cases do not break auth.
+- Invalid lifecycle transitions are rejected.
+- Paid order transition creates entitlements.
 
-### FR-AUTH-04 Local fallback controls
-- Local JWT fallback may be enabled only for dev resilience.
-- Production must rely on provider verification path and secure TLS verification.
+### FR-ADMIN-05 Admin infrastructure operations
+- Admin can list all droplets and trigger droplet actions.
+- Admin can list audit logs and manage site settings.
 
 Acceptance:
-- Environment flags control behavior explicitly.
-- Production defaults preserve strict verification.
+- Provider failures are mapped to controlled errors.
+- Site settings write path is admin-only.
 
-## 7. Security Requirements
+## 5. Route Matrix (Current)
 
-### FR-SEC-01 Origin checks on mutation
-- All state-changing API endpoints must require same-origin.
+### 5.1 Web Routes
+- `/login`, `/admin/login`, `/auth/callback` public auth pages
+- `/` and `/products/{slug}` public catalog pages
+- `/dashboard*` guarded by `supabase.auth`
+- `/admin*` guarded by `supabase.admin`
 
-### FR-SEC-02 Role and ownership checks
-- Admin role required for admin endpoints.
-- Ownership required for user resource access.
+### 5.2 API Routes by Domain
+- Auth: `POST /auth/login`, `POST /auth/session`, `POST /auth/logout`
+- Droplets: user and admin droplet list/detail/actions
+- Catalog: `GET /products`, `GET /products/{slug}`
+- User: products/actions, orders/detail, checkout
+- Admin: products, users, orders, entitlements, droplets, audit logs, settings
+
+All mutating routes use `EnsureSameOrigin`.
+
+## 6. Authentication and Session Requirements
+
+### FR-AUTH-01 Magic-link initiation
+- `POST /auth/login` validates input and calls Supabase OTP endpoint with callback URL context.
+
+### FR-AUTH-02 Session persistence
+- `POST /auth/session` must set `sb-access-token` and `sb-refresh-token` cookies with secure attributes.
+
+### FR-AUTH-03 Session user resolution
+- Token lookup order must support bearer token, cookie value, and raw cookie header fallback.
+- Primary verification uses Supabase `/auth/v1/user`.
+- Optional local JWT fallback is env-gated for development only.
+
+### FR-AUTH-04 Middleware gates
+- `supabase.auth` checks authenticated session for user pages.
+- `supabase.admin` checks authenticated + active admin role for admin pages.
+
+## 7. Authorization and Security Requirements
+
+### FR-SEC-01 Same-origin enforcement
+- Every state-changing route rejects mismatched origin with 403.
+
+### FR-SEC-02 Ownership and role checks
+- User access is scoped by `user_id` ownership and `droplet_ids` assignment.
+- Admin access requires role in `admin|super-admin` and active user.
 
 ### FR-SEC-03 Secret handling
-- No secrets exposed in responses or logs.
-- Service keys remain server-side only.
+- No provider token leakage in responses or logs.
+- Service role credentials remain server-side only.
 
-### FR-SEC-04 Database-layer enforcement alignment
-- RLS/RBAC policy model must align with app-level access logic.
+### FR-SEC-04 App and DB defense-in-depth
+- App-level checks must remain enforced even when RLS exists.
+- RLS policy pack and verification SQL remain part of security baseline.
 
-## 8. Data Model and Integration Contracts
+## 8. Service Map and Contracts
+
+### Core Services
+- `SupabaseAuthService`: magic link and session user resolution
+- `DigitalOceanService`: list/detail/action/action-history for droplets
+- `DropletAccessService`: assigned droplet ownership checks
+- `AdminAccessService`: role/is_active admin checks
+- `OrderService`: checkout, list/show, status transitions, entitlement creation
+- `EntitlementService`: entitlement listing and state transitions
+- `CatalogService`: product list/detail with filters
+- `SiteSettingService`: grouped settings list/upsert
+- `AuditLogService`: mutation auditing
+
+### Contract Expectations
+- Controllers remain thin: validate + authorize + delegate + map errors
+- External provider failures map to typed 5xx responses
+- State transitions are explicit and guarded
+
+## 9. Data Model Requirements
 
 Core entities:
-- users
-- product_categories
-- products
-- product_prices
-- orders
-- order_items
-- transactions
-- entitlements
-- site_settings
-- audit_logs
+- `users` (UUID, role, is_active, droplet_ids)
+- `product_categories`, `products`, `product_prices`
+- `orders`, `order_items`, `transactions`
+- `entitlements`
+- `site_settings`
+- `audit_logs`
 
-Contract expectations:
-- All API responses use stable keys per endpoint domain.
-- IDs and status fields must be type-consistent.
-- Pagination shape should remain consistent within endpoint families.
+Schema expectations:
+- Strong foreign-key integrity on commerce/entitlement tables
+- JSON fields used intentionally for metadata and catalog tagging
+- Indexes support list/filter patterns used by controllers/services
 
-## 9. Error and Response Standards
+## 10. Validation and Error Contracts
 
-### Typed Error Outcomes
-- 400 invalid input format
+Validation is enforced through dedicated request classes for catalog filters, droplet actions, checkout, and admin mutations.
+
+Typed error targets:
+- 400 invalid ID/format
 - 401 unauthenticated
-- 403 unauthorized/forbidden
-- 404 missing resource
-- 422 validation/state transition violation
-- 502 external provider failure
-- 503 upstream auth/service unavailable
+- 403 forbidden/origin mismatch
+- 404 resource not found
+- 422 validation or invalid state transition
+- 502 provider failure
 
-### Response Shape Requirements
-- Mutation success should be explicit and predictable
-- Collection endpoints should support pagination metadata
-- Error bodies should expose actionable and non-sensitive messages
+Response consistency requirements:
+- Deterministic success keys for mutation responses
+- Consistent pagination envelope for collections
+- Non-sensitive, actionable error messages
 
-## 10. Integration Gaps and Risks
+## 11. Current Gaps and Risks
 
-### Gap-G01 Payment integration incomplete
-- Current checkout flow writes pending/manual transactions; gateway settlement integration remains incomplete.
+### G-01 Payment integration incomplete
+- Transactions are created in manual/pending model; no live gateway settlement flow.
 
-### Gap-G02 Async product action execution incomplete
-- User product action endpoint returns accepted without full queue-backed execution path.
+### G-02 Product action queue is placeholder
+- User product action endpoint returns accepted without actual queued execution.
 
-### Gap-G03 Droplet assignment management surface
-- Assignment governance for user droplet IDs requires robust admin workflows and validation hardening.
+### G-03 Entitlement expiry automation missing
+- No scheduled expiration/reconciliation flow despite `expires_at` support.
 
-### Gap-G04 Entitlement expiry enforcement
-- Expiration policy enforcement needs scheduled and query-level consistency checks.
+### G-04 Login request rate limiting absent
+- Magic-link initiation lacks explicit throttle policy.
 
-### Gap-G05 Operational diagnostics
-- Need explicit integration observability for auth/session/provider failures.
+### G-05 Validation centralization gaps
+- Some ID validations are repeated manually in controllers.
 
-## 11. Non-Functional Requirements
+### G-06 Observability gaps
+- Admin mutations are audited; user auth/checkout lifecycle observability is still partial.
 
-- Reliability: graceful degradation on provider failure
-- Observability: structured logs for auth/provider failures
-- Performance: pagination and constrained eager loads for large datasets
-- Security: strict production TLS verification and disabled local-only fallbacks
-- Maintainability: preserve service boundaries and typed endpoint behavior
+## 12. Delivery Priorities
 
-## 12. Delivery Plan (Backend Integration Focus)
+### Phase 1: Auth hardening and regression
+- Add explicit auth/session integration tests across user/admin login and callback paths.
+- Add rate limiting to login initiation.
 
-### Phase 1: Authentication and Session Hardening
-- Finalize callback/session flow and env defaults by environment
-- Validate admin/user mode-aware redirect behavior
-- Add test coverage for session persistence and middleware gating
+### Phase 2: User operations completion
+- Implement real queued processing for user product actions.
+- Standardize droplet ID validation path.
 
-### Phase 2: User Surface Integration Completion
-- Verify droplets/orders/entitlements contracts end-to-end
-- Complete product action backend execution path
+### Phase 3: Commerce hardening
+- Integrate payment gateway and verified paid transition flow.
+- Add entitlement expiration/renewal automation.
 
-### Phase 3: Admin Surface Integration Completion
-- Complete admin operations and audit contract verification
-- Harden droplet ownership/assignment management workflows
+### Phase 4: Observability and policy verification
+- Expand logging and audit coverage for critical user flows.
+- Keep RLS verification as repeatable operational check.
 
-### Phase 4: Commerce and Fulfillment Integration
-- Add payment gateway and webhook reconciliation
-- Enforce entitlement lifecycle transitions with automation
+## 13. Acceptance Criteria
 
-### Phase 5: Hardening and Regression
-- Integration regression suite for homepage, user dashboard, admin dashboard
-- Security and performance validation
-
-## 13. Acceptance Criteria (Overall)
-
-- Homepage data fully backed by validated APIs with stable contracts
-- User dashboard routes and APIs are session-protected and ownership-safe
-- Admin dashboard routes and APIs are role-protected and auditable
-- Magic-link login reliably establishes session without relogin loops
-- Production-safe security defaults documented and enforceable
-- Backend integration gaps prioritized with implementation-ready requirements
-
-## 14. Implementation Notes for Next Step
-
-When starting backend integration work from this PRD:
-- Begin with auth/session and middleware verification test matrix
-- Then address provider integration gaps (payment and product actions)
-- Keep all mutations audited
-- Keep DigitalOcean and Supabase interactions encapsulated in service layer
+- Public catalog is fully API-backed with validated, predictable contracts.
+- User dashboard routes and APIs are session-protected and ownership-safe.
+- Admin dashboard routes and APIs are role-protected and audited.
+- Magic-link flow reliably persists session cookies without login loop regression.
+- Mutating routes enforce same-origin checks across all domains.
+- Known gaps are prioritized into implementation phases with clear completion targets.

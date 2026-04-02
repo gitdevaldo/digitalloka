@@ -1,5 +1,14 @@
 # Change Log
 
+## 2026-04-02 09:41
+- Short description: Rewrote backend integration PRD from a fresh top-down deep-dive pass.
+- What you do:
+  - Re-scanned route, controller, middleware, service, and data-model architecture from the current codebase to avoid fragmented prior context.
+  - Replaced the backend integration PRD with a single coherent document covering homepage, user dashboard, admin dashboard, auth/session flow, security controls, service contracts, data model, risks, delivery priorities, and acceptance criteria.
+- File path that changes:
+  - `docs/prds/2026-04-02-backend-integration-full-deep-dive-prd.md`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-02 00:00
 - Short description: Added full detailed backend integration deep-dive PRD.
 - What you do:
