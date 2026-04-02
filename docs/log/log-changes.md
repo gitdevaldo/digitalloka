@@ -1,5 +1,18 @@
 # Change Log
 
+## 2026-04-02 11:18
+- Short description: Fixed admin product creation flow end-to-end.
+- What you do:
+  - Replaced placeholder create-product button behavior in admin UI with real backend POST `/api/admin/products` flow.
+  - Added client-side slug generation helper and validation/error surfacing for failed create attempts.
+  - Hardened backend slug validation with regex + unique constraint handling to return 422 validation errors instead of DB-level uniqueness failures.
+  - Added feature tests verifying successful product creation and duplicate slug rejection behavior.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `app/Http/Requests/Admin/StoreProductRequest.php`
+  - `tests/Feature/AdminProductCreateTest.php`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-02 11:05
 - Short description: Implemented full backend integration plan (T1-T7) with tests, security checks, and production hardening.
 - What you do:

@@ -624,7 +624,7 @@ body::before{
 <div class="page" id="page-products">
   <x-layout.page-header variant="admin" title="Products" subtitle="/admin/products — full catalog management">
     <x-slot:actions>
-      <x-ui.button variant="accent" onclick="showToast('✅ Create product flow — connect to backend.','ok')">
+      <x-ui.button variant="accent" onclick="createProduct()">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Create Product
       </x-ui.button>
@@ -1199,6 +1199,65 @@ async function handleLogout(redirectTo){
   document.cookie = 'sb-access-token=; Path=/; Max-Age=0; SameSite=Lax';
   document.cookie = 'sb-refresh-token=; Path=/; Max-Age=0; SameSite=Lax';
   window.location.href = redirectTo;
+}
+
+async function createProduct(){
+  const name = (window.prompt('Product name:') || '').trim();
+  if(!name){
+    showToast('⚠️ Product name is required.','fail');
+    return;
+  }
+
+  const suggestedSlug = slugify(name);
+  const slug = (window.prompt('Product slug:', suggestedSlug) || '').trim();
+  if(!slug){
+    showToast('⚠️ Product slug is required.','fail');
+    return;
+  }
+
+  const type = (window.prompt('Product type (digital/template/course/vps_droplet):', 'digital') || 'digital').trim();
+  const status = (window.prompt('Status (available/out-of-stock/coming-soon):', 'available') || 'available').trim();
+  const shortDescription = (window.prompt('Short description (optional):') || '').trim();
+
+  try {
+    const response = await fetch('/api/admin/products', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        name,
+        slug,
+        product_type: type,
+        status,
+        short_description: shortDescription || null,
+        is_visible: true,
+      }),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if(!response.ok){
+      const firstValidationError = payload?.errors ? Object.values(payload.errors)[0]?.[0] : null;
+      const message = firstValidationError || payload?.error || `Create product failed (${response.status})`;
+      showToast(`⚠️ ${message}`,'fail');
+      return;
+    }
+
+    await loadBackendData();
+    showToast('✅ Product created.','ok');
+  } catch {
+    showToast('⚠️ Failed to create product.','fail');
+  }
+}
+
+function slugify(text){
+  return String(text || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
 }
 
 /* ============================================================ MODAL */
