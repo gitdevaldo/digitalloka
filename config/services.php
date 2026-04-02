@@ -42,6 +42,7 @@ return [
         'redirect_url' => env('SUPABASE_AUTH_REDIRECT_URL', env('APP_URL').'/auth/callback'),
         'http_verify_ssl' => env('SUPABASE_HTTP_VERIFY_SSL', env('APP_ENV') !== 'local'),
         'http_ca_bundle' => env('SUPABASE_HTTP_CA_BUNDLE'),
+        'local_jwt_fallback' => env('SUPABASE_LOCAL_JWT_FALLBACK', env('APP_ENV') === 'local'),
     ],
 
     'digitalocean' => [

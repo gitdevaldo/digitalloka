@@ -21,14 +21,18 @@ class SupabaseAuthService
             'Authorization' => 'Bearer ' . $token,
         ])->get(rtrim((string) config('services.supabase.url'), '/') . '/auth/v1/user');
 
-        if (!$response->successful()) {
-            return null;
+        if ($response->successful()) {
+            $data = $response->json();
+            $userId = $data['id'] ?? null;
+
+            return is_string($userId) && $userId !== '' ? $userId : null;
         }
 
-        $data = $response->json();
-        $userId = $data['id'] ?? null;
+        if ((bool) config('services.supabase.local_jwt_fallback', false)) {
+            return $this->extractUserIdFromJwt($token);
+        }
 
-        return is_string($userId) && $userId !== '' ? $userId : null;
+        return null;
     }
 
     public function startMagicLinkLogin(string $email, ?string $nextPath = null): array
@@ -69,6 +73,42 @@ class SupabaseAuthService
         }
 
         return str_starts_with($nextPath, '/') ? $nextPath : null;
+    }
+
+    private function extractUserIdFromJwt(string $jwt): ?string
+    {
+        $parts = explode('.', $jwt);
+        if (count($parts) < 2 || $parts[1] === '') {
+            return null;
+        }
+
+        $payloadRaw = $parts[1];
+        $padding = strlen($payloadRaw) % 4;
+        if ($padding > 0) {
+            $payloadRaw .= str_repeat('=', 4 - $padding);
+        }
+
+        $decoded = base64_decode(strtr($payloadRaw, '-_', '+/'), true);
+        if (!is_string($decoded) || $decoded === '') {
+            return null;
+        }
+
+        $payload = json_decode($decoded, true);
+        if (!is_array($payload)) {
+            return null;
+        }
+
+        $exp = $payload['exp'] ?? null;
+        if (is_numeric($exp) && (int) $exp <= time()) {
+            return null;
+        }
+
+        $sub = $payload['sub'] ?? null;
+        if (!is_string($sub) || $sub === '') {
+            return null;
+        }
+
+        return $sub;
     }
 
     private function supabaseClient(array $headers): PendingRequest

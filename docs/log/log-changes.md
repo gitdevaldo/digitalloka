@@ -1,6 +1,20 @@
 # Change Log
 
 ## 2026-04-02 00:00
+- Short description: Fixed localhost login loop by adding local JWT fallback for session user resolution.
+- What you do:
+  - Updated Supabase session user resolution to fall back to local access-token JWT payload parsing when remote `/auth/v1/user` introspection fails.
+  - Added expiration check (`exp`) and subject extraction (`sub`) in fallback parser.
+  - Added configurable flag `SUPABASE_LOCAL_JWT_FALLBACK` with local-environment default enabled.
+  - Enabled local fallback in `.env` and documented it in `.env.example`.
+- File path that changes:
+  - `app/Services/Auth/SupabaseAuthService.php`
+  - `config/services.php`
+  - `.env`
+  - `.env.example`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 00:00
 - Short description: Fixed post-magic-link relogin loop by persisting session cookies through backend endpoint.
 - What you do:
   - Added `/api/auth/session` endpoint to persist Supabase access/refresh tokens into server-set cookies.
