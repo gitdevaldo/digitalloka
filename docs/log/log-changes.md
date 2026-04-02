@@ -1,6 +1,27 @@
 # Change Log
 
 ## 2026-04-02 00:00
+- Short description: Added dedicated user/admin authentication pages with protected dashboard route guards.
+- What you do:
+  - Added dedicated web login pages for user dashboard (`/login`) and admin dashboard (`/admin/login`) with magic-link submission to `/api/auth/login`.
+  - Implemented callback page flow to parse Supabase access token from URL hash, persist auth cookies, and redirect to sanitized `next` path.
+  - Added route middleware guards for dashboard and admin web routes to enforce authenticated and admin-authenticated access.
+  - Added middleware aliases in application bootstrap for user and admin Supabase auth guards.
+  - Extended login API/service flow to accept optional `next` path and include it in Supabase `email_redirect_to` callback URL.
+- File path that changes:
+  - `app/Http/Controllers/Web/AuthPageController.php`
+  - `app/Http/Middleware/EnsureSupabaseAuthenticated.php`
+  - `app/Http/Middleware/EnsureSupabaseAdminAuthenticated.php`
+  - `app/Http/Controllers/Auth/LoginController.php`
+  - `app/Http/Controllers/Auth/CallbackController.php`
+  - `app/Services/Auth/SupabaseAuthService.php`
+  - `routes/web.php`
+  - `bootstrap/app.php`
+  - `resources/views/auth/login.blade.php`
+  - `resources/views/auth/callback.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 00:00
 - Short description: Added live actor-behavior verification evidence for Supabase RLS/RBAC hardening.
 - What you do:
   - Executed direct PostgreSQL actor simulation checks for `anon`, `authenticated`, and simulated `admin` paths.

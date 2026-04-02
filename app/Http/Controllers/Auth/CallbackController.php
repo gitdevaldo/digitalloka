@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class CallbackController extends Controller
 {
-    public function show(Request $request): RedirectResponse
+    public function show(Request $request): View
     {
         $next = (string) $request->query('next', '/dashboard');
 
@@ -16,6 +16,6 @@ class CallbackController extends Controller
             $next = '/dashboard';
         }
 
-        return redirect($next);
+        return view('auth.callback', ['next' => $next]);
     }
 }

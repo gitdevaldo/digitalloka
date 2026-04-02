@@ -30,13 +30,20 @@ class SupabaseAuthService
         return is_string($userId) && $userId !== '' ? $userId : null;
     }
 
-    public function startMagicLinkLogin(string $email): array
+    public function startMagicLinkLogin(string $email, ?string $nextPath = null): array
     {
+        $redirectUrl = (string) config('services.supabase.redirect_url');
+        $safeNextPath = $this->sanitizeNextPath($nextPath);
+        if ($safeNextPath !== null) {
+            $separator = str_contains($redirectUrl, '?') ? '&' : '?';
+            $redirectUrl .= $separator . http_build_query(['next' => $safeNextPath]);
+        }
+
         $payload = [
             'email' => $email,
             'create_user' => false,
             'options' => [
-                'email_redirect_to' => (string) config('services.supabase.redirect_url'),
+                'email_redirect_to' => $redirectUrl,
             ],
         ];
 
@@ -52,6 +59,15 @@ class SupabaseAuthService
         }
 
         return ['success' => true];
+    }
+
+    private function sanitizeNextPath(?string $nextPath): ?string
+    {
+        if (!is_string($nextPath) || $nextPath === '') {
+            return null;
+        }
+
+        return str_starts_with($nextPath, '/') ? $nextPath : null;
     }
 
     private function extractAccessToken(Request $request): ?string
