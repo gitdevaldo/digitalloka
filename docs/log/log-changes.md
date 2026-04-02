@@ -1,6 +1,17 @@
 # Change Log
 
 ## 2026-04-02 00:00
+- Short description: Added implementation plan for Supabase database hardening (RBAC + RLS).
+- What you do:
+  - Created a dedicated implementation plan for Supabase database security enhancement.
+  - Documented current live baseline, target actor model, table access intent, and phased rollout.
+  - Defined execution phases for RLS enablement, policy implementation, privilege hardening, and verification.
+  - Added deliverables and acceptance criteria for SQL migration scripts, policy matrix, and verification runbook.
+- File path that changes:
+  - `docs/plans/2026-04-02-supabase-database-rbac-rls-enhancement-plan.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 00:00
 - Short description: Started shared Blade component rollout and replaced duplicated topbar/badge/empty-state blocks.
 - What you do:
   - Added reusable Blade UI components for buttons, avatar chips, status badges, and empty states.
