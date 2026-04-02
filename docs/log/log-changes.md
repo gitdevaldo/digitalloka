@@ -1,6 +1,15 @@
 # Change Log
 
 ## 2026-04-01 00:00
+- Short description: Added dashboard HTML reference file to repository tracking.
+- What you do:
+  - Staged and included the provided user dashboard reference HTML file under docs references.
+  - Ensured the reference artifact is now part of git history and available on remote.
+- File path that changes:
+  - `docs/references/digitalloka-dashboard.html`
+  - `docs/log/log-changes.md`
+
+## 2026-04-01 00:00
 - Short description: Wired user dashboard routes to the provided reference HTML layout.
 - What you do:
   - Copied `docs/references/digitalloka-dashboard.html` into a new Blade entry view at `resources/views/dashboard/app.blade.php`.
