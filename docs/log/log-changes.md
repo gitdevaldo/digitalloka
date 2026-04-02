@@ -1,6 +1,16 @@
 # Change Log
 
 ## 2026-04-02 00:00
+- Short description: Hardened access-token extraction with raw cookie-header fallback to stop lingering relogin loops.
+- What you do:
+  - Updated access-token extraction to first use bearer/cookie APIs, then fall back to parsing `sb-access-token` from raw `Cookie` header.
+  - Added token normalization for URL-encoded and quoted cookie values.
+  - Ensured auth user resolution can continue even when cookie middleware mutates parsed cookie values.
+- File path that changes:
+  - `app/Services/Auth/SupabaseAuthService.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 00:00
 - Short description: Fixed root cause of localhost login loop by excluding Supabase auth cookies from Laravel cookie encryption.
 - What you do:
   - Identified root issue: Supabase auth cookies were set as raw values, while Laravel web middleware attempted to decrypt them and dropped unreadable values.

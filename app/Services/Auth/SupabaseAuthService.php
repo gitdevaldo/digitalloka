@@ -133,7 +133,33 @@ class SupabaseAuthService
         }
 
         $cookieToken = $request->cookie('sb-access-token');
+        if (is_string($cookieToken) && $cookieToken !== '') {
+            return $this->normalizeToken($cookieToken);
+        }
 
-        return is_string($cookieToken) && $cookieToken !== '' ? $cookieToken : null;
+        $rawCookieHeader = $request->headers->get('cookie');
+        if (is_string($rawCookieHeader) && $rawCookieHeader !== '') {
+            foreach (explode(';', $rawCookieHeader) as $pair) {
+                $segment = trim($pair);
+                if (!str_starts_with($segment, 'sb-access-token=')) {
+                    continue;
+                }
+
+                $rawValue = substr($segment, strlen('sb-access-token='));
+                if ($rawValue === false || $rawValue === '') {
+                    continue;
+                }
+
+                return $this->normalizeToken($rawValue);
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizeToken(string $rawToken): ?string
+    {
+        $token = trim(urldecode($rawToken), "\"' ");
+        return $token !== '' ? $token : null;
     }
 }
