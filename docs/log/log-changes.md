@@ -1,6 +1,16 @@
 # Change Log
 
 ## 2026-04-02 00:00
+- Short description: Fixed root cause of localhost login loop by excluding Supabase auth cookies from Laravel cookie encryption.
+- What you do:
+  - Identified root issue: Supabase auth cookies were set as raw values, while Laravel web middleware attempted to decrypt them and dropped unreadable values.
+  - Excluded `sb-access-token` and `sb-refresh-token` from Laravel cookie encryption/decryption middleware.
+  - Preserved existing backend session-persistence flow and middleware guards.
+- File path that changes:
+  - `bootstrap/app.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 00:00
 - Short description: Fixed localhost login loop by adding local JWT fallback for session user resolution.
 - What you do:
   - Updated Supabase session user resolution to fall back to local access-token JWT payload parsing when remote `/auth/v1/user` introspection fails.

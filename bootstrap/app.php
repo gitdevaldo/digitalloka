@@ -12,6 +12,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->encryptCookies(except: [
+            'sb-access-token',
+            'sb-refresh-token',
+        ]);
+
         $middleware->alias([
             'supabase.auth' => \App\Http\Middleware\EnsureSupabaseAuthenticated::class,
             'supabase.admin' => \App\Http\Middleware\EnsureSupabaseAdminAuthenticated::class,
