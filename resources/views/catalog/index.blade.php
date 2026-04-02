@@ -720,6 +720,10 @@
       .filter-row .filter-chip { flex: 0 0 auto; }
       .product-card { border-radius: 16px; }
       .product-meta { gap: 8px; }
+      .topbar { padding: 0 14px; }
+      .topbar-right { gap: 8px; }
+      .topbar-right .btn { padding: 8px 12px; font-size: 0.78rem; }
+      .topbar-right .tb-cart-count { font-weight: 800; }
     }
 
     @media (max-width: 560px) {
@@ -728,6 +732,12 @@
       .main { padding: 14px; }
       .product-card { padding: 14px; }
       .buy-btn, .wishlist-btn { padding: 8px 12px; }
+      .topbar { height: 58px; }
+      .page-wrapper { padding-top: 58px; }
+      .topbar-right .btn { min-width: 0; padding: 7px 10px; }
+      .topbar-right .btn .tb-label { display: none; }
+      .topbar-right .btn .tb-cart-count { display: inline; }
+      .topbar-right .btn svg { margin-right: 0; }
     }
 
     /* ===================== THUMB BG COLORS ===================== */

@@ -1,5 +1,18 @@
 # Change Log
 
+## 2026-04-02 23:35
+- Short description: Refined mobile catalog topbar and 400px narrow-width layout behavior.
+- What you do:
+  - Updated catalog topbar button markup to expose responsive text labels and cart count elements.
+  - Tuned catalog mobile breakpoints to reduce topbar crowding and improve control sizing.
+  - Added small-screen behavior to hide verbose topbar labels while preserving icon/cart count clarity.
+  - Reduced page top offset on small screens to match compact topbar height.
+  - Cleared compiled Blade views after updates.
+- File path that changes:
+  - `resources/views/components/layout/topbar.blade.php`
+  - `resources/views/catalog/index.blade.php`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-02 23:20
 - Short description: Added cross-page mobile responsiveness for admin dashboard, user dashboard, and catalog/homepage surfaces.
 - What you do:
