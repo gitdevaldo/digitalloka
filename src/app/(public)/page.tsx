@@ -388,17 +388,14 @@ export default function CatalogPage() {
       <FloatingBar alwaysVisible>
         <button className="floating-bar-btn" onClick={() => setMobileFilterOpen(o => !o)}>
           <SlidersHorizontal size={18} />
-          <span className="desktop-only">Filter</span>
         </button>
         <div className="floating-bar-divider" />
         <button className="floating-bar-btn">
           <ShoppingBag size={18} />
-          <span>Cart</span>
         </button>
         <div className="floating-bar-divider" />
         <button className="floating-bar-btn">
           <Heart size={18} />
-          <span>Wishlist</span>
           {(wishlistCtx.count ?? 0) > 0 && (
             <span className="floating-bar-badge">{wishlistCtx.count}</span>
           )}
