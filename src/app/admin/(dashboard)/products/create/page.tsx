@@ -241,12 +241,14 @@ export default function CreateProductPage() {
 
           <label className="flex flex-col gap-1.5">
             <span className="text-[0.8rem] font-bold">Billing Period</span>
-            <input
-              value={priceBillingPeriod}
-              onChange={(e) => setPriceBillingPeriod(e.target.value)}
-              className={inputClass}
-              placeholder="one-time / monthly"
-            />
+            <select value={priceBillingPeriod} onChange={(e) => setPriceBillingPeriod(e.target.value)} className={inputClass}>
+              <option value="">Select billing period</option>
+              <option value="one-time">One-time</option>
+              <option value="monthly">Monthly</option>
+              <option value="3-month">3-Month</option>
+              <option value="6-month">6-Month</option>
+              <option value="yearly">Yearly</option>
+            </select>
           </label>
 
           <label className="flex flex-col gap-1.5" style={{ gridColumn: '1 / span 2' }}>
