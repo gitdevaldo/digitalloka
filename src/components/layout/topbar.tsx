@@ -1,8 +1,11 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { BrandLogo } from './brand-logo';
 import { AvatarChip } from '@/components/ui/avatar-chip';
-import { Bell, Search } from 'lucide-react';
+import { Bell, Search, LogIn, LayoutDashboard } from 'lucide-react';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 interface TopbarProps {
   variant?: 'dashboard' | 'admin' | 'catalog';
@@ -12,6 +15,17 @@ interface TopbarProps {
 }
 
 export function Topbar({ variant = 'dashboard', searchPlaceholder, onSearch, children }: TopbarProps) {
+  const isCatalog = variant === 'catalog';
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    if (!isCatalog) return;
+    const supabase = createSupabaseBrowserClient();
+    supabase.auth.getSession().then(({ data }) => {
+      setIsLoggedIn(!!data.session);
+    });
+  }, [isCatalog]);
+
   const defaultPlaceholder = variant === 'admin'
     ? 'Search users, orders, products...'
     : variant === 'catalog'
@@ -20,7 +34,7 @@ export function Topbar({ variant = 'dashboard', searchPlaceholder, onSearch, chi
 
   const placeholder = searchPlaceholder || defaultPlaceholder;
 
-  const defaultRightContent = variant === 'catalog' ? (
+  const defaultRightContent = isCatalog ? (
     <>
       <a href="#" className="btn btn-ghost" id="wishlistButton">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -36,6 +50,17 @@ export function Topbar({ variant = 'dashboard', searchPlaceholder, onSearch, chi
         <span className="tb-label">Cart</span>
         <span className="tb-cart-count">(0)</span>
       </a>
+      {isLoggedIn ? (
+        <Link href="/dashboard" className="btn btn-ghost">
+          <LayoutDashboard size={16} />
+          <span className="tb-label">Dashboard</span>
+        </Link>
+      ) : (
+        <Link href="/login" className="btn btn-ghost">
+          <LogIn size={16} />
+          <span className="tb-label">Login</span>
+        </Link>
+      )}
     </>
   ) : (
     <>
@@ -62,7 +87,7 @@ export function Topbar({ variant = 'dashboard', searchPlaceholder, onSearch, chi
           <input
             type="text"
             placeholder={placeholder}
-            id={variant === 'catalog' ? 'globalSearch' : undefined}
+            id={isCatalog ? 'globalSearch' : undefined}
             onInput={onSearch ? (e) => onSearch(e.currentTarget.value) : undefined}
           />
         </div>
