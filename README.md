@@ -16,6 +16,21 @@ This folder contains Phase 1 migration scaffolding for moving DigitalLoka from N
    - composer install
 4. Copy .env.example to .env and fill secrets.
 
+## API Performance (all endpoints)
+
+- For local concurrency testing, prefer:
+  - `php artisan serve --workers=4` (supported on this project), or
+  - a production-like stack (Nginx + PHP-FPM).
+- Keep `CACHE_STORE` on a fast backend (Redis in production).
+- Tune these env values:
+  - `SUPABASE_SESSION_USER_CACHE_SECONDS`
+  - `SUPABASE_SESSION_NEGATIVE_CACHE_SECONDS`
+  - `DIGITALOCEAN_CONNECT_TIMEOUT_SECONDS`
+  - `DIGITALOCEAN_REQUEST_TIMEOUT_SECONDS`
+  - `DIGITALOCEAN_DROPLETS_CACHE_SECONDS`
+  - `DIGITALOCEAN_DROPLET_CACHE_SECONDS`
+  - `DIGITALOCEAN_ACTIONS_CACHE_SECONDS`
+
 ## Immediate Next Tasks
 
 1. Bootstrap a full Laravel app kernel and providers.

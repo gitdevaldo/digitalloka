@@ -1,5 +1,21 @@
 # Change Log
 
+## 2026-04-03 05:10
+- Short description: Applied global API performance improvements (auth/session caching, DigitalOcean caching/timeouts, local concurrency guidance)
+- What you do:
+  - Increased and made configurable Supabase session user cache TTLs to reduce repeated auth introspection overhead across endpoints.
+  - Added configurable DigitalOcean connect/request timeouts and short-lived caching for droplets, droplet detail, and droplet actions.
+  - Added cache invalidation for droplet/action cache on mutating droplet actions.
+  - Added performance-related environment variables to `.env.example`.
+  - Added API performance runtime guidance in `README.md` for concurrent local serving and cache tuning.
+- File path that changes:
+  - `app/Services/Auth/SupabaseAuthService.php`
+  - `app/Services/DigitalOcean/DigitalOceanService.php`
+  - `config/services.php`
+  - `.env.example`
+  - `README.md`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-03 04:45
 - Short description: Fixed admin product edit URL, reduced product page load latency, and removed stale UI refresh behavior
 - What you do:

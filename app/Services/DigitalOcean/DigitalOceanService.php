@@ -2,6 +2,7 @@
 
 namespace App\Services\DigitalOcean;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -10,6 +11,21 @@ use RuntimeException;
 class DigitalOceanService
 {
     public function listDroplets(array $dropletIds, ?string $userId = null): array
+    {
+        if ($dropletIds === []) {
+            return [];
+        }
+
+        sort($dropletIds);
+        $cacheTtl = max(1, (int) config('services.digitalocean.droplets_cache_seconds', 20));
+        $cacheKey = 'digitalocean:droplets:' . hash('sha256', implode(',', $dropletIds) . '|' . (string) $userId);
+
+        return Cache::remember($cacheKey, now()->addSeconds($cacheTtl), function () use ($dropletIds, $userId): array {
+            return $this->fetchDroplets($dropletIds, $userId);
+        });
+    }
+
+    private function fetchDroplets(array $dropletIds, ?string $userId = null): array
     {
         $droplets = [];
 
@@ -26,9 +42,13 @@ class DigitalOceanService
 
     public function getDroplet(int $dropletId, ?string $userId = null): array
     {
-        $data = $this->request('GET', '/droplets/' . $dropletId);
+        $cacheTtl = max(1, (int) config('services.digitalocean.droplet_cache_seconds', 20));
+        $cacheKey = 'digitalocean:droplet:' . $dropletId;
 
-        return $data['droplet'] ?? [];
+        return Cache::remember($cacheKey, now()->addSeconds($cacheTtl), function () use ($dropletId): array {
+            $data = $this->request('GET', '/droplets/' . $dropletId);
+            return $data['droplet'] ?? [];
+        });
     }
 
     public function performAction(int $dropletId, string $actionType, ?string $userId = null): array
@@ -37,14 +57,21 @@ class DigitalOceanService
             'type' => $actionType,
         ]);
 
+        Cache::forget('digitalocean:droplet:' . $dropletId);
+        Cache::forget('digitalocean:droplet-actions:' . $dropletId);
+
         return $data['action'] ?? [];
     }
 
     public function listActions(int $dropletId, ?string $userId = null): array
     {
-        $data = $this->request('GET', '/droplets/' . $dropletId . '/actions?per_page=20');
+        $cacheTtl = max(1, (int) config('services.digitalocean.actions_cache_seconds', 10));
+        $cacheKey = 'digitalocean:droplet-actions:' . $dropletId;
 
-        return $data['actions'] ?? [];
+        return Cache::remember($cacheKey, now()->addSeconds($cacheTtl), function () use ($dropletId): array {
+            $data = $this->request('GET', '/droplets/' . $dropletId . '/actions?per_page=20');
+            return $data['actions'] ?? [];
+        });
     }
 
     private function request(string $method, string $endpoint, array $payload = []): array
@@ -61,7 +88,10 @@ class DigitalOceanService
             'Authorization' => 'Bearer ' . $token,
             'Content-Type' => 'application/json',
             'X-Correlation-ID' => $correlationId,
-        ])->send($method, $baseUrl . $endpoint, [
+        ])
+            ->connectTimeout((float) config('services.digitalocean.connect_timeout_seconds', 3))
+            ->timeout((float) config('services.digitalocean.request_timeout_seconds', 10))
+            ->send($method, $baseUrl . $endpoint, [
             'json' => $payload,
         ]);
 

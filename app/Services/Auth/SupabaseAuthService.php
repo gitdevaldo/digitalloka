@@ -4,6 +4,7 @@ namespace App\Services\Auth;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -17,6 +18,18 @@ class SupabaseAuthService
             return null;
         }
 
+        $cacheKey = 'supabase:session-user:' . hash('sha256', $token);
+        $positiveCacheSeconds = max(5, (int) config('services.supabase.session_user_cache_seconds', 120));
+        $negativeCacheSeconds = max(5, (int) config('services.supabase.session_negative_cache_seconds', 30));
+        $cached = Cache::get($cacheKey);
+        if (is_string($cached)) {
+            return $cached !== '' ? $cached : null;
+        }
+
+        if ($cached === false) {
+            return null;
+        }
+
         $response = $this->supabaseClient([
             'apikey' => (string) config('services.supabase.anon_key'),
             'Authorization' => 'Bearer ' . $token,
@@ -26,7 +39,13 @@ class SupabaseAuthService
             $data = $response->json();
             $userId = $data['id'] ?? null;
 
-            return is_string($userId) && $userId !== '' ? $userId : null;
+            if (is_string($userId) && $userId !== '') {
+                Cache::put($cacheKey, $userId, now()->addSeconds($positiveCacheSeconds));
+                return $userId;
+            }
+
+            Cache::put($cacheKey, false, now()->addSeconds($negativeCacheSeconds));
+            return null;
         }
 
         Log::warning('supabase_auth_user_lookup_failed', [
@@ -35,6 +54,8 @@ class SupabaseAuthService
             'has_cookie_token' => is_string($request->cookie('sb-access-token')),
             'has_bearer_token' => is_string($request->bearerToken()),
         ]);
+
+        Cache::put($cacheKey, false, now()->addSeconds($negativeCacheSeconds));
 
         if ((bool) config('services.supabase.local_jwt_fallback', false)) {
             return $this->extractUserIdFromJwt($token);

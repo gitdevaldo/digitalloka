@@ -43,11 +43,18 @@ return [
         'http_verify_ssl' => env('SUPABASE_HTTP_VERIFY_SSL', env('APP_ENV') !== 'local'),
         'http_ca_bundle' => env('SUPABASE_HTTP_CA_BUNDLE'),
         'local_jwt_fallback' => env('SUPABASE_LOCAL_JWT_FALLBACK', env('APP_ENV') === 'local'),
+        'session_user_cache_seconds' => (int) env('SUPABASE_SESSION_USER_CACHE_SECONDS', 120),
+        'session_negative_cache_seconds' => (int) env('SUPABASE_SESSION_NEGATIVE_CACHE_SECONDS', 30),
     ],
 
     'digitalocean' => [
         'token' => env('DIGITALOCEAN_TOKEN'),
         'base_url' => env('DIGITALOCEAN_BASE_URL', 'https://api.digitalocean.com/v2'),
+        'request_timeout_seconds' => (float) env('DIGITALOCEAN_REQUEST_TIMEOUT_SECONDS', 10),
+        'connect_timeout_seconds' => (float) env('DIGITALOCEAN_CONNECT_TIMEOUT_SECONDS', 3),
+        'droplets_cache_seconds' => (int) env('DIGITALOCEAN_DROPLETS_CACHE_SECONDS', 20),
+        'droplet_cache_seconds' => (int) env('DIGITALOCEAN_DROPLET_CACHE_SECONDS', 20),
+        'actions_cache_seconds' => (int) env('DIGITALOCEAN_ACTIONS_CACHE_SECONDS', 10),
     ],
 
     'security' => [
