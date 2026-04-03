@@ -2,6 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const userId = await getSessionUserId();
+  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  const { id } = await params;
+  const admin = createSupabaseAdminClient();
+
+  const { data, error } = await admin
+    .from('products')
+    .select('*, category:product_categories(*), prices:product_prices(*)')
+    .eq('id', Number(id))
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 404 });
+  return NextResponse.json({ data });
+}
+
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getSessionUserId();
   if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -10,18 +27,60 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const body = await request.json();
   const admin = createSupabaseAdminClient();
 
+  let categoryId: number | null = null;
+
+  if (body.category_name?.trim()) {
+    const slug = body.category_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const { data: existing } = await admin.from('product_categories').select('id').eq('slug', slug).single();
+    if (existing) {
+      categoryId = existing.id;
+    } else {
+      const { data: created } = await admin.from('product_categories').insert({ name: body.category_name.trim(), slug }).select('id').single();
+      if (created) categoryId = created.id;
+    }
+  } else if (body.category_id) {
+    categoryId = Number(body.category_id);
+  }
+
   const updates: Record<string, unknown> = {};
   if (body.name !== undefined) updates.name = body.name;
   if (body.slug !== undefined) updates.slug = body.slug;
+  if (body.product_type !== undefined) updates.product_type = body.product_type;
   if (body.status !== undefined) updates.status = body.status;
-  if (body.is_visible !== undefined) updates.is_visible = body.is_visible;
+  if (body.catalog_visibility !== undefined) {
+    updates.catalog_visibility = body.catalog_visibility;
+    updates.is_visible = body.catalog_visibility !== 'hidden';
+  }
   if (body.short_description !== undefined) updates.short_description = body.short_description;
   if (body.description !== undefined) updates.description = body.description;
   if (body.featured !== undefined) updates.featured = body.featured;
   if (body.faq_items !== undefined) updates.faq_items = body.faq_items;
   if (body.meta !== undefined) updates.meta = body.meta;
+  if (categoryId !== null) updates.category_id = categoryId;
 
   const { data, error } = await admin.from('products').update(updates).eq('id', Number(id)).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 422 });
+
+  if (body.price_amount !== undefined && body.price_amount !== '') {
+    const amount = Number(body.price_amount);
+    const { data: existingPrices } = await admin.from('product_prices').select('id').eq('product_id', Number(id));
+    if (existingPrices && existingPrices.length > 0) {
+      await admin.from('product_prices').update({
+        amount,
+        currency: body.price_currency || 'USD',
+        name: body.price_name || 'Standard',
+        billing_period: body.price_billing_period || 'one-time',
+      }).eq('id', existingPrices[0].id);
+    } else if (amount > 0) {
+      await admin.from('product_prices').insert({
+        product_id: Number(id),
+        amount,
+        currency: body.price_currency || 'USD',
+        name: body.price_name || 'Standard',
+        billing_period: body.price_billing_period || 'one-time',
+      });
+    }
+  }
+
   return NextResponse.json({ data });
 }

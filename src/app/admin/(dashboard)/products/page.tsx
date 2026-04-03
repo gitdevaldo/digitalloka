@@ -1,24 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
 import { AdminTable } from '@/components/ui/admin-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Modal } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast';
 import { formatDate } from '@/lib/utils';
 
-const inputClass = "w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent";
-
 export default function AdminProductsPage() {
+  const router = useRouter();
   const [products, setProducts] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editProduct, setEditProduct] = useState<Record<string, unknown> | null>(null);
-  const [isCreate, setIsCreate] = useState(false);
-  const [saving, setSaving] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => { loadProducts(); }, []);
@@ -30,55 +26,6 @@ export default function AdminProductsPage() {
       setProducts(data.data || []);
     } catch { showToast('Failed to load products'); }
     finally { setLoading(false); }
-  }
-
-  function openCreate() {
-    setEditProduct({
-      name: '',
-      slug: '',
-      product_type: 'digital',
-      short_description: '',
-      status: 'available',
-    });
-    setIsCreate(true);
-  }
-
-  function openEdit(row: Record<string, unknown>) {
-    setEditProduct({ ...row });
-    setIsCreate(false);
-  }
-
-  function closeModal() {
-    setEditProduct(null);
-    setIsCreate(false);
-  }
-
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    if (!editProduct) return;
-    setSaving(true);
-    try {
-      const url = isCreate ? '/api/admin/products' : `/api/admin/products/${editProduct.id}`;
-      const method = isCreate ? 'POST' : 'PUT';
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editProduct),
-      });
-      const result = await res.json();
-      if (!res.ok) {
-        showToast(result.error || 'Failed to save');
-        return;
-      }
-      showToast(isCreate ? 'Product created' : 'Product updated');
-      closeModal();
-      loadProducts();
-    } catch { showToast('Save failed'); }
-    finally { setSaving(false); }
-  }
-
-  function autoSlug(name: string) {
-    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   }
 
   const columns = [
@@ -146,7 +93,7 @@ export default function AdminProductsPage() {
       label: 'Actions',
       render: (row: Record<string, unknown>) => (
         <div className="flex gap-1">
-          <Button size="sm" onClick={() => openEdit(row)}>Edit</Button>
+          <Button size="sm" onClick={() => router.push(`/admin/products/${row.id}/edit`)}>Edit</Button>
         </div>
       ),
     },
@@ -160,7 +107,10 @@ export default function AdminProductsPage() {
         actions={
           <div className="flex gap-2">
             <Button size="sm" onClick={loadProducts}>Refresh</Button>
-            <Button variant="accent" onClick={openCreate}>+ Create Product</Button>
+            <Button variant="accent" onClick={() => router.push('/admin/products/create')}>
+              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Create Product
+            </Button>
           </div>
         }
       />
@@ -186,81 +136,6 @@ export default function AdminProductsPage() {
           </div>
         </Panel>
       )}
-
-      <Modal open={!!editProduct} onClose={closeModal} title={isCreate ? 'Create Product' : `Edit: ${editProduct?.name || ''}`}>
-        {editProduct && (
-          <form onSubmit={handleSave} className="space-y-3">
-            <label className="block">
-              <span className="text-xs font-bold uppercase text-muted-foreground">Product Name</span>
-              <input
-                value={(editProduct.name as string) || ''}
-                onChange={(e) => {
-                  const name = e.target.value;
-                  const updates: Record<string, unknown> = { ...editProduct, name };
-                  if (isCreate) updates.slug = autoSlug(name);
-                  setEditProduct(updates);
-                }}
-                className={inputClass}
-                placeholder="e.g. NovaDash UI Kit"
-                required
-              />
-            </label>
-            <label className="block">
-              <span className="text-xs font-bold uppercase text-muted-foreground">Slug</span>
-              <input
-                value={(editProduct.slug as string) || ''}
-                onChange={(e) => setEditProduct({ ...editProduct, slug: e.target.value })}
-                className={inputClass}
-                placeholder="e.g. novadash-ui-kit"
-                required
-              />
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="text-xs font-bold uppercase text-muted-foreground">Type</span>
-                <select
-                  value={(editProduct.product_type as string) || 'digital'}
-                  onChange={(e) => setEditProduct({ ...editProduct, product_type: e.target.value })}
-                  className={inputClass}
-                >
-                  <option value="digital">digital</option>
-                  <option value="template">template</option>
-                  <option value="course">course</option>
-                  <option value="vps_droplet">vps_droplet</option>
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-xs font-bold uppercase text-muted-foreground">Status</span>
-                <select
-                  value={(editProduct.status as string) || 'available'}
-                  onChange={(e) => setEditProduct({ ...editProduct, status: e.target.value })}
-                  className={inputClass}
-                >
-                  <option value="available">Available</option>
-                  <option value="out-of-stock">Out of Stock</option>
-                  <option value="coming-soon">Coming Soon</option>
-                </select>
-              </label>
-            </div>
-            <label className="block">
-              <span className="text-xs font-bold uppercase text-muted-foreground">Short Description</span>
-              <textarea
-                value={(editProduct.short_description as string) || ''}
-                onChange={(e) => setEditProduct({ ...editProduct, short_description: e.target.value })}
-                className={inputClass}
-                rows={2}
-                placeholder="Brief product description..."
-              />
-            </label>
-            <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-border">
-              <Button type="submit" variant="accent" disabled={saving}>
-                {saving ? 'Saving...' : isCreate ? 'Create Product' : 'Save Changes'}
-              </Button>
-              <Button type="button" variant="ghost" onClick={closeModal}>Cancel</Button>
-            </div>
-          </form>
-        )}
-      </Modal>
     </div>
   );
 }
