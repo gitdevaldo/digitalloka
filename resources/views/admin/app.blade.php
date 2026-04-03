@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>DigitalLoka — Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet"/>
 <style>
 /* ============================================================ TOKENS */
 :root {
@@ -62,17 +63,6 @@ body::before{
 }
 .app.collapsed .topbar-brand{width:var(--sidebar-c);}
 
-.brand-logo{
-  display:flex;align-items:center;text-decoration:none;
-  font-family:var(--font-h);font-weight:900;font-size:1.05rem;letter-spacing:-0.03em;flex-shrink:0;
-}
-.brand-box{
-  background:var(--accent);color:#fff;
-  border:2px solid var(--foreground);
-  box-shadow:3px 3px 0 var(--shadow);
-  padding:3px 9px;border-radius:var(--r-sm);white-space:nowrap;
-}
-.brand-box .loka{color:var(--tertiary);}
 .admin-pill{
   background:rgba(244,114,182,0.12);border:2px solid var(--secondary);
   color:var(--secondary);font-size:0.6rem;font-weight:800;
@@ -331,6 +321,25 @@ body::before{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:12px;
+}
+
+.cp-details-editor{
+  min-height:180px;
+  background:var(--input);
+  border:2px solid var(--border);
+  border-radius:var(--r-sm);
+}
+
+.cp-details-editor .ql-toolbar.ql-snow{
+  border:none;
+  border-bottom:1px solid var(--border);
+  border-top-left-radius:var(--r-sm);
+  border-top-right-radius:var(--r-sm);
+}
+
+.cp-details-editor .ql-container.ql-snow{
+  border:none;
+  font-family:var(--font-b);
 }
 
 .psm-import-wrap .setting-input{
@@ -760,9 +769,43 @@ body::before{
         </select>
       </label>
 
+      <label style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-weight:700;font-size:0.8rem">Category</span>
+        <select id="cp-category-id" class="setting-select"></select>
+      </label>
+
+      <label style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-weight:700;font-size:0.8rem">Price Amount</span>
+        <input id="cp-price-amount" type="number" min="0" step="0.01" class="setting-input" placeholder="49.00" />
+      </label>
+
+      <label style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-weight:700;font-size:0.8rem">Price Currency</span>
+        <select id="cp-price-currency" class="setting-select">
+          <option value="USD">USD</option>
+          <option value="IDR">IDR</option>
+          <option value="EUR">EUR</option>
+        </select>
+      </label>
+
+      <label style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-weight:700;font-size:0.8rem">Price Name</span>
+        <input id="cp-price-name" class="setting-input" placeholder="Standard" />
+      </label>
+
+      <label style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-weight:700;font-size:0.8rem">Billing Period</span>
+        <input id="cp-price-billing-period" class="setting-input" placeholder="one-time / monthly" />
+      </label>
+
       <label style="display:flex;flex-direction:column;gap:6px;grid-column:1 / span 2">
-        <span style="font-weight:700;font-size:0.8rem">Short Description</span>
-        <textarea id="cp-short-description" class="setting-input" rows="4" placeholder="Optional short description"></textarea>
+        <span style="font-weight:700;font-size:0.8rem">Product Description</span>
+        <textarea id="cp-short-description" class="setting-input" rows="4" placeholder="Product description"></textarea>
+      </label>
+
+      <label style="display:flex;flex-direction:column;gap:6px;grid-column:1 / span 2">
+        <span style="font-weight:700;font-size:0.8rem">Product Details</span>
+        <div id="cp-details-editor" class="cp-details-editor"></div>
       </label>
 
       <label style="display:flex;flex-direction:column;gap:6px;grid-column:1 / span 2">
@@ -772,6 +815,13 @@ body::before{
           <option value="hidden">hidden</option>
         </select>
       </label>
+
+      <div style="grid-column:1 / span 2;border-top:1px solid var(--border);padding-top:10px">
+        <div style="font-family:var(--font-h);font-size:0.95rem;font-weight:800;margin-bottom:8px">Featured Highlights</div>
+        <p style="font-size:0.8rem;color:var(--muted-foreground);margin-bottom:12px">Displayed on product detail page spec grid (max 4 items)</p>
+        <div id="cp-featured-list" style="display:grid;gap:8px;margin-bottom:10px"></div>
+        <button type="button" class="btn btn-sm" onclick="addFeaturedItem()">Add Featured Item</button>
+      </div>
 
       <div style="grid-column:1 / span 2;border-top:1px solid var(--border);padding-top:10px">
         <div style="font-family:var(--font-h);font-size:0.95rem;font-weight:800;margin-bottom:8px">Type-Specific Fields</div>
@@ -1146,11 +1196,13 @@ body::before{
 <x-ui.toast id="toast" variant="admin" />
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
 
 <script>
 /* ============================================================ DATA */
 let DATA = {
   products:[],
+  categories:[],
   orders:[],
   users:[],
   entitlements:[],
@@ -1169,6 +1221,7 @@ let selectedStockProductId = null;
 let productFormMode = 'create';
 let editingProductId = null;
 let actionModalResolver = null;
+let productDetailsEditor = null;
 
 const API = {
   bootstrap: '/api/admin/bootstrap?per_page=100',
@@ -1220,12 +1273,29 @@ function mapProducts(payload){
     type: p.product_type || 'digital',
     status: p.status || 'available',
     shortDescription: p.short_description || '',
+    description: p.description || '',
     cat: p.category?.name || 'General',
+    categoryId: p.category?.id ?? null,
     visible: Boolean(p.is_visible),
     stockHeaders: Array.isArray(p?.meta?.stock_headers) ? p.meta.stock_headers : [],
-    price: p.prices_count ? `${p.prices_count} prices` : '—',
+    meta: (p.meta && typeof p.meta === 'object') ? p.meta : {},
+    featured: Array.isArray(p.featured) ? p.featured : [],
+    defaultPriceAmount: Array.isArray(p.prices) && p.prices[0] ? Number(p.prices[0].amount || 0) : null,
+    defaultPriceCurrency: Array.isArray(p.prices) && p.prices[0] ? String(p.prices[0].currency || 'USD') : 'USD',
+    defaultPriceName: Array.isArray(p.prices) && p.prices[0] ? String(p.prices[0].name || 'Standard') : 'Standard',
+    defaultPriceBillingPeriod: Array.isArray(p.prices) && p.prices[0] ? String(p.prices[0].billing_period || '') : '',
+    price: Array.isArray(p.prices) && p.prices[0] ? `${p.prices[0].currency} ${Number(p.prices[0].amount || 0).toFixed(2)}` : (p.prices_count ? `${p.prices_count} prices` : '—'),
     updated: fmtDate(p.updated_at || p.created_at),
   }));
+}
+
+function mapCategories(payload){
+  const rows = Array.isArray(payload) ? payload : [];
+  return rows.map((item) => ({
+    id: Number(item.id || 0),
+    name: String(item.name || ''),
+    slug: String(item.slug || ''),
+  })).filter((item) => item.id > 0 && item.name !== '');
 }
 
 function mapOrders(payload){
@@ -1341,6 +1411,7 @@ async function loadHeavyDataOnce(){
     DATA.users = mapUsers(payload?.users || {});
     DATA.droplets = mapDroplets(payload?.droplets || {});
     DATA.audit = mapAudit(payload?.audit || {});
+    DATA.categories = mapCategories(payload?.categories || []);
     applySettings(payload?.settings?.settings || {});
     applyProductTypesPayload(payload?.product_types || {});
   } catch (error) {
@@ -1377,6 +1448,7 @@ async function loadHeavyDataOnce(){
   renderOverview();
   renderSidebarSignals();
   renderProductTypesPage();
+  renderProductCategoryOptions();
   syncCreateProductTypeOptions();
   renderProductStockProducts();
   updateProductStockManagementPanel();
@@ -1420,6 +1492,73 @@ function syncCreateProductTypeOptions(){
   }
 
   renderCreateProductTypeFields(select.value);
+}
+
+function renderProductCategoryOptions(selectedId = null){
+  const select = document.getElementById('cp-category-id');
+  if(!select){
+    return;
+  }
+
+  const selectedValue = selectedId ?? select.value;
+  const options = ['<option value="">Uncategorized</option>']
+    .concat(DATA.categories.map((category) => `<option value="${category.id}">${escapeHtmlAttr(category.name)}</option>`));
+
+  select.innerHTML = options.join('');
+  if(selectedValue !== null && selectedValue !== undefined && selectedValue !== ''){
+    select.value = String(selectedValue);
+  }
+}
+
+function ensureProductDetailsEditor(){
+  if(productDetailsEditor){
+    return productDetailsEditor;
+  }
+
+  const editorEl = document.getElementById('cp-details-editor');
+  if(!editorEl || typeof Quill === 'undefined'){
+    return null;
+  }
+
+  productDetailsEditor = new Quill('#cp-details-editor', {
+    theme: 'snow',
+    placeholder: 'Write long product details here...',
+    modules: {
+      toolbar: [
+        [{ header: [2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        ['link', 'blockquote', 'code-block'],
+        ['clean']
+      ],
+    },
+  });
+
+  return productDetailsEditor;
+}
+
+function setProductDetailsValue(value){
+  const editor = ensureProductDetailsEditor();
+  if(!editor){
+    return;
+  }
+
+  const html = String(value || '').trim();
+  editor.root.innerHTML = html !== '' ? html : '<p><br></p>';
+}
+
+function getProductDetailsValue(){
+  const editor = ensureProductDetailsEditor();
+  if(!editor){
+    return '';
+  }
+
+  const text = editor.getText().trim();
+  if(text === ''){
+    return '';
+  }
+
+  return editor.root.innerHTML;
 }
 
 function renderCreateProductTypeFields(typeKey){
@@ -2855,6 +2994,18 @@ function createProduct(){
     form.reset();
   }
 
+  renderProductCategoryOptions();
+  setProductDetailsValue('');
+
+  const priceAmountField = document.getElementById('cp-price-amount');
+  const priceCurrencyField = document.getElementById('cp-price-currency');
+  const priceNameField = document.getElementById('cp-price-name');
+  const priceBillingPeriodField = document.getElementById('cp-price-billing-period');
+  if(priceAmountField) priceAmountField.value = '';
+  if(priceCurrencyField) priceCurrencyField.value = 'USD';
+  if(priceNameField) priceNameField.value = 'Standard';
+  if(priceBillingPeriodField) priceBillingPeriodField.value = '';
+
   productFormMode = 'create';
   editingProductId = null;
   const submitButton = document.getElementById('cp-submit');
@@ -2895,6 +3046,10 @@ function openProductFormForEdit(product){
   const typeField = document.getElementById('cp-type');
   const statusField = document.getElementById('cp-status');
   const descField = document.getElementById('cp-short-description');
+  const priceAmountField = document.getElementById('cp-price-amount');
+  const priceCurrencyField = document.getElementById('cp-price-currency');
+  const priceNameField = document.getElementById('cp-price-name');
+  const priceBillingPeriodField = document.getElementById('cp-price-billing-period');
   const visibleField = document.getElementById('cp-visible');
   const submitButton = document.getElementById('cp-submit');
 
@@ -2903,7 +3058,13 @@ function openProductFormForEdit(product){
   if(typeField) typeField.value = product.type || 'digital';
   if(statusField) statusField.value = product.status || 'available';
   if(descField) descField.value = product.shortDescription || '';
+  renderProductCategoryOptions(product.categoryId);
+  if(priceAmountField) priceAmountField.value = product.defaultPriceAmount !== null && product.defaultPriceAmount !== undefined ? String(product.defaultPriceAmount) : '';
+  if(priceCurrencyField) priceCurrencyField.value = product.defaultPriceCurrency || 'USD';
+  if(priceNameField) priceNameField.value = product.defaultPriceName || 'Standard';
+  if(priceBillingPeriodField) priceBillingPeriodField.value = product.defaultPriceBillingPeriod || '';
   if(visibleField) visibleField.value = product.visible ? 'visible' : 'hidden';
+  setProductDetailsValue(product.description || '');
 
   renderCreateProductTypeFields(product.type || 'digital');
 
@@ -2922,6 +3083,9 @@ function openProductFormForEdit(product){
     }
   });
 
+  const featured = Array.isArray(product.featured) ? product.featured : [];
+  renderFeaturedItems(featured);
+
   if(submitButton){
     submitButton.textContent = 'Update Product';
   }
@@ -2936,7 +3100,13 @@ async function submitCreateProduct(event){
   const slugInput = document.getElementById('cp-slug');
   const type = (document.getElementById('cp-type')?.value || 'digital').trim();
   const status = (document.getElementById('cp-status')?.value || 'available').trim();
+  const categoryIdRaw = (document.getElementById('cp-category-id')?.value || '').trim();
+  const priceAmountRaw = (document.getElementById('cp-price-amount')?.value || '').trim();
+  const priceCurrency = (document.getElementById('cp-price-currency')?.value || 'USD').trim().toUpperCase();
+  const priceName = (document.getElementById('cp-price-name')?.value || 'Standard').trim();
+  const priceBillingPeriod = (document.getElementById('cp-price-billing-period')?.value || '').trim();
   const shortDescription = (document.getElementById('cp-short-description')?.value || '').trim();
+  const detailsDescription = getProductDetailsValue();
   const isVisible = (document.getElementById('cp-visible')?.value || 'visible') === 'visible';
   const meta = collectTypeMetaFields();
   const payloadMeta = Object.keys(meta).length > 0 ? meta : undefined;
@@ -2957,6 +3127,18 @@ async function submitCreateProduct(event){
     slugInput.value = slug;
   }
 
+  const categoryId = categoryIdRaw !== '' ? Number(categoryIdRaw) : null;
+  if(categoryIdRaw !== '' && Number.isNaN(categoryId)){
+    showToast('⚠️ Invalid category value.','fail');
+    return;
+  }
+
+  const priceAmount = priceAmountRaw !== '' ? Number(priceAmountRaw) : null;
+  if(priceAmountRaw !== '' && (Number.isNaN(priceAmount) || priceAmount < 0)){
+    showToast('⚠️ Price amount must be a valid non-negative number.','fail');
+    return;
+  }
+
   if(submitButton){
     submitButton.disabled = true;
   }
@@ -2965,6 +3147,7 @@ async function submitCreateProduct(event){
     const isEditMode = productFormMode === 'edit' && editingProductId;
     const endpoint = isEditMode ? `/api/admin/products/${editingProductId}` : '/api/admin/products';
     const method = isEditMode ? 'PUT' : 'POST';
+    const featured = getFeaturedItems().filter(f => f.label && f.value);
 
     await requestJson(endpoint, {
       method,
@@ -2973,8 +3156,15 @@ async function submitCreateProduct(event){
         slug,
         product_type: type,
         status,
+        category_id: categoryId,
+        price_amount: priceAmount,
+        price_currency: priceCurrency || 'USD',
+        price_name: priceName || 'Standard',
+        price_billing_period: priceBillingPeriod || null,
         short_description: shortDescription || null,
+        description: detailsDescription || null,
         is_visible: isVisible,
+        featured: featured.length ? featured : null,
         meta: payloadMeta,
       }),
     });
@@ -2984,6 +3174,7 @@ async function submitCreateProduct(event){
     showToast(isEditMode ? '✅ Product updated.' : '✅ Product created.','ok');
     productFormMode = 'create';
     editingProductId = null;
+    renderFeaturedItems([]);
     if(submitButton){
       submitButton.textContent = 'Create Product';
     }
@@ -3003,6 +3194,62 @@ function slugify(text){
     .trim()
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-');
+}
+
+/* ============================================================ FEATURED ITEMS */
+function renderFeaturedItems(items){
+  const container = document.getElementById('cp-featured-list');
+  if(!container) return;
+  container.innerHTML = items.map((item, i) => `
+    <div class="featured-row" data-index="${i}" style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end;padding:10px;background:var(--muted);border-radius:var(--r-sm)">
+      <label style="display:flex;flex-direction:column;gap:4px">
+        <span style="font-size:0.7rem;color:var(--muted-foreground)">Label</span>
+        <input class="setting-input feat-label" value="${escapeAttr(item.label || '')}" placeholder="e.g. Type" style="padding:8px"/>
+      </label>
+      <label style="display:flex;flex-direction:column;gap:4px">
+        <span style="font-size:0.7rem;color:var(--muted-foreground)">Value</span>
+        <input class="setting-input feat-value" value="${escapeAttr(item.value || '')}" placeholder="e.g. Account" style="padding:8px"/>
+      </label>
+      <label style="display:flex;flex-direction:column;gap:4px">
+        <span style="font-size:0.7rem;color:var(--muted-foreground)">Sub</span>
+        <input class="setting-input feat-sub" value="${escapeAttr(item.sub || '')}" placeholder="e.g. Digital" style="padding:8px"/>
+      </label>
+      <button type="button" class="btn btn-sm" style="background:var(--secondary)" onclick="removeFeaturedItem(${i})">Remove</button>
+    </div>
+  `).join('');
+}
+
+function addFeaturedItem(){
+  const items = getFeaturedItems();
+  if(items.length >= 4){
+    showToast('⚠️ Maximum 4 featured items allowed.','fail');
+    return;
+  }
+  items.push({ label: '', value: '', sub: '' });
+  renderFeaturedItems(items);
+}
+
+function removeFeaturedItem(index){
+  const items = getFeaturedItems();
+  items.splice(index, 1);
+  renderFeaturedItems(items);
+}
+
+function getFeaturedItems(){
+  const items = [];
+  document.querySelectorAll('#cp-featured-list .featured-row').forEach(el => {
+    items.push({
+      label: (el.querySelector('.feat-label')?.value || '').trim(),
+      value: (el.querySelector('.feat-value')?.value || '').trim(),
+      sub: (el.querySelector('.feat-sub')?.value || '').trim()
+    });
+  });
+  return items;
+}
+
+function escapeAttr(str){
+  if(!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 /* ============================================================ MODAL */
