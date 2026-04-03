@@ -96,14 +96,23 @@ function getOrigin(request: NextRequest): string {
   return 'http://localhost:5000';
 }
 
+function getRedirectTarget(request: NextRequest): string {
+  const cookieRedirect = request.cookies.get('auth-redirect')?.value;
+  if (cookieRedirect && cookieRedirect.startsWith('/')) return cookieRedirect;
+
+  const url = new URL(request.url);
+  const next = url.searchParams.get('next');
+  if (next && next.startsWith('/')) return next;
+
+  const mode = url.searchParams.get('mode') || 'user';
+  return mode === 'admin' ? '/admin' : '/dashboard';
+}
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const origin = getOrigin(request);
   const code = requestUrl.searchParams.get('code');
-  const mode = requestUrl.searchParams.get('mode') || 'user';
-  const next = requestUrl.searchParams.get('next') || '';
-  const fallback = mode === 'admin' ? '/admin' : '/dashboard';
-  const redirectTarget = next && next.startsWith('/') ? next : fallback;
+  const redirectTarget = getRedirectTarget(request);
 
   if (code) {
     const supabase = await createSupabaseServerClient();
@@ -114,11 +123,15 @@ export async function GET(request: NextRequest) {
       if (user) {
         await syncUserToTable(user.id, user.email ?? '');
       }
-      return NextResponse.redirect(new URL(redirectTarget, origin));
+      const response = NextResponse.redirect(new URL(redirectTarget, origin));
+      response.cookies.delete('auth-redirect');
+      return response;
     }
 
     return NextResponse.redirect(new URL('/login?error=auth_failed', origin));
   }
 
+  const mode = requestUrl.searchParams.get('mode') || 'user';
+  const next = requestUrl.searchParams.get('next') || '';
   return hashFragmentHtml(mode, next);
 }

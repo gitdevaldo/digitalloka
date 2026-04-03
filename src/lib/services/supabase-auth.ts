@@ -1,4 +1,5 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
 
 export async function getSessionUserId(): Promise<string | null> {
   const supabase = await createSupabaseServerClient();
@@ -16,6 +17,16 @@ export async function startMagicLinkLogin(email: string, nextPath?: string, mode
   const params = new URLSearchParams({ mode });
   if (nextPath?.startsWith('/')) params.set('next', nextPath);
   const redirectTo = `${baseUrl}/auth/callback?${params.toString()}`;
+
+  const cookieStore = await cookies();
+  const redirectTarget = (nextPath?.startsWith('/')) ? nextPath : (mode === 'admin' ? '/admin' : '/dashboard');
+  cookieStore.set('auth-redirect', redirectTarget, {
+    path: '/',
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax',
+    maxAge: 600,
+  });
 
   const { error } = await supabase.auth.signInWithOtp({
     email,
