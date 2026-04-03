@@ -182,8 +182,9 @@ export default function ProductDetailClient({ product }: { product: ProductData 
                 </>
               ) : (
                 <>
-                  <a className="btn btn-accent btn-lg btn-full" href="#">Add to wishlist</a>
-                  <a className="btn btn-ghost btn-full" href="/">Back to catalog</a>
+                  <button className="btn btn-accent btn-lg btn-full">Buy Now</button>
+                  <button className="btn btn-ghost btn-full">Add to wishlist</button>
+                  <a className="btn btn-ghost btn-full" href="/" style={{ fontSize: '0.78rem' }}>Back to catalog</a>
                 </>
               )}
             </div>
