@@ -22,6 +22,8 @@ class Product extends Model
         'tags',
         'badges',
         'faq_items',
+        'featured',
+        'meta',
     ];
 
     protected $casts = [
@@ -31,6 +33,8 @@ class Product extends Model
         'tags' => 'array',
         'badges' => 'array',
         'faq_items' => 'array',
+        'featured' => 'array',
+        'meta' => 'array',
     ];
 
     public function category(): BelongsTo
@@ -51,5 +55,15 @@ class Product extends Model
     public function entitlements(): HasMany
     {
         return $this->hasMany(Entitlement::class, 'product_id');
+    }
+
+    public function stockItems(): HasMany
+    {
+        return $this->hasMany(ProductStockItem::class, 'product_id');
+    }
+
+    public function wishlistItems(): HasMany
+    {
+        return $this->hasMany(WishlistItem::class, 'product_id');
     }
 }

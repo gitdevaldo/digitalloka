@@ -36,6 +36,7 @@ class CatalogPageController extends Controller
         $billingPeriod = $price['billing_period'] ?? 'one-time';
 
         $meta = is_array($productArray['meta'] ?? null) ? $productArray['meta'] : [];
+        $featured = is_array($productArray['featured'] ?? null) ? $productArray['featured'] : [];
 
         $viewData = [
             'product' => $productArray,
@@ -46,6 +47,7 @@ class CatalogPageController extends Controller
             'formattedAmount' => $formattedAmount,
             'billingPeriod' => $billingPeriod,
             'meta' => $meta,
+            'featured' => $featured,
             'status' => $this->formatStatus($productArray['status'] ?? ''),
             'category' => $productArray['category']['name'] ?? 'Product',
             'productType' => str_replace('_', ' ', $productArray['product_type'] ?? 'Digital Product'),

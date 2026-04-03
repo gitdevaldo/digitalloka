@@ -26,51 +26,35 @@
       {{ $product['short_description'] ?? 'A digital product with instant delivery and clear lifecycle management. Purchase securely and access immediately from your dashboard.' }}
     </p>
 
-    <!-- Spec strip -->
+    <!-- Spec strip - dynamic from featured field -->
+    @if(!empty($featured))
     <div class="spec-grid">
-      <div class="spec-cell">
-        <div class="spec-label">Delivery</div>
-        <div class="spec-value">Instant</div>
-        <div class="spec-sub">After checkout</div>
+      @foreach(array_slice($featured, 0, 4) as $index => $item)
+      <div class="spec-cell"@if($index === 3) style="border-right:none"@endif>
+        <div class="spec-label">{{ $item['label'] ?? '' }}</div>
+        <div class="spec-value">{{ $item['value'] ?? '' }}</div>
+        <div class="spec-sub">{{ $item['sub'] ?? '' }}</div>
       </div>
-      <div class="spec-cell">
-        <div class="spec-label">Access</div>
-        <div class="spec-value">Dashboard</div>
-        <div class="spec-sub">Web portal</div>
-      </div>
-      <div class="spec-cell">
-        <div class="spec-label">Billing</div>
-        <div class="spec-value">{{ ucfirst($billingPeriod) }}</div>
-        <div class="spec-sub">Recurring</div>
-      </div>
-      <div class="spec-cell" style="border-right:none">
-        <div class="spec-label">Security</div>
-        <div class="spec-value">Encrypted</div>
-        <div class="spec-sub">Credential storage</div>
-      </div>
+      @endforeach
     </div>
+    @endif
 
     <!-- What's included -->
     <div class="includes-title">What you get with your purchase</div>
     <div class="checklist">
       <div class="check-item">
-        <div class="check-icon" style="background:var(--quaternary)">✓</div>
         Instant delivery after checkout — access from your dashboard immediately
       </div>
       <div class="check-item">
-        <div class="check-icon" style="background:var(--quaternary)">✓</div>
         Clear ownership and entitlement tracking in your account
       </div>
       <div class="check-item">
-        <div class="check-icon" style="background:var(--quaternary)">✓</div>
         Status and renewal information always visible
       </div>
       <div class="check-item">
-        <div class="check-icon" style="background:var(--quaternary)">✓</div>
         Secure credential handling and storage
       </div>
       <div class="check-item">
-        <div class="check-icon" style="background:var(--quaternary)">✓</div>
         Customer support included for product lifecycle
       </div>
     </div>
@@ -78,21 +62,6 @@
 
   <!-- RIGHT: PURCHASE CARD -->
   <div class="purchase-card">
-
-    <!-- Digital product visual - geometric pattern -->
-    <div class="digital-visual">
-      <div class="digital-pattern">
-        <div class="pattern-row">
-          <div class="pattern-block" style="background:var(--accent)"></div>
-          <div class="pattern-block" style="background:var(--tertiary)"></div>
-        </div>
-        <div class="pattern-row">
-          <div class="pattern-block" style="background:var(--quaternary)"></div>
-          <div class="pattern-block" style="background:var(--secondary)"></div>
-        </div>
-      </div>
-      <div class="product-type-label">{{ $productType }}</div>
-    </div>
 
     <div class="card-body">
       <div class="price-area">
@@ -105,70 +74,30 @@
 
       <div class="card-cta-stack">
         <a class="btn btn-accent btn-lg btn-full" href="/wishlist">
-          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
           Add to wishlist
         </a>
         <a class="btn btn-ghost btn-full" href="/">
-          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
           Back to catalog
         </a>
       </div>
 
       <div class="card-specs">
         <div class="card-spec-row">
-          <span class="cs-key">
-            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Setup time
-          </span>
+          <span class="cs-key">Setup time</span>
           <span class="cs-val">Instant</span>
         </div>
         <div class="card-spec-row">
-          <span class="cs-key">
-            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            Contract
-          </span>
+          <span class="cs-key">Contract</span>
           <span class="cs-val">No lock-in</span>
         </div>
         <div class="card-spec-row">
-          <span class="cs-key">
-            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-            Renewal
-          </span>
+          <span class="cs-key">Renewal</span>
           <span class="cs-val">Auto-renews</span>
         </div>
       </div>
     </div>
   </div>
 
-</section>
-
-<!-- ── PRODUCT HIGHLIGHTS ──────────────────────────────── -->
-<div class="divider"></div>
-<section class="features-section">
-  <div class="section-hd">
-    <div class="section-title">Product highlights</div>
-    <div class="section-sub">Core capabilities and what you can expect</div>
-  </div>
-  <div class="features-grid">
-    <div class="feature-card">
-      <div class="feat-icon" style="background:rgba(139,92,246,0.1)">⚡</div>
-      <div class="feat-title">Instant delivery</div>
-      <div class="feat-desc">Your product is activated immediately after checkout. No waiting — access it directly from your DigitalLoka dashboard.</div>
-      <div class="feat-deco" style="color:var(--accent)"></div>
-    </div>
-    <div class="feature-card">
-      <div class="feat-icon" style="background:rgba(52,211,153,0.12)">🔒</div>
-      <div class="feat-title">Secure storage</div>
-      <div class="feat-desc">All credentials and access details are stored securely. View them anytime from your account with proper authentication.</div>
-      <div class="feat-deco" style="color:var(--quaternary)"></div>
-    </div>
-    <div class="feature-card">
-      <div class="feat-icon" style="background:rgba(251,191,36,0.15)">📊</div>
-      <div class="feat-title">Usage tracking</div>
-      <div class="feat-desc">Monitor your product status, renewal dates, and any usage metrics directly from your dashboard.</div>
-      <div class="feat-deco" style="color:var(--tertiary)"></div>
-    </div>
-  </div>
 </section>
 
 <!-- ── PRODUCT DESCRIPTION ──────────────────────────────── -->

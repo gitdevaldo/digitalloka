@@ -1,5 +1,36 @@
 # Change Log
 
+## 2026-04-03 04:20
+- Short description: Added featured field and removed all icons from digital product template
+- What you do:
+  - Added `featured` JSON field to products table via migration
+  - Updated Product model to include `featured` in fillable and casts
+  - Updated CatalogPageController to pass featured data to view
+  - Modified spec-grid to render dynamic data from featured field instead of hardcoded values
+  - Removed geometric pattern visual (colored blocks) from purchase card
+  - Removed all emoji icons (⚡🔒📊) from product highlights section
+  - Removed entire product highlights section (was using emojis)
+  - Removed SVG icons from buttons and card specs
+  - Removed checkmark icons from checklist items
+- File path that changes:
+  - `database/migrations/2026_04_03_041907_add_featured_to_products_table.php` (new)
+  - `app/Models/Product.php`
+  - `app/Http/Controllers/Web/CatalogPageController.php`
+  - `resources/views/catalog/partials/product-digital.blade.php`
+  - `docs/log/log-changes.md`
+
+## 2026-04-03 04:10
+- Short description: Fixed digital product template - removed duplicates and emoji
+- What you do:
+  - Replaced duplicate spec grid (Category/Type/Status/Support) with useful info (Delivery/Access/Billing/Security)
+  - Removed emoji icons from purchase card visual
+  - Added geometric pattern blocks as visual element instead of emoji
+  - Simplified card specs to avoid repeating information shown elsewhere
+- File path that changes:
+  - `resources/views/catalog/show.blade.php`
+  - `resources/views/catalog/partials/product-digital.blade.php`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-03 03:55
 - Short description: Rewrote product detail page with server-rendered Blade templates
 - What you do:
