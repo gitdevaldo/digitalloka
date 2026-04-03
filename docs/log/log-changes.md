@@ -1,5 +1,20 @@
 # Change Log
 
+## 2026-04-03 04:45
+- Short description: Fixed admin product edit URL, reduced product page load latency, and removed stale UI refresh behavior
+- What you do:
+  - Added dedicated admin edit route `/admin/products/{id}/edit` and wired it to a new `productEdit` page initializer.
+  - Updated admin SPA navigation and startup flow so edit mode uses `/admin/products/{id}/edit` instead of `/admin/products/create`.
+  - Refactored heavy bootstrap loading with promise memoization and page-scoped refresh logic to avoid repeated full-data fetches.
+  - Removed droplet API fetch from bootstrap response path and made droplets load lazily only when the droplets page is opened.
+  - Added lightweight product refresh flow (`refreshProducts`) used after create/edit/visibility toggle so product list updates immediately without manual page reload.
+  - Updated stock/product helpers to keep category/select/product-stock panels in sync after product refresh.
+- File path that changes:
+  - `app/Http/Controllers/Web/AdminPageController.php`
+  - `routes/web.php`
+  - `resources/views/admin/app.blade.php`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-03 04:20
 - Short description: Added featured field and removed all icons from digital product template
 - What you do:

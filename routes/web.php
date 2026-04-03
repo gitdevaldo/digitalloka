@@ -22,11 +22,19 @@ Route::middleware('supabase.auth')->group(function (): void {
 	Route::get('/dashboard/orders', [DashboardPageController::class, 'orders']);
 	Route::get('/dashboard/account', [DashboardPageController::class, 'account']);
 	Route::get('/dashboard/support', [DashboardPageController::class, 'support']);
+	Route::view('/wishlist', 'catalog.wishlist');
 });
 
 Route::middleware('supabase.admin')->group(function (): void {
 	Route::get('/admin', [AdminPageController::class, 'overview']);
 	Route::get('/admin/products', [AdminPageController::class, 'products']);
+	Route::get('/admin/products/create', [AdminPageController::class, 'productCreate']);
+	Route::get('/admin/products/{id}/edit', [AdminPageController::class, 'productEdit']);
+	Route::get('/admin/product-stocks', [AdminPageController::class, 'productStocks']);
+	Route::get('/admin/products/{id}/stocks', [AdminPageController::class, 'productStocksByProduct']);
+	Route::get('/admin/product-types', [AdminPageController::class, 'productTypes']);
+	Route::get('/admin/product-types/create', [AdminPageController::class, 'productTypeCreate']);
+	Route::get('/admin/product-types/{type}/edit', [AdminPageController::class, 'productTypeEdit']);
 	Route::get('/admin/users', [AdminPageController::class, 'users']);
 	Route::get('/admin/orders', [AdminPageController::class, 'orders']);
 	Route::get('/admin/entitlements', [AdminPageController::class, 'entitlements']);

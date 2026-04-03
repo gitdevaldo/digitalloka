@@ -17,6 +17,57 @@ class AdminPageController extends Controller
         return view('admin.app', ['initialPage' => 'products']);
     }
 
+    public function productCreate(): View
+    {
+        return view('admin.app', ['initialPage' => 'product-create']);
+    }
+
+    public function productEdit(string $id): View
+    {
+        $productId = filter_var($id, FILTER_VALIDATE_INT);
+
+        return view('admin.app', [
+            'initialPage' => 'product-edit',
+            'initialProductEditId' => $productId !== false ? (int) $productId : null,
+        ]);
+    }
+
+    public function productTypes(): View
+    {
+        return view('admin.app', ['initialPage' => 'product-types']);
+    }
+
+    public function productStocks(): View
+    {
+        return view('admin.app', ['initialPage' => 'product-stocks']);
+    }
+
+    public function productStocksByProduct(string $id): View
+    {
+        $productId = filter_var($id, FILTER_VALIDATE_INT);
+
+        return view('admin.app', [
+            'initialPage' => 'product-stocks',
+            'initialStockProductId' => $productId !== false ? (int) $productId : null,
+        ]);
+    }
+
+    public function productTypeCreate(): View
+    {
+        return view('admin.app', [
+            'initialPage' => 'product-type-editor',
+            'initialProductType' => null,
+        ]);
+    }
+
+    public function productTypeEdit(string $type): View
+    {
+        return view('admin.app', [
+            'initialPage' => 'product-type-editor',
+            'initialProductType' => $type,
+        ]);
+    }
+
     public function users(): View
     {
         return view('admin.app', ['initialPage' => 'users']);

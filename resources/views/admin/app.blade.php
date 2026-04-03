@@ -555,6 +555,7 @@ body::before{
   $initialPageValue = $initialPage ?? 'overview';
   $initialProductTypeValue = $initialProductType ?? null;
   $initialStockProductIdValue = $initialStockProductId ?? null;
+  $initialProductEditIdValue = $initialProductEditId ?? null;
 @endphp
 
 <!-- ============================================================ TOPBAR -->
@@ -1207,6 +1208,7 @@ let DATA = {
   users:[],
   entitlements:[],
   droplets:[],
+  dropletsLazy:false,
   audit:[],
   productTypes:[],
   productStocks:[]
@@ -1217,11 +1219,13 @@ let productTypeDraftFields = [];
 let productTypeEditorMode = 'create';
 let hasLoadedHeavyData = false;
 let isLoadingHeavyData = false;
+let loadHeavyDataPromise = null;
 let selectedStockProductId = null;
 let productFormMode = 'create';
 let editingProductId = null;
 let actionModalResolver = null;
 let productDetailsEditor = null;
+let isDropletsLoading = false;
 
 const API = {
   bootstrap: '/api/admin/bootstrap?per_page=100',
@@ -1287,6 +1291,23 @@ function mapProducts(payload){
     price: Array.isArray(p.prices) && p.prices[0] ? `${p.prices[0].currency} ${Number(p.prices[0].amount || 0).toFixed(2)}` : (p.prices_count ? `${p.prices_count} prices` : '—'),
     updated: fmtDate(p.updated_at || p.created_at),
   }));
+}
+
+function deriveCategoriesFromProducts(){
+  const categories = new Map();
+  DATA.products.forEach((product) => {
+    const categoryId = Number(product.categoryId || 0);
+    const categoryName = String(product.cat || '').trim();
+    if(categoryId <= 0 || categoryName === ''){
+      return;
+    }
+    categories.set(String(categoryId), {
+      id: categoryId,
+      name: categoryName,
+      slug: '',
+    });
+  });
+  DATA.categories = Array.from(categories.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function mapCategories(payload){
@@ -1393,81 +1414,181 @@ async function prefetchProductTypesFast(){
 }
 
 function pageNeedsHeavyData(page){
-  return !['product-types', 'product-type-editor', 'product-create'].includes(page);
+  return ['overview', 'orders', 'users', 'entitlements', 'droplets', 'audit', 'settings'].includes(page);
 }
 
 async function loadHeavyDataOnce(){
-  if(hasLoadedHeavyData || isLoadingHeavyData){
+  if(hasLoadedHeavyData){
     return;
+  }
+  if(loadHeavyDataPromise){
+    return loadHeavyDataPromise;
   }
 
   isLoadingHeavyData = true;
+  loadHeavyDataPromise = (async () => {
+    try {
+      const payload = await fetchJson(API.bootstrap);
+      DATA.products = mapProducts(payload?.products || {});
+      deriveCategoriesFromProducts();
+      DATA.orders = mapOrders(payload?.orders || {});
+      DATA.entitlements = mapEntitlements(payload?.entitlements || {});
+      DATA.users = mapUsers(payload?.users || {});
+      DATA.droplets = payload?.droplets?.lazy ? [] : mapDroplets(payload?.droplets || {});
+      DATA.dropletsLazy = Boolean(payload?.droplets?.lazy);
+      DATA.audit = mapAudit(payload?.audit || {});
+      const backendCategories = mapCategories(payload?.categories || []);
+      if(backendCategories.length > 0){
+        DATA.categories = backendCategories;
+      }
+      applySettings(payload?.settings?.settings || {});
+      applyProductTypesPayload(payload?.product_types || {});
+    } catch (error) {
+      const results = await Promise.allSettled([
+        fetchJson(API.products),
+        fetchJson(API.orders),
+        fetchJson(API.users),
+        fetchJson(API.entitlements),
+        fetchJson(API.audit),
+        fetchJson(API.settings),
+        fetchJson(API.productTypes),
+      ]);
+
+      if(results[0].status === 'fulfilled'){
+        DATA.products = mapProducts(results[0].value);
+        deriveCategoriesFromProducts();
+      }
+      if(results[1].status === 'fulfilled'){ DATA.orders = mapOrders(results[1].value); }
+      if(results[3].status === 'fulfilled'){ DATA.entitlements = mapEntitlements(results[3].value); }
+      if(results[2].status === 'fulfilled'){ DATA.users = mapUsers(results[2].value); }
+      if(results[4].status === 'fulfilled'){ DATA.audit = mapAudit(results[4].value); }
+      if(results[5].status === 'fulfilled'){ applySettings(results[5].value?.settings || {}); }
+      if(results[6].status === 'fulfilled'){ applyProductTypesPayload(results[6].value || {}); }
+      DATA.droplets = [];
+      DATA.dropletsLazy = true;
+    }
+
+    hasLoadedHeavyData = true;
+    renderProducts();
+    renderOrders();
+    renderUsers();
+    renderEntitlements();
+    renderDroplets();
+    renderAudit();
+    renderOverview();
+    renderSidebarSignals();
+    renderProductTypesPage();
+    renderProductCategoryOptions();
+    syncCreateProductTypeOptions();
+    renderProductStockProducts();
+    updateProductStockManagementPanel();
+
+    if(initialPage === 'product-stocks-manage' || initialPage === 'product-stocks'){
+      loadProductStocks();
+    }
+  })();
 
   try {
-    const payload = await fetchJson(API.bootstrap);
-    DATA.products = mapProducts(payload?.products || {});
-    DATA.orders = mapOrders(payload?.orders || {});
-    DATA.entitlements = mapEntitlements(payload?.entitlements || {});
-    DATA.users = mapUsers(payload?.users || {});
-    DATA.droplets = mapDroplets(payload?.droplets || {});
-    DATA.audit = mapAudit(payload?.audit || {});
-    DATA.categories = mapCategories(payload?.categories || []);
-    applySettings(payload?.settings?.settings || {});
-    applyProductTypesPayload(payload?.product_types || {});
-  } catch (error) {
-    const results = await Promise.allSettled([
-      fetchJson(API.products),
-      fetchJson(API.orders),
-      fetchJson(API.users),
-      fetchJson(API.entitlements),
-      fetchJson(API.droplets),
-      fetchJson(API.audit),
-      fetchJson(API.settings),
-      fetchJson(API.productTypes),
-    ]);
-
-    if(results[0].status === 'fulfilled'){ DATA.products = mapProducts(results[0].value); }
-    if(results[1].status === 'fulfilled'){ DATA.orders = mapOrders(results[1].value); }
-    if(results[3].status === 'fulfilled'){ DATA.entitlements = mapEntitlements(results[3].value); }
-    if(results[2].status === 'fulfilled'){ DATA.users = mapUsers(results[2].value); }
-    if(results[4].status === 'fulfilled'){ DATA.droplets = mapDroplets(results[4].value); }
-    if(results[5].status === 'fulfilled'){ DATA.audit = mapAudit(results[5].value); }
-    if(results[6].status === 'fulfilled'){ applySettings(results[6].value?.settings || {}); }
-    if(results[7].status === 'fulfilled'){ applyProductTypesPayload(results[7].value || {}); }
-  }
-
-  hasLoadedHeavyData = true;
-  isLoadingHeavyData = false;
-
-  renderProducts();
-  renderOrders();
-  renderUsers();
-  renderEntitlements();
-  renderDroplets();
-  renderAudit();
-  renderOverview();
-  renderSidebarSignals();
-  renderProductTypesPage();
-  renderProductCategoryOptions();
-  syncCreateProductTypeOptions();
-  renderProductStockProducts();
-  updateProductStockManagementPanel();
-
-  if(initialPage === 'product-stocks-manage' || initialPage === 'product-stocks'){
-    loadProductStocks();
+    await loadHeavyDataPromise;
+  } finally {
+    isLoadingHeavyData = false;
+    loadHeavyDataPromise = null;
   }
 }
 
 async function loadBackendData(){
+  const activePage = document.querySelector('.page.active')?.id?.replace('page-', '') || initialPage;
   // Product Types is lightweight and should render quickly without waiting for heavy bootstrap data.
   const fastProductTypesPromise = prefetchProductTypesFast();
 
-  if(pageNeedsHeavyData(initialPage)){
-    await Promise.all([fastProductTypesPromise, loadHeavyDataOnce()]);
+  if(pageNeedsHeavyData(activePage)){
+    await fastProductTypesPromise;
+    if(hasLoadedHeavyData){
+      await refreshHeavyPageData(activePage);
+      return;
+    }
+    await loadHeavyDataOnce();
     return;
   }
 
-  await fastProductTypesPromise;
+  const lightweightTasks = [fastProductTypesPromise];
+  if(['products', 'product-create', 'product-edit', 'product-stocks', 'product-stocks-manage'].includes(activePage)){
+    lightweightTasks.push(refreshProducts());
+  }
+
+  await Promise.all(lightweightTasks);
+}
+
+async function refreshHeavyPageData(page){
+  if(page === 'droplets'){
+    await refreshDroplets();
+    return;
+  }
+
+  if(page === 'orders'){
+    const payload = await fetchJson(API.orders);
+    DATA.orders = mapOrders(payload);
+    renderOrders();
+    renderOverview();
+    renderSidebarSignals();
+    return;
+  }
+
+  if(page === 'users'){
+    const payload = await fetchJson(API.users);
+    DATA.users = mapUsers(payload);
+    renderUsers();
+    renderOverview();
+    renderSidebarSignals();
+    return;
+  }
+
+  if(page === 'entitlements'){
+    const [entitlementsPayload, usersPayload] = await Promise.all([
+      fetchJson(API.entitlements),
+      fetchJson(API.users),
+    ]);
+    DATA.entitlements = mapEntitlements(entitlementsPayload);
+    DATA.users = mapUsers(usersPayload);
+    renderEntitlements();
+    renderUsers();
+    renderOverview();
+    renderSidebarSignals();
+    return;
+  }
+
+  if(page === 'audit'){
+    const payload = await fetchJson(API.audit);
+    DATA.audit = mapAudit(payload);
+    renderAudit();
+    renderOverview();
+    return;
+  }
+
+  if(page === 'settings'){
+    const payload = await fetchJson(API.settings);
+    applySettings(payload?.settings || {});
+    return;
+  }
+
+  if(page === 'overview'){
+    const [ordersPayload, usersPayload, entitlementsPayload, auditPayload] = await Promise.all([
+      fetchJson(API.orders),
+      fetchJson(API.users),
+      fetchJson(API.entitlements),
+      fetchJson(API.audit),
+    ]);
+    DATA.orders = mapOrders(ordersPayload);
+    DATA.entitlements = mapEntitlements(entitlementsPayload);
+    DATA.users = mapUsers(usersPayload);
+    DATA.audit = mapAudit(auditPayload);
+    renderOrders();
+    renderUsers();
+    renderEntitlements();
+    renderAudit();
+    renderOverview();
+    renderSidebarSignals();
+  }
 }
 
 function getProductTypeConfig(typeKey){
@@ -2683,7 +2804,22 @@ function renderEntitlements(){
 }
 
 function renderDroplets(){
-  document.getElementById('droplets-body').innerHTML = DATA.droplets.map(d=>`<tr id="dr-${d.id.replace('-','_')}">
+  const body = document.getElementById('droplets-body');
+  if(!body){
+    return;
+  }
+
+  if(DATA.dropletsLazy === true && DATA.droplets.length === 0){
+    body.innerHTML = '<tr><td colspan="9" style="color:var(--muted-foreground);font-size:0.78rem">Loading droplets…</td></tr>';
+    return;
+  }
+
+  if(DATA.droplets.length === 0){
+    body.innerHTML = '<tr><td colspan="9" style="color:var(--muted-foreground);font-size:0.78rem">No droplets available.</td></tr>';
+    return;
+  }
+
+  body.innerHTML = DATA.droplets.map(d=>`<tr id="dr-${d.id.replace('-','_')}">
     <td class="mono">${d.id}</td>
     <td class="fw">${d.user}</td>
     <td class="mono">${d.ent}</td>
@@ -2700,6 +2836,37 @@ function renderDroplets(){
       <button class="btn btn-sm btn-ghost" onclick="viewDropletActions('${d.id}')">Log</button>
     </div></td>
   </tr>`).join('');
+}
+
+async function refreshDroplets(showToastOnError = true){
+  try {
+    const payload = await fetchJson(API.droplets);
+    DATA.droplets = mapDroplets(payload || {});
+    DATA.dropletsLazy = false;
+    renderDroplets();
+    renderOverview();
+    renderSidebarSignals();
+    return true;
+  } catch (error) {
+    if(showToastOnError){
+      showToast(`⚠️ ${error.message}`,'fail');
+    }
+    return false;
+  }
+}
+
+async function ensureDropletsLoaded(){
+  if(DATA.dropletsLazy !== true || isDropletsLoading){
+    return;
+  }
+  isDropletsLoading = true;
+  renderDroplets();
+  const loaded = await refreshDroplets(false);
+  if(!loaded){
+    showToast('⚠️ Failed to load droplets.','fail');
+    renderDroplets();
+  }
+  isDropletsLoading = false;
 }
 
 function getProductById(productId){
@@ -2736,7 +2903,7 @@ async function toggleProductVisibility(productId){
       }),
     });
 
-    await loadBackendData();
+    await refreshProducts();
     showToast(`✅ Product ${product.visible ? 'hidden' : 'visible'}.`,'ok');
   } catch (error) {
     showToast(`⚠️ ${error.message}`,'fail');
@@ -2938,7 +3105,7 @@ function dropletOp(id,action){
   };
 
   if(action === 'refresh'){
-    loadBackendData()
+    refreshDroplets()
       .then(()=>showToast('✅ Status refreshed.','ok'))
       .catch(()=>showToast('⚠️ Failed to refresh statuses.','fail'))
       .finally(()=>btns.forEach(b=>b.disabled=false));
@@ -2956,7 +3123,7 @@ function dropletOp(id,action){
     if(!response.ok){
       throw new Error(`Action request failed: ${response.status}`);
     }
-    await loadBackendData();
+    await refreshDroplets(false);
     showToast('✅ Droplet action queued.','ok');
   }).catch(()=>{
     showToast('⚠️ Droplet action failed.','fail');
@@ -2967,7 +3134,7 @@ function dropletOp(id,action){
 
 function refreshAll(){
   showToast('🔄 Refreshing all droplets…','warn');
-  loadBackendData()
+  refreshDroplets()
     .then(()=>showToast('✅ All statuses updated.','ok'))
     .catch(()=>showToast('⚠️ Refresh failed.','fail'));
 }
@@ -3008,6 +3175,7 @@ function createProduct(){
 
   productFormMode = 'create';
   editingProductId = null;
+  renderFeaturedItems([]);
   const submitButton = document.getElementById('cp-submit');
   if(submitButton){
     submitButton.textContent = 'Create Product';
@@ -3090,7 +3258,7 @@ function openProductFormForEdit(product){
     submitButton.textContent = 'Update Product';
   }
 
-  nav('product-create', null);
+  navToProductEdit(product.rawId);
 }
 
 async function submitCreateProduct(event){
@@ -3170,7 +3338,7 @@ async function submitCreateProduct(event){
     });
 
     nav('products', null);
-    await loadBackendData();
+    await refreshProducts();
     showToast(isEditMode ? '✅ Product updated.' : '✅ Product created.','ok');
     productFormMode = 'create';
     editingProductId = null;
@@ -3194,6 +3362,31 @@ function slugify(text){
     .trim()
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-');
+}
+
+async function refreshProducts(){
+  try {
+    const payload = await fetchJson(API.products);
+    DATA.products = mapProducts(payload);
+    deriveCategoriesFromProducts();
+    renderProducts();
+    renderProductCategoryOptions();
+    renderProductStockProducts();
+    updateProductStockManagementPanel();
+  } catch (e) {
+    console.error('Failed to refresh products', e);
+  }
+}
+
+function navToProductEdit(productId){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const t=document.getElementById('page-product-create');
+  if(t)t.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const f=document.querySelector('[data-page="products"]');
+  if(f)f.classList.add('active');
+  document.querySelector('.main').scrollTop=0;
+  window.history.replaceState({ page: 'product-edit' }, '', `/admin/products/${productId}/edit`);
 }
 
 /* ============================================================ FEATURED ITEMS */
@@ -3316,18 +3509,24 @@ function showToast(msg,type){
 
 /* ============================================================ NAVIGATION */
 function nav(page,el){
+  const activePage = page === 'product-edit' ? 'product-create' : page;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  const t=document.getElementById('page-'+page);
+  const t=document.getElementById('page-'+activePage);
   if(t)t.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(el)el.classList.add('active');
-  else{const f=document.querySelector(`[data-page="${page}"]`);if(f)f.classList.add('active');}
+  else{
+    const targetNavPage = activePage === 'product-create' ? 'products' : activePage;
+    const f=document.querySelector(`[data-page="${targetNavPage}"]`);
+    if(f)f.classList.add('active');
+  }
   document.querySelector('.main').scrollTop=0;
 
   const pathMap = {
     overview: '/admin',
     products: '/admin/products',
     'product-create': '/admin/products/create',
+    'product-edit': '/admin/products',
     'product-types': '/admin/product-types',
     'product-stocks': '/admin/product-stocks',
     'product-stocks-manage': '/admin/product-stocks',
@@ -3342,24 +3541,32 @@ function nav(page,el){
     support: '/admin/support',
   };
 
-  if(pathMap[page]){
-    if(page === 'product-stocks-manage' && selectedStockProductId){
-      window.history.replaceState({ page }, '', `/admin/products/${encodeURIComponent(selectedStockProductId)}/stocks`);
+  if(pathMap[activePage]){
+    if(activePage === 'product-stocks-manage' && selectedStockProductId){
+      window.history.replaceState({ page: activePage }, '', `/admin/products/${encodeURIComponent(selectedStockProductId)}/stocks`);
     } else {
-      window.history.replaceState({ page }, '', pathMap[page]);
+      window.history.replaceState({ page: activePage }, '', pathMap[activePage]);
     }
   }
 
-  if(page === 'product-stocks'){
+  if(activePage === 'product-stocks'){
     renderProductStockProducts();
   }
 
-  if(page === 'product-stocks-manage'){
+  if(activePage === 'product-stocks-manage'){
     updateProductStockManagementPanel();
     loadProductStocks();
   }
 
-  if(pageNeedsHeavyData(page)){
+  if(activePage === 'products' || activePage === 'product-create'){
+    refreshProducts();
+  }
+
+  if(activePage === 'droplets'){
+    ensureDropletsLoaded();
+  }
+
+  if(pageNeedsHeavyData(activePage)){
     loadHeavyDataOnce().catch(()=>{
       showToast('⚠️ Failed to load full dashboard data.','fail');
     });
@@ -3393,26 +3600,46 @@ document.querySelector('.main')?.addEventListener('click',()=>{
 const initialPage = @json($initialPageValue);
 const initialProductType = @json($initialProductTypeValue);
 const initialStockProductId = @json($initialStockProductIdValue);
+const initialProductEditId = @json($initialProductEditIdValue);
 if(initialStockProductId){
   selectedStockProductId = String(initialStockProductId);
 }
-const startupPage = initialPage === 'product-stocks' && selectedStockProductId ? 'product-stocks-manage' : initialPage;
+const startupPage =
+  initialPage === 'product-stocks' && selectedStockProductId
+    ? 'product-stocks-manage'
+    : (initialPage === 'product-edit' ? 'product-create' : initialPage);
 nav(startupPage, null);
 
-loadBackendData().catch(()=>{
-  showToast('⚠️ Loaded with fallback data. Backend unavailable.','fail');
-});
-
-if(initialPage === 'product-type-editor'){
-  window.setTimeout(() => {
-    if(initialProductType){
-      openProductTypeEditor(initialProductType);
-      return;
+loadBackendData()
+  .then(async () => {
+    if(initialPage === 'product-edit' && initialProductEditId){
+      let product = getProductById(String(initialProductEditId));
+      if(!product){
+        await refreshProducts();
+        product = getProductById(String(initialProductEditId));
+      }
+      if(product){
+        openProductFormForEdit(product);
+      } else {
+        showToast('⚠️ Product not found for edit.','fail');
+        nav('products', null);
+      }
     }
 
-    openProductTypeEditor();
-  }, 0);
-}
+    if(initialPage === 'product-type-editor'){
+      window.setTimeout(() => {
+        if(initialProductType){
+          openProductTypeEditor(initialProductType);
+          return;
+        }
+
+        openProductTypeEditor();
+      }, 0);
+    }
+  })
+  .catch(()=>{
+    showToast('⚠️ Loaded with fallback data. Backend unavailable.','fail');
+  });
 </script>
 </body>
 </html>
