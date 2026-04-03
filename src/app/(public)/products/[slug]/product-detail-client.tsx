@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { formatCurrency } from '@/lib/utils';
 
 export interface ProductData {
@@ -22,6 +22,19 @@ export interface ProductData {
 export default function ProductDetailClient({ product }: { product: ProductData }) {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  const heroRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   const isDroplet = product.product_type === 'vps_droplet';
   const prices = product.prices || [];
@@ -49,7 +62,7 @@ export default function ProductDetailClient({ product }: { product: ProductData 
   return (
     <div className="page">
 
-      <section className="pdp-hero">
+      <section className="pdp-hero" ref={heroRef}>
         <div className="hero-left">
           <div className="breadcrumb">
             <a href="/">Home</a><span className="sep">/</span>
@@ -340,6 +353,16 @@ export default function ProductDetailClient({ product }: { product: ProductData 
           ))}
         </div>
       </section>
+
+      <div className={`sticky-buy-bar${showStickyBar ? ' visible' : ''}`}>
+        <div className="sticky-buy-inner">
+          <div className="sticky-buy-info">
+            <span className="sticky-buy-name">{product.name}</span>
+            <span className="sticky-buy-price">{formattedAmount} <span style={{ fontSize: '0.75rem', fontWeight: 500, opacity: 0.7 }}>/ {billingPeriod}</span></span>
+          </div>
+          <button className="btn btn-accent btn-lg">Buy Now</button>
+        </div>
+      </div>
     </div>
   );
 }
