@@ -34,8 +34,9 @@ export default function ProductDetailClient({ product }: { product: ProductData 
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const { isInWishlist, toggleWishlist } = useWishlist();
-  const { addItem: addToCart } = useCart();
+  const { addItem: addToCart, isInCart: checkInCart } = useCart();
   const wishlisted = isInWishlist(product.id);
+  const isInCart = checkInCart(product.id);
 
   const handleWishlist = async () => {
     const result = await toggleWishlist(product.id);
@@ -207,6 +208,15 @@ export default function ProductDetailClient({ product }: { product: ProductData 
               ) : (
                 <>
                   <button className="btn btn-accent btn-lg btn-full" onClick={handleBuyNow}>Buy Now</button>
+                  <button
+                    className={`btn btn-full${isInCart ? ' btn-ghost' : ''}`}
+                    onClick={() => { if (!isInCart) addToCart(product.id); }}
+                    disabled={isInCart}
+                    style={isInCart ? { opacity: 0.6, cursor: 'default' } : {}}
+                  >
+                    <ShoppingCart size={16} />
+                    {isInCart ? 'Already in Cart' : 'Add to Cart'}
+                  </button>
                   <button className="btn btn-ghost btn-full" onClick={handleWishlist}>
                     {wishlisted ? '❤️ In Wishlist' : 'Add to wishlist'}
                   </button>

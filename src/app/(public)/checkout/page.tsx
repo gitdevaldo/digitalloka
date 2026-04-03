@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, ShieldCheck, Zap, CreditCard, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Check } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
 import { useWishlist } from '@/context/wishlist-context';
 import { formatCurrency } from '@/lib/utils';
@@ -20,8 +19,22 @@ interface Product {
   icon_emoji: string;
 }
 
+const ICON_COLORS: Record<string, string> = {
+  template: 'linear-gradient(135deg, #ede9fe, #ddd6fe)',
+  'ui-kit': 'linear-gradient(135deg, #d1fae5, #a7f3d0)',
+  plugin: 'linear-gradient(135deg, #fce7f3, #fbcfe8)',
+  ebook: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+  course: 'linear-gradient(135deg, #dbeafe, #bfdbfe)',
+};
+
+const STEPS = [
+  { num: 1, label: 'Cart' },
+  { num: 2, label: 'Account' },
+  { num: 3, label: 'Payment' },
+  { num: 4, label: 'Review' },
+];
+
 export default function CheckoutPage() {
-  const router = useRouter();
   const { items, clearCart } = useCart();
   const { isLoggedIn } = useWishlist();
   const [products, setProducts] = useState<Product[]>([]);
@@ -32,6 +45,16 @@ export default function CheckoutPage() {
   const [showLogin, setShowLogin] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
+  const [currentStep, setCurrentStep] = useState(2);
+
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    payMethod: 'card',
+  });
+
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -55,6 +78,10 @@ export default function CheckoutPage() {
   const cartProducts = products.filter(p => items.some(i => i.productId === p.id));
   const subtotal = cartProducts.reduce((sum, p) => sum + p.price_amount * getQty(p.id), 0);
   const currency = cartProducts[0]?.price_currency || 'USD';
+
+  const advanceStep = (step: number) => {
+    setCurrentStep(step + 1);
+  };
 
   const handleCheckout = async () => {
     if (!isLoggedIn) {
@@ -87,135 +114,382 @@ export default function CheckoutPage() {
 
   if (orderComplete) {
     return (
-      <div className="inner-page">
-        <div className="checkout-success">
-          <div className="success-icon">✅</div>
-          <h1>Order Placed!</h1>
-          <p>Your order <strong>{orderNumber}</strong> has been placed successfully.</p>
-          <p className="success-sub">You will receive a confirmation and can track your order from your dashboard.</p>
-          <div className="success-actions">
-            <Link href="/" className="btn-primary">Continue Shopping</Link>
+      <div className="inner-wrap">
+        <div className="success-page">
+          <div className="success-icon-circle">&#10003;</div>
+          <div className="success-title">Order Placed!</div>
+          <div className="success-desc">
+            Your order has been placed successfully. You will receive credentials and access details via email within 60 seconds.
+          </div>
+          <div className="success-details">
+            <div className="sd-row">
+              <span className="sd-key">Order Number</span>
+              <span className="sd-val mono">{orderNumber}</span>
+            </div>
+            <div className="sd-row">
+              <span className="sd-key">Status</span>
+              <span className="sd-val">Processing</span>
+            </div>
+            <div className="sd-row">
+              <span className="sd-key">Payment</span>
+              <span className="sd-val">{formData.payMethod === 'card' ? 'Card' : formData.payMethod}</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <Link href="/" className="btn btn-accent">Continue Shopping</Link>
           </div>
         </div>
       </div>
     );
   }
 
+  const getCatSlug = (p: Product) => p.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'template';
+
   return (
-    <div className="inner-page">
-      <div className="inner-page-header">
+    <div className="inner-wrap">
+      <div className="page-header">
         <Link href="/cart" className="back-link">
-          <ArrowLeft size={18} />
-          <span>Back to cart</span>
+          <ArrowLeft size={16} />
+          Back to cart
         </Link>
-        <div className="inner-page-title-row">
-          <CreditCard size={28} />
-          <h1>Checkout</h1>
-        </div>
+        <div className="page-title">Checkout</div>
+        <div className="page-sub">Complete your purchase</div>
       </div>
 
       {loading ? (
         <div className="empty-state">
-          <div className="icon">⏳</div>
-          <h3>Loading checkout</h3>
-          <p>Preparing your order...</p>
+          <div className="empty-icon">&#9203;</div>
+          <div className="empty-title">Loading checkout</div>
+          <div className="empty-desc">Preparing your order...</div>
         </div>
       ) : fetchError ? (
         <div className="empty-state">
-          <div className="icon">⚠️</div>
-          <h3>Something went wrong</h3>
-          <p>Could not load checkout details. Please try again.</p>
-          <button className="btn-primary" style={{ marginTop: '16px' }} onClick={() => window.location.reload()}>
-            Retry
-          </button>
+          <div className="empty-icon">&#9888;&#65039;</div>
+          <div className="empty-title">Something went wrong</div>
+          <div className="empty-desc">Could not load checkout details. Please try again.</div>
+          <button className="btn btn-accent" onClick={() => window.location.reload()}>Retry</button>
         </div>
       ) : cartProducts.length === 0 ? (
         <div className="empty-state">
-          <div className="icon">🛒</div>
-          <h3>Nothing to checkout</h3>
-          <p>Your cart is empty. Add some products first.</p>
-          <Link href="/" className="btn-primary" style={{ marginTop: '16px', display: 'inline-flex' }}>
-            Browse Products
-          </Link>
+          <div className="empty-icon">&#128722;</div>
+          <div className="empty-title">Nothing to checkout</div>
+          <div className="empty-desc">Your cart is empty. Add some products first.</div>
+          <Link href="/" className="btn btn-accent">Browse Products</Link>
         </div>
       ) : (
-        <div className="checkout-layout">
-          <div className="checkout-items">
-            <h2 className="checkout-section-title">Order Summary</h2>
-            <div className="checkout-item-list">
-              {cartProducts.map(product => {
-                const qty = getQty(product.id);
-                return (
-                  <div key={product.id} className="checkout-item">
-                    <div className="checkout-item-icon">{product.icon_emoji || '📦'}</div>
-                    <div className="checkout-item-info">
-                      <span className="checkout-item-name">{product.name}</span>
-                      <span className="checkout-item-meta">
-                        {product.category?.name}
-                        {qty > 1 && <> &middot; Qty: {qty}</>}
-                      </span>
-                    </div>
-                    <span className="checkout-item-price">
-                      {formatCurrency(product.price_amount * qty, product.price_currency)}
-                    </span>
+        <>
+          <div className="checkout-steps">
+            {STEPS.map((step, i) => (
+              <div key={step.num} style={{ display: 'flex', alignItems: 'center' }}>
+                {i > 0 && <div className={`step-connector${currentStep > step.num ? ' done' : ''}`} />}
+                <div className={`checkout-step${currentStep === step.num ? ' active' : ''}${currentStep > step.num ? ' done' : ''}`}>
+                  <div className="step-num">
+                    {currentStep > step.num ? <Check size={12} /> : step.num}
                   </div>
-                );
-              })}
+                  <span className="step-label">{step.label}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="checkout-layout">
+            <div>
+              {/* Step 2: Account */}
+              <div className={`form-panel${currentStep > 2 ? '' : ''}${currentStep < 2 ? ' locked' : ''}`}>
+                <div className="fp-header">
+                  <div className="fp-title">
+                    <div className="fp-step-badge" style={currentStep > 2 ? { background: 'var(--quaternary)' } : {}}>2</div>
+                    Account Details
+                  </div>
+                  {currentStep > 2 && (
+                    <div className="fp-done-badge">
+                      <Check size={14} /> Done
+                    </div>
+                  )}
+                </div>
+                {currentStep >= 2 && (
+                  <div className="fp-body">
+                    <div className="field-row">
+                      <div className="field">
+                        <div className="field-label">First Name</div>
+                        <input
+                          className="field-input"
+                          type="text"
+                          placeholder="Your first name"
+                          value={formData.firstName}
+                          onChange={e => setFormData(d => ({ ...d, firstName: e.target.value }))}
+                          disabled={currentStep > 2}
+                        />
+                      </div>
+                      <div className="field">
+                        <div className="field-label">Last Name</div>
+                        <input
+                          className="field-input"
+                          type="text"
+                          placeholder="Your last name"
+                          value={formData.lastName}
+                          onChange={e => setFormData(d => ({ ...d, lastName: e.target.value }))}
+                          disabled={currentStep > 2}
+                        />
+                      </div>
+                    </div>
+                    <div className="field-row single">
+                      <div className="field">
+                        <div className="field-label">Email Address</div>
+                        <input
+                          className="field-input"
+                          type="email"
+                          placeholder="you@example.com"
+                          value={formData.email}
+                          onChange={e => setFormData(d => ({ ...d, email: e.target.value }))}
+                          disabled={currentStep > 2}
+                        />
+                      </div>
+                    </div>
+                    {currentStep === 2 && (
+                      <div style={{ marginTop: '14px' }}>
+                        <button className="btn btn-accent" onClick={() => advanceStep(2)}>
+                          Continue to payment &rarr;
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Step 3: Payment */}
+              <div className={`form-panel${currentStep < 3 ? ' locked' : ''}`}>
+                <div className="fp-header">
+                  <div className="fp-title">
+                    <div className="fp-step-badge" style={currentStep < 3 ? { background: 'var(--muted-foreground)' } : currentStep > 3 ? { background: 'var(--quaternary)' } : {}}>3</div>
+                    Payment
+                  </div>
+                  {currentStep > 3 && (
+                    <div className="fp-done-badge">
+                      <Check size={14} /> Done
+                    </div>
+                  )}
+                </div>
+                {currentStep >= 3 && (
+                  <div className="fp-body">
+                    <div className="pay-tabs">
+                      {[
+                        { key: 'card', icon: '&#128179;', label: 'Card' },
+                        { key: 'bank', icon: '&#127974;', label: 'Bank Transfer' },
+                        { key: 'qris', icon: '&#128241;', label: 'QRIS / GoPay' },
+                        { key: 'paypal', icon: '&#127359;&#65039;', label: 'PayPal' },
+                      ].map(tab => (
+                        <div
+                          key={tab.key}
+                          className={`pay-tab${formData.payMethod === tab.key ? ' active' : ''}`}
+                          onClick={() => currentStep === 3 && setFormData(d => ({ ...d, payMethod: tab.key }))}
+                        >
+                          <div className="pay-tab-icon" dangerouslySetInnerHTML={{ __html: tab.icon }} />
+                          <div className="pay-tab-label">{tab.label}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {formData.payMethod === 'card' && (
+                      <>
+                        <div className="field-row single">
+                          <div className="field">
+                            <div className="field-label">Cardholder Name</div>
+                            <input className="field-input" type="text" placeholder="Name on card" disabled={currentStep > 3} />
+                          </div>
+                        </div>
+                        <div className="field-row single">
+                          <div className="field">
+                            <div className="field-label">Card Number</div>
+                            <div className="card-field">
+                              <input className="field-input" type="text" placeholder="0000  0000  0000  0000" disabled={currentStep > 3} />
+                              <div className="card-brand-icon">CARD</div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="field-row triple">
+                          <div className="field">
+                            <div className="field-label">Exp. Month</div>
+                            <select className="field-select" disabled={currentStep > 3}>
+                              <option value="">MM</option>
+                              {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map(m => (
+                                <option key={m}>{m}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="field">
+                            <div className="field-label">Exp. Year</div>
+                            <select className="field-select" disabled={currentStep > 3}>
+                              {[2026, 2027, 2028, 2029, 2030].map(y => (
+                                <option key={y}>{y}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="field">
+                            <div className="field-label">CVV</div>
+                            <input className="field-input" type="text" placeholder="&bull;&bull;&bull;" maxLength={4} disabled={currentStep > 3} />
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {currentStep === 3 && (
+                      <div style={{ marginTop: '14px' }}>
+                        <button className="btn btn-accent" onClick={() => advanceStep(3)}>
+                          Review order &rarr;
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Step 4: Review & Place Order */}
+              <div className={`form-panel${currentStep < 4 ? ' locked' : ''}`}>
+                <div className="fp-header">
+                  <div className="fp-title">
+                    <div className="fp-step-badge" style={currentStep < 4 ? { background: 'var(--muted-foreground)' } : {}}>4</div>
+                    Review &amp; Place Order
+                  </div>
+                </div>
+                {currentStep >= 4 && (
+                  <div className="fp-body">
+                    <div style={{
+                      background: 'var(--muted)',
+                      border: '2px solid var(--border)',
+                      borderRadius: 'var(--r-lg, 24px)',
+                      padding: '14px 16px',
+                      marginBottom: '16px',
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      color: 'var(--muted-foreground)',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                    }}>
+                      <span style={{ fontSize: '1rem', flexShrink: 0 }}>&#128274;</span>
+                      <span>Your products will be delivered <strong style={{ color: 'var(--foreground)' }}>instantly</strong> after payment. Access details will be sent to your email.</span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+                      {formData.firstName && (
+                        <div className="sd-row">
+                          <span className="sd-key">Name</span>
+                          <span className="sd-val">{formData.firstName} {formData.lastName}</span>
+                        </div>
+                      )}
+                      {formData.email && (
+                        <div className="sd-row">
+                          <span className="sd-key">Email</span>
+                          <span className="sd-val">{formData.email}</span>
+                        </div>
+                      )}
+                      <div className="sd-row">
+                        <span className="sd-key">Payment</span>
+                        <span className="sd-val">{formData.payMethod === 'card' ? 'Card' : formData.payMethod === 'bank' ? 'Bank Transfer' : formData.payMethod === 'qris' ? 'QRIS / GoPay' : 'PayPal'}</span>
+                      </div>
+                    </div>
+
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '12px',
+                      background: 'rgba(139, 92, 246, 0.06)',
+                      border: '2px solid var(--accent)',
+                      borderRadius: 'var(--r-md)',
+                      marginBottom: '16px',
+                      fontSize: '0.78rem',
+                      fontWeight: 600,
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={agreedToTerms}
+                        onChange={e => setAgreedToTerms(e.target.checked)}
+                        style={{ width: '16px', height: '16px', accentColor: 'var(--accent)', cursor: 'pointer' }}
+                      />
+                      <label style={{ cursor: 'pointer' }}>
+                        I agree to the <a href="#" style={{ color: 'var(--accent)', fontWeight: 700 }}>Terms of Service</a> and <a href="#" style={{ color: 'var(--accent)', fontWeight: 700 }}>Privacy Policy</a>.
+                      </label>
+                    </div>
+
+                    {error && <div className="checkout-error">{error}</div>}
+
+                    <button
+                      className="btn btn-accent btn-full"
+                      style={{ justifyContent: 'center', padding: '14px 32px', fontSize: '1rem', background: 'var(--quaternary)', color: 'var(--foreground)' }}
+                      onClick={handleCheckout}
+                      disabled={submitting || !agreedToTerms}
+                    >
+                      {submitting ? (
+                        <><Loader2 size={18} className="spin" /> Processing...</>
+                      ) : (
+                        <><Check size={18} /> Place order &mdash; {formatCurrency(subtotal, currency)}</>
+                      )}
+                    </button>
+                    <div style={{ textAlign: 'center', fontSize: '0.72rem', fontWeight: 600, color: 'var(--muted-foreground)', marginTop: '10px' }}>
+                      &#128274; SSL secured &middot; Your card is charged once
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="checkout-totals">
-              <div className="checkout-total-row">
-                <span>Subtotal</span>
-                <span>{formatCurrency(subtotal, currency)}</span>
-              </div>
-              <div className="checkout-total-row total">
-                <span>Total</span>
-                <span>{formatCurrency(subtotal, currency)}</span>
+            {/* Right: Order Summary */}
+            <div>
+              <div className="order-summary" style={{ top: '80px' }}>
+                <div className="os-header">
+                  <div className="os-title">Your order</div>
+                </div>
+                <div className="os-body">
+                  <div style={{ marginBottom: '14px' }}>
+                    {cartProducts.map(product => (
+                      <div className="review-item" key={product.id}>
+                        <div className="ri-icon" style={{ background: ICON_COLORS[getCatSlug(product)] || ICON_COLORS.template }}>
+                          {product.icon_emoji || '📦'}
+                        </div>
+                        <div className="ri-info">
+                          <div className="ri-name">{product.name}</div>
+                          <div className="ri-meta">
+                            {product.category?.name || 'Product'}
+                            {getQty(product.id) > 1 ? ` x${getQty(product.id)}` : ''}
+                          </div>
+                        </div>
+                        <div className="ri-price">{formatCurrency(product.price_amount * getQty(product.id), product.price_currency)}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="os-divider"></div>
+                  <div className="os-line">
+                    <span className="os-label">Subtotal</span>
+                    <span className="os-value">{formatCurrency(subtotal, currency)}</span>
+                  </div>
+                  <div className="os-divider"></div>
+                  <div className="os-total-row" style={{ marginBottom: '10px' }}>
+                    <span className="os-total-label">Total</span>
+                    <span className="os-total-value">{formatCurrency(subtotal, currency)}</span>
+                  </div>
+
+                  <div className="os-trust">
+                    <div className="trust-line">
+                      <div className="trust-icon">&#9889;</div>
+                      Instant delivery
+                    </div>
+                    <div className="trust-line">
+                      <div className="trust-icon">&#128260;</div>
+                      Cancel anytime
+                    </div>
+                    <div className="trust-line">
+                      <div className="trust-icon">&#128737;&#65039;</div>
+                      7-day refund guarantee
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-
-          <div className="checkout-payment">
-            <h2 className="checkout-section-title">Payment</h2>
-
-            <div className="checkout-trust">
-              <div className="trust-item">
-                <ShieldCheck size={18} />
-                <span>Secure checkout</span>
-              </div>
-              <div className="trust-item">
-                <Zap size={18} />
-                <span>Instant delivery</span>
-              </div>
-            </div>
-
-            {error && (
-              <div className="checkout-error">{error}</div>
-            )}
-
-            <button
-              className="btn-checkout"
-              onClick={handleCheckout}
-              disabled={submitting}
-            >
-              {submitting ? (
-                <>
-                  <Loader2 size={18} className="spin" />
-                  <span>Processing...</span>
-                </>
-              ) : (
-                <>
-                  <CreditCard size={18} />
-                  <span>Place Order &middot; {formatCurrency(subtotal, currency)}</span>
-                </>
-              )}
-            </button>
-
-            <p className="checkout-note">
-              By placing this order, you agree to our Terms of Service and Privacy Policy.
-            </p>
-          </div>
-        </div>
+        </>
       )}
 
       <LoginDialog open={showLogin} onClose={() => setShowLogin(false)} />

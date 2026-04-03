@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ShoppingCart, ArrowLeft, Plus, Minus, Trash2, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Trash2 } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
 import { formatCurrency } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 interface Product {
   id: number;
@@ -19,11 +20,20 @@ interface Product {
   icon_emoji: string;
 }
 
+const ICON_COLORS: Record<string, string> = {
+  template: 'linear-gradient(135deg, #ede9fe, #ddd6fe)',
+  'ui-kit': 'linear-gradient(135deg, #d1fae5, #a7f3d0)',
+  plugin: 'linear-gradient(135deg, #fce7f3, #fbcfe8)',
+  ebook: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+  course: 'linear-gradient(135deg, #dbeafe, #bfdbfe)',
+};
+
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, clearCart } = useCart();
+  const { items, removeItem, clearCart } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (items.length === 0) {
@@ -45,121 +55,158 @@ export default function CartPage() {
   }, [items.length]);
 
   const getCartItem = (productId: number) => items.find(i => i.productId === productId);
-
   const cartProducts = products.filter(p => items.some(i => i.productId === p.id));
 
   const subtotal = cartProducts.reduce((sum, p) => {
     const ci = getCartItem(p.id);
     return sum + (ci ? p.price_amount * ci.quantity : 0);
   }, 0);
-
   const currency = cartProducts[0]?.price_currency || 'USD';
 
   return (
-    <div className="inner-page">
-      <div className="inner-page-header">
+    <div className="inner-wrap">
+      <div className="page-header">
         <Link href="/" className="back-link">
-          <ArrowLeft size={18} />
-          <span>Back to catalog</span>
+          <ArrowLeft size={16} />
+          Back to catalog
         </Link>
-        <div className="inner-page-title-row">
-          <ShoppingCart size={28} />
-          <h1>Shopping Cart</h1>
-          {cartProducts.length > 0 && (
-            <span className="inner-page-count">{items.reduce((a, i) => a + i.quantity, 0)} item{items.reduce((a, i) => a + i.quantity, 0) !== 1 ? 's' : ''}</span>
-          )}
+        <div className="page-title">Shopping Cart</div>
+        <div className="page-sub">
+          {cartProducts.length > 0
+            ? `${cartProducts.length} item${cartProducts.length !== 1 ? 's' : ''} in your cart`
+            : 'Your cart is empty'}
         </div>
       </div>
 
       {loading ? (
         <div className="empty-state">
-          <div className="icon">⏳</div>
-          <h3>Loading your cart</h3>
-          <p>Fetching product details...</p>
+          <div className="empty-icon">&#9203;</div>
+          <div className="empty-title">Loading your cart</div>
+          <div className="empty-desc">Fetching product details...</div>
         </div>
       ) : fetchError ? (
         <div className="empty-state">
-          <div className="icon">⚠️</div>
-          <h3>Something went wrong</h3>
-          <p>Could not load cart details. Please try again.</p>
-          <button className="btn-primary" style={{ marginTop: '16px' }} onClick={() => window.location.reload()}>
-            Retry
-          </button>
+          <div className="empty-icon">&#9888;&#65039;</div>
+          <div className="empty-title">Something went wrong</div>
+          <div className="empty-desc">Could not load cart details. Please try again.</div>
+          <button className="btn btn-accent" onClick={() => window.location.reload()}>Retry</button>
         </div>
       ) : cartProducts.length === 0 ? (
         <div className="empty-state">
-          <div className="icon">🛒</div>
-          <h3>Your cart is empty</h3>
-          <p>Add products to your cart to get started.</p>
-          <Link href="/" className="btn-primary" style={{ marginTop: '16px', display: 'inline-flex' }}>
-            Browse Products
-          </Link>
+          <div className="empty-icon">&#128722;</div>
+          <div className="empty-title">Your cart is empty</div>
+          <div className="empty-desc">Add products to your cart to get started.</div>
+          <Link href="/" className="btn btn-accent">Browse Products</Link>
         </div>
       ) : (
-        <>
-          <div className="item-list">
-            {cartProducts.map(product => {
-              const ci = getCartItem(product.id);
-              if (!ci) return null;
-              const lineTotal = product.price_amount * ci.quantity;
-              return (
-                <div key={product.id} className="item-card">
-                  <Link href={`/products/${product.slug}`} className="item-card-thumb">
-                    <div className={`card-thumb-mini ${product.thumb_color || 'thumb-purple'}`}>
-                      <span className="thumb-icon">{product.icon_emoji || '📦'}</span>
+        <div className="cart-layout">
+          <div>
+            <div className="cart-items">
+              {cartProducts.map(product => {
+                const ci = getCartItem(product.id);
+                if (!ci) return null;
+                const catSlug = product.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'template';
+                const iconBg = ICON_COLORS[catSlug] || ICON_COLORS.template;
+                return (
+                  <div className="cart-item" key={product.id}>
+                    <div className="prod-icon" style={{ background: iconBg }}>
+                      {product.icon_emoji || '📦'}
                     </div>
-                  </Link>
-                  <div className="item-card-info">
-                    <Link href={`/products/${product.slug}`} className="item-card-name">{product.name}</Link>
-                    <p className="item-card-desc">{product.short_description}</p>
-                    <div className="item-card-meta">
-                      {product.category && <span className="item-card-cat">{product.category.name}</span>}
-                      <span className="item-card-price">
-                        {formatCurrency(product.price_amount, product.price_currency)}
+                    <div className="cart-item-info">
+                      <div className="ci-type">{product.category?.name || 'Product'}</div>
+                      <Link href={`/products/${product.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <div className="ci-name">{product.name}</div>
+                      </Link>
+                      <div className="ci-meta">
+                        <span className="ci-spec"><strong>{product.price_billing_period || 'one-time'}</strong> billing</span>
+                      </div>
+                    </div>
+                    <div className="cart-item-right">
+                      <div className="ci-price">
+                        {formatCurrency(product.price_amount * ci.quantity, product.price_currency)}
                         {product.price_billing_period && product.price_billing_period !== 'one-time' && (
-                          <span className="billing-period"> / {product.price_billing_period}</span>
+                          <div className="ci-period">/{product.price_billing_period}</div>
                         )}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="item-card-actions">
-                    <div className="qty-control">
-                      <button className="qty-btn" onClick={() => updateQuantity(product.id, ci.quantity - 1)} disabled={ci.quantity <= 1}>
-                        <Minus size={14} />
-                      </button>
-                      <span className="qty-value">{ci.quantity}</span>
-                      <button className="qty-btn" onClick={() => updateQuantity(product.id, ci.quantity + 1)}>
-                        <Plus size={14} />
+                      </div>
+                      <button className="ci-remove" onClick={() => removeItem(product.id)}>
+                        <Trash2 size={12} /> Remove
                       </button>
                     </div>
-                    <span className="item-line-total">{formatCurrency(lineTotal, product.price_currency)}</span>
-                    <button className="item-btn btn-ghost-danger" onClick={() => removeItem(product.id)}>
-                      <Trash2 size={14} />
-                    </button>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+
+            {cartProducts.length > 1 && (
+              <div style={{ marginTop: '12px', textAlign: 'right' }}>
+                <button className="btn btn-ghost btn-sm" onClick={clearCart}>Clear all</button>
+              </div>
+            )}
           </div>
 
-          <div className="cart-summary">
-            <div className="cart-summary-row">
-              <span>Subtotal</span>
-              <span className="cart-summary-value">{formatCurrency(subtotal, currency)}</span>
-            </div>
-            <div className="cart-summary-row total">
-              <span>Total</span>
-              <span className="cart-summary-value">{formatCurrency(subtotal, currency)}</span>
-            </div>
-            <div className="cart-summary-actions">
-              <button className="item-btn btn-ghost" onClick={clearCart}>Clear Cart</button>
-              <Link href="/checkout" className="btn-primary">
-                <span>Proceed to Checkout</span>
-                <ArrowRight size={16} />
-              </Link>
+          <div>
+            <div className="order-summary">
+              <div className="os-header">
+                <div className="os-title">Order Summary</div>
+              </div>
+              <div className="os-body">
+                <div style={{ marginBottom: '14px' }}>
+                  {cartProducts.map(product => {
+                    const ci = getCartItem(product.id);
+                    const catSlug = product.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'template';
+                    const iconBg = ICON_COLORS[catSlug] || ICON_COLORS.template;
+                    return (
+                      <div className="review-item" key={product.id}>
+                        <div className="ri-icon" style={{ background: iconBg }}>
+                          {product.icon_emoji || '📦'}
+                        </div>
+                        <div className="ri-info">
+                          <div className="ri-name">{product.name}</div>
+                          <div className="ri-meta">{product.category?.name || 'Product'} {ci && ci.quantity > 1 ? `x${ci.quantity}` : ''}</div>
+                        </div>
+                        <div className="ri-price">{formatCurrency(product.price_amount * (ci?.quantity || 1), product.price_currency)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="os-divider"></div>
+                <div className="os-line">
+                  <span className="os-label">Subtotal</span>
+                  <span className="os-value">{formatCurrency(subtotal, currency)}</span>
+                </div>
+                <div className="os-divider"></div>
+                <div className="os-total-row" style={{ marginBottom: '16px' }}>
+                  <span className="os-total-label">Total</span>
+                  <span className="os-total-value">{formatCurrency(subtotal, currency)}</span>
+                </div>
+
+                <button
+                  className="btn btn-accent btn-full"
+                  style={{ justifyContent: 'center', padding: '14px 24px', fontSize: '0.95rem' }}
+                  onClick={() => router.push('/checkout')}
+                >
+                  Proceed to Checkout
+                </button>
+
+                <div className="os-trust">
+                  <div className="trust-line">
+                    <div className="trust-icon">&#9889;</div>
+                    Instant delivery after payment
+                  </div>
+                  <div className="trust-line">
+                    <div className="trust-icon">&#128274;</div>
+                    Secure checkout
+                  </div>
+                  <div className="trust-line">
+                    <div className="trust-icon">&#128736;&#65039;</div>
+                    Cancel anytime
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

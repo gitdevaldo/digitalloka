@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Heart, ShoppingCart, ArrowLeft, Trash2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useWishlist } from '@/context/wishlist-context';
 import { useCart } from '@/context/cart-context';
 import { formatCurrency } from '@/lib/utils';
 import { LoginDialog } from '@/components/ui/login-dialog';
+import { useRouter } from 'next/navigation';
 
 interface Product {
   id: number;
@@ -22,6 +23,14 @@ interface Product {
   icon_emoji: string;
 }
 
+const ICON_COLORS: Record<string, string> = {
+  template: 'linear-gradient(135deg, #ede9fe, #ddd6fe)',
+  'ui-kit': 'linear-gradient(135deg, #d1fae5, #a7f3d0)',
+  plugin: 'linear-gradient(135deg, #fce7f3, #fbcfe8)',
+  ebook: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+  course: 'linear-gradient(135deg, #dbeafe, #bfdbfe)',
+};
+
 export default function WishlistPage() {
   const { items: wishlistIds, toggleWishlist, isLoggedIn } = useWishlist();
   const { addItem, isInCart } = useCart();
@@ -29,6 +38,7 @@ export default function WishlistPage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -45,6 +55,9 @@ export default function WishlistPage() {
 
   const visibleProducts = products.filter(p => wishlistIds.includes(p.id));
 
+  const totalValue = visibleProducts.reduce((sum, p) => sum + p.price_amount, 0);
+  const currency = visibleProducts[0]?.price_currency || 'USD';
+
   const handleRemove = async (productId: number) => {
     await toggleWishlist(productId);
   };
@@ -53,94 +66,141 @@ export default function WishlistPage() {
     addItem(productId);
   };
 
+  const handleBuyNow = (productId: number) => {
+    addItem(productId);
+    router.push('/cart');
+  };
+
   return (
-    <div className="inner-page">
-      <div className="inner-page-header">
+    <div className="inner-wrap">
+      <div className="page-header">
         <Link href="/" className="back-link">
-          <ArrowLeft size={18} />
-          <span>Back to catalog</span>
+          <ArrowLeft size={16} />
+          Back to catalog
         </Link>
-        <div className="inner-page-title-row">
-          <Heart size={28} />
-          <h1>My Wishlist</h1>
-          {visibleProducts.length > 0 && (
-            <span className="inner-page-count">{visibleProducts.length} item{visibleProducts.length !== 1 ? 's' : ''}</span>
-          )}
+        <div className="page-title">Wishlist</div>
+        <div className="page-sub">
+          {visibleProducts.length > 0
+            ? `${visibleProducts.length} product${visibleProducts.length !== 1 ? 's' : ''} saved — add to cart when you're ready`
+            : 'Your saved products will appear here'}
         </div>
       </div>
 
       {loading ? (
         <div className="empty-state">
-          <div className="icon">⏳</div>
-          <h3>Loading your wishlist</h3>
-          <p>Fetching your saved items...</p>
+          <div className="empty-icon">&#9203;</div>
+          <div className="empty-title">Loading your wishlist</div>
+          <div className="empty-desc">Fetching your saved items...</div>
         </div>
       ) : fetchError ? (
         <div className="empty-state">
-          <div className="icon">⚠️</div>
-          <h3>Something went wrong</h3>
-          <p>Could not load your wishlist. Please try again.</p>
-          <button className="btn-primary" style={{ marginTop: '16px' }} onClick={() => window.location.reload()}>
-            Retry
-          </button>
+          <div className="empty-icon">&#9888;&#65039;</div>
+          <div className="empty-title">Something went wrong</div>
+          <div className="empty-desc">Could not load your wishlist. Please try again.</div>
+          <button className="btn btn-accent" onClick={() => window.location.reload()}>Retry</button>
         </div>
       ) : !isLoggedIn ? (
         <div className="empty-state">
-          <div className="icon">🔒</div>
-          <h3>Sign in to see your wishlist</h3>
-          <p>Log in to save and view your favorite products.</p>
-          <button className="btn-primary" style={{ marginTop: '16px' }} onClick={() => setShowLogin(true)}>
-            Sign In
-          </button>
+          <div className="empty-icon">&#128274;</div>
+          <div className="empty-title">Sign in to see your wishlist</div>
+          <div className="empty-desc">Log in to save and view your favorite products.</div>
+          <button className="btn btn-accent" onClick={() => setShowLogin(true)}>Sign In</button>
         </div>
       ) : visibleProducts.length === 0 ? (
         <div className="empty-state">
-          <div className="icon">💜</div>
-          <h3>Your wishlist is empty</h3>
-          <p>Browse our catalog and save products you love.</p>
-          <Link href="/" className="btn-primary" style={{ marginTop: '16px', display: 'inline-flex' }}>
-            Browse Products
-          </Link>
+          <div className="empty-icon">&#128156;</div>
+          <div className="empty-title">Your wishlist is empty</div>
+          <div className="empty-desc">Browse our catalog and save products you love.</div>
+          <Link href="/" className="btn btn-accent">Browse Products</Link>
         </div>
       ) : (
-        <div className="item-list">
-          {visibleProducts.map(product => (
-            <div key={product.id} className="item-card">
-              <Link href={`/products/${product.slug}`} className="item-card-thumb">
-                <div className={`card-thumb-mini ${product.thumb_color || 'thumb-purple'}`}>
-                  <span className="thumb-icon">{product.icon_emoji || '📦'}</span>
+        <>
+          <div className="wishlist-grid">
+            {visibleProducts.map(product => {
+              const catSlug = product.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'template';
+              const iconBg = ICON_COLORS[catSlug] || ICON_COLORS.template;
+              return (
+                <div className="wish-card" key={product.id}>
+                  <div className="wish-card-top">
+                    <div className="prod-icon" style={{ background: iconBg }}>
+                      {product.icon_emoji || '📦'}
+                    </div>
+                    <div className="wish-card-info">
+                      <div className="wish-type">{product.category?.name || 'Product'}</div>
+                      <Link href={`/products/${product.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <div className="wish-name">{product.name}</div>
+                      </Link>
+                      <div className="wish-desc">{product.short_description}</div>
+                      <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap' }}>
+                        <span className="badge b-green" style={{ fontSize: '0.58rem' }}>
+                          <span className="dot"></span>{product.status || 'Available'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="wish-card-footer">
+                    <div className="wish-price">
+                      <div className="wish-price-main">
+                        {formatCurrency(product.price_amount, product.price_currency)}
+                        {product.price_billing_period && product.price_billing_period !== 'one-time' && (
+                          <span className="wish-price-period">/{product.price_billing_period}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="wish-actions">
+                      <button
+                        className="remove-btn"
+                        title="Remove from wishlist"
+                        onClick={() => handleRemove(product.id)}
+                      >
+                        &#10005;
+                      </button>
+                      <button
+                        className={`btn btn-ghost btn-sm${isInCart(product.id) ? ' btn-disabled' : ''}`}
+                        onClick={() => handleAddToCart(product.id)}
+                        disabled={isInCart(product.id)}
+                        style={isInCart(product.id) ? { opacity: 0.5 } : {}}
+                      >
+                        {isInCart(product.id) ? 'In Cart' : 'Add to cart'}
+                      </button>
+                      <button
+                        className="btn btn-accent btn-sm"
+                        onClick={() => handleBuyNow(product.id)}
+                      >
+                        Buy now
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </Link>
-              <div className="item-card-info">
-                <Link href={`/products/${product.slug}`} className="item-card-name">{product.name}</Link>
-                <p className="item-card-desc">{product.short_description}</p>
-                <div className="item-card-meta">
-                  {product.category && <span className="item-card-cat">{product.category.name}</span>}
-                  <span className="item-card-price">
-                    {formatCurrency(product.price_amount, product.price_currency)}
-                    {product.price_billing_period && product.price_billing_period !== 'one-time' && (
-                      <span className="billing-period"> / {product.price_billing_period}</span>
-                    )}
-                  </span>
-                </div>
+              );
+            })}
+          </div>
+
+          <div className="wishlist-summary">
+            <div className="ws-left">
+              <div className="ws-stat">
+                <div className="ws-stat-val">{visibleProducts.length}</div>
+                <div className="ws-stat-lbl">Items</div>
               </div>
-              <div className="item-card-actions">
-                <button
-                  className={`item-btn btn-accent ${isInCart(product.id) ? 'btn-disabled' : ''}`}
-                  onClick={() => handleAddToCart(product.id)}
-                  disabled={isInCart(product.id)}
-                >
-                  <ShoppingCart size={14} />
-                  <span>{isInCart(product.id) ? 'In Cart' : 'Add to Cart'}</span>
-                </button>
-                <button className="item-btn btn-ghost-danger" onClick={() => handleRemove(product.id)}>
-                  <Trash2 size={14} />
-                  <span>Remove</span>
-                </button>
+              <div className="ws-stat">
+                <div className="ws-stat-val">{formatCurrency(totalValue, currency)}</div>
+                <div className="ws-stat-lbl">Total Value</div>
               </div>
             </div>
-          ))}
-        </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                className="btn btn-accent"
+                onClick={() => {
+                  visibleProducts.forEach(p => { if (!isInCart(p.id)) addItem(p.id); });
+                  router.push('/cart');
+                }}
+              >
+                Add all to cart
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       <LoginDialog open={showLogin} onClose={() => setShowLogin(false)} />

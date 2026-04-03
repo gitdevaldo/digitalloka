@@ -1,0 +1,2947 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>DigitalLoka — Wishlist · Cart · Checkout</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ═══════════════════════════════════════ TOKENS */
+      :root {
+        --bg: #fffdf5;
+        --fg: #1e293b;
+        --muted: #f1f5f9;
+        --muted-fg: #64748b;
+        --accent: #8b5cf6;
+        --accent-fg: #ffffff;
+        --secondary: #f472b6;
+        --tertiary: #fbbf24;
+        --quat: #34d399;
+        --border: #e2e8f0;
+        --input: #ffffff;
+        --card: #ffffff;
+        --shadow: #1e293b;
+        --fh: "Outfit", sans-serif;
+        --fb: "Plus Jakarta Sans", sans-serif;
+        --ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+        --r-sm: 8px;
+        --r-md: 16px;
+        --r-lg: 24px;
+        --r-xl: 32px;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: var(--fb);
+        background: var(--bg);
+        color: var(--fg);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background-image: radial-gradient(
+          circle,
+          rgba(30, 41, 59, 0.09) 1px,
+          transparent 1px
+        );
+        background-size: 22px 22px;
+      }
+      ::-webkit-scrollbar {
+        width: 5px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 999px;
+      }
+
+      /* ═══════════════════════════════════════ TOPBAR */
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 200;
+        height: 64px;
+        background: var(--card);
+        border-bottom: 2px solid var(--fg);
+        box-shadow: 0 4px 0 var(--shadow);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 40px;
+      }
+      .brand-logo {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        font-family: var(--fh);
+        font-weight: 900;
+        font-size: 1.1rem;
+        letter-spacing: -0.03em;
+      }
+      .brand-box {
+        background: var(--accent);
+        color: #fff;
+        border: 2px solid var(--fg);
+        box-shadow: 3px 3px 0 var(--shadow);
+        padding: 4px 10px;
+        border-radius: var(--r-sm);
+      }
+      .brand-box .loka {
+        color: var(--tertiary);
+      }
+
+      .topbar-tabs {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: var(--muted);
+        border: 2px solid var(--fg);
+        border-radius: 999px;
+        padding: 3px;
+        box-shadow: 3px 3px 0 var(--shadow);
+      }
+      .tab-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 16px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-family: var(--fb);
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--muted-fg);
+        border: 2px solid transparent;
+        transition: all 0.18s var(--ease);
+        background: transparent;
+        white-space: nowrap;
+      }
+      .tab-btn.active {
+        background: var(--card);
+        color: var(--fg);
+        border-color: var(--fg);
+        box-shadow: 2px 2px 0 var(--shadow);
+      }
+      .tab-btn:hover:not(.active) {
+        color: var(--fg);
+        background: rgba(255, 255, 255, 0.5);
+      }
+      .tab-count {
+        background: var(--accent);
+        color: #fff;
+        border-radius: 999px;
+        font-size: 0.62rem;
+        font-weight: 800;
+        padding: 1px 6px;
+        border: 1.5px solid var(--fg);
+      }
+      .tab-btn.active .tab-count {
+        background: var(--accent);
+      }
+      .tab-btn:not(.active) .tab-count {
+        background: var(--muted-fg);
+      }
+
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .icon-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        background: var(--card);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--muted-fg);
+        transition: all 0.15s var(--ease);
+      }
+      .icon-btn:hover {
+        border-color: var(--fg);
+        box-shadow: 2px 2px 0 var(--shadow);
+        transform: translate(-1px, -1px);
+        color: var(--fg);
+      }
+      .avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--secondary));
+        border: 2px solid var(--fg);
+        box-shadow: 2px 2px 0 var(--shadow);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--fh);
+        font-weight: 800;
+        font-size: 0.82rem;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      /* ═══════════════════════════════════════ PAGES */
+      .page {
+        display: none;
+        position: relative;
+        z-index: 1;
+        animation: fadeUp 0.3s var(--ease);
+      }
+      .page.active {
+        display: block;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ═══════════════════════════════════════ SHARED */
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 40px;
+      }
+      .page-header {
+        margin-bottom: 32px;
+      }
+      .page-title {
+        font-family: var(--fh);
+        font-size: 1.9rem;
+        font-weight: 900;
+        line-height: 1.1;
+      }
+      .page-sub {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--muted-fg);
+        margin-top: 5px;
+      }
+
+      .btn {
+        font-family: var(--fb);
+        font-weight: 700;
+        font-size: 0.83rem;
+        border: 2px solid var(--fg);
+        border-radius: 999px;
+        padding: 9px 20px;
+        cursor: pointer;
+        transition: all 0.15s var(--ease);
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: var(--card);
+        color: var(--fg);
+        box-shadow: 3px 3px 0 var(--shadow);
+        text-decoration: none;
+      }
+      .btn:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 5px 5px 0 var(--shadow);
+      }
+      .btn:active {
+        transform: translate(1px, 1px);
+        box-shadow: 1px 1px 0 var(--shadow);
+      }
+      .btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+      .btn-accent {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-quat {
+        background: var(--quat);
+        color: var(--fg);
+      }
+      .btn-secondary {
+        background: var(--secondary);
+        color: #fff;
+      }
+      .btn-tertiary {
+        background: var(--tertiary);
+        color: var(--fg);
+      }
+      .btn-ghost {
+        background: var(--muted);
+        border-color: var(--border);
+        box-shadow: 2px 2px 0 var(--border);
+        color: var(--muted-fg);
+      }
+      .btn-ghost:hover {
+        color: var(--fg);
+        border-color: var(--fg);
+        box-shadow: 3px 3px 0 var(--shadow);
+      }
+      .btn-sm {
+        padding: 5px 13px;
+        font-size: 0.72rem;
+        box-shadow: 2px 2px 0 var(--shadow);
+      }
+      .btn-sm:hover {
+        box-shadow: 3px 3px 0 var(--shadow);
+      }
+      .btn-lg {
+        padding: 14px 32px;
+        font-size: 1rem;
+      }
+      .btn-full {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.62rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        border: 2px solid var(--fg);
+        box-shadow: 2px 2px 0 var(--shadow);
+        white-space: nowrap;
+      }
+      .badge .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+      }
+      .b-green {
+        background: var(--quat);
+        color: var(--fg);
+      }
+      .b-green .dot {
+        background: #065f46;
+      }
+      .b-amber {
+        background: var(--tertiary);
+        color: var(--fg);
+      }
+      .b-amber .dot {
+        background: #78350f;
+      }
+      .b-accent {
+        background: var(--accent);
+        color: #fff;
+      }
+      .b-accent .dot {
+        background: #ede9fe;
+      }
+      .b-pink {
+        background: var(--secondary);
+        color: #fff;
+      }
+      .b-pink .dot {
+        background: #9f1239;
+      }
+      .b-muted {
+        background: var(--muted);
+        color: var(--muted-fg);
+        border-color: var(--border);
+        box-shadow: none;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 80px 32px;
+        border: 2px dashed var(--border);
+        border-radius: var(--r-xl);
+        background: var(--muted);
+      }
+      .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 14px;
+      }
+      .empty-title {
+        font-family: var(--fh);
+        font-size: 1.2rem;
+        font-weight: 800;
+        margin-bottom: 8px;
+      }
+      .empty-desc {
+        font-size: 0.83rem;
+        font-weight: 500;
+        color: var(--muted-fg);
+        margin-bottom: 20px;
+      }
+
+      /* ═══════════════════════════════════════ PRODUCT TYPE ICON */
+      .prod-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: var(--r-md);
+        border: 2px solid var(--fg);
+        box-shadow: 3px 3px 0 var(--shadow);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+      }
+
+      /* ══════════════════════════════════════════════════════════════
+   WISHLIST PAGE
+══════════════════════════════════════════════════════════════ */
+      .wishlist-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .wish-card {
+        background: var(--card);
+        border: 2px solid var(--fg);
+        border-radius: var(--r-xl);
+        box-shadow: 4px 4px 0 var(--shadow);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        transition: all 0.15s var(--ease);
+        position: relative;
+        overflow: hidden;
+      }
+      .wish-card:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 6px 6px 0 var(--shadow);
+      }
+      .wish-card::before {
+        content: "";
+        position: absolute;
+        top: -14px;
+        right: -14px;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        border: 2px solid var(--fg);
+        opacity: 0.05;
+      }
+      .wish-card-top {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+      .wish-card-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .wish-type {
+        font-size: 0.62rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: var(--muted-fg);
+        margin-bottom: 3px;
+      }
+      .wish-name {
+        font-family: var(--fh);
+        font-size: 1.05rem;
+        font-weight: 800;
+        line-height: 1.2;
+        margin-bottom: 6px;
+      }
+      .wish-desc {
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: var(--muted-fg);
+        line-height: 1.5;
+        margin-bottom: 10px;
+      }
+
+      .wish-specs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-bottom: 14px;
+      }
+      .spec-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 9px;
+        background: var(--muted);
+        border: 1.5px solid var(--border);
+        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: var(--muted-fg);
+      }
+      .spec-pill strong {
+        color: var(--fg);
+      }
+
+      .wish-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 14px;
+        border-top: 2px solid var(--border);
+        margin-top: auto;
+        gap: 10px;
+      }
+      .wish-price {
+        display: flex;
+        flex-direction: column;
+      }
+      .wish-price-orig {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--muted-fg);
+        text-decoration: line-through;
+      }
+      .wish-price-main {
+        font-family: var(--fh);
+        font-size: 1.35rem;
+        font-weight: 900;
+      }
+      .wish-price-period {
+        font-size: 0.7rem;
+        color: var(--muted-fg);
+        font-weight: 600;
+      }
+      .wish-actions {
+        display: flex;
+        gap: 7px;
+        align-items: center;
+      }
+      .remove-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        background: var(--muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted-fg);
+        font-size: 0.85rem;
+        transition: all 0.15s var(--ease);
+      }
+      .remove-btn:hover {
+        background: var(--secondary);
+        border-color: var(--fg);
+        color: #fff;
+        box-shadow: 2px 2px 0 var(--shadow);
+      }
+
+      .wishlist-summary {
+        margin-top: 24px;
+        background: var(--card);
+        border: 2px solid var(--fg);
+        border-radius: var(--r-xl);
+        box-shadow: 4px 4px 0 var(--shadow);
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 14px;
+      }
+      .ws-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .ws-stat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0 16px;
+        border-right: 2px solid var(--border);
+      }
+      .ws-stat:last-of-type {
+        border-right: none;
+      }
+      .ws-stat-val {
+        font-family: var(--fh);
+        font-size: 1.3rem;
+        font-weight: 900;
+      }
+      .ws-stat-lbl {
+        font-size: 0.62rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted-fg);
+      }
+
+      /* ══════════════════════════════════════════════════════════════
+   CART PAGE
+══════════════════════════════════════════════════════════════ */
+      .cart-layout {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 24px;
+        align-items: start;
+      }
+
+      /* Cart items */
+      .cart-items {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .cart-item {
+        background: var(--card);
+        border: 2px solid var(--fg);
+        border-radius: var(--r-xl);
+        box-shadow: 4px 4px 0 var(--shadow);
+        padding: 18px 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: all 0.15s var(--ease);
+      }
+      .cart-item:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 6px 6px 0 var(--shadow);
+      }
+      .cart-item-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .ci-type {
+        font-size: 0.62rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: var(--muted-fg);
+        margin-bottom: 2px;
+      }
+      .ci-name {
+        font-family: var(--fh);
+        font-size: 1rem;
+        font-weight: 800;
+        margin-bottom: 5px;
+      }
+      .ci-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .ci-spec {
+        font-size: 0.73rem;
+        font-weight: 600;
+        color: var(--muted-fg);
+      }
+      .ci-spec strong {
+        color: var(--fg);
+      }
+      .ci-spec-sep {
+        color: var(--border);
+        font-size: 0.7rem;
+      }
+
+      .ci-billing {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 8px;
+      }
+      .ci-billing-opt {
+        padding: 3px 10px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--muted-fg);
+        border: 1.5px solid var(--border);
+        background: var(--muted);
+        transition: all 0.12s;
+      }
+      .ci-billing-opt.active {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--fg);
+        box-shadow: 1px 1px 0 var(--shadow);
+      }
+      .ci-billing-opt:hover:not(.active) {
+        border-color: var(--fg);
+        color: var(--fg);
+      }
+      .ci-save-tag {
+        font-size: 0.62rem;
+        font-weight: 800;
+        color: var(--quat);
+        margin-left: 4px;
+      }
+
+      .cart-item-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .ci-price {
+        font-family: var(--fh);
+        font-size: 1.2rem;
+        font-weight: 900;
+        text-align: right;
+      }
+      .ci-period {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--muted-fg);
+      }
+      .ci-remove {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--muted-fg);
+        cursor: pointer;
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        transition: color 0.12s;
+        padding: 0;
+        font-family: var(--fb);
+      }
+      .ci-remove:hover {
+        color: var(--secondary);
+      }
+
+      /* Promo code row */
+      .promo-row {
+        background: var(--card);
+        border: 2px solid var(--border);
+        border-radius: var(--r-xl);
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .promo-input {
+        flex: 1;
+        border: 2px solid var(--border);
+        border-radius: var(--r-md);
+        padding: 8px 14px;
+        font-family: var(--fb);
+        font-size: 0.82rem;
+        font-weight: 600;
+        background: var(--input);
+        color: var(--fg);
+        outline: none;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .promo-input:focus {
+        border-color: var(--accent);
+        box-shadow: 3px 3px 0 var(--accent);
+      }
+      .promo-input::placeholder {
+        color: var(--muted-fg);
+      }
+      .promo-tag {
+        display: none;
+        align-items: center;
+        gap: 6px;
+        background: rgba(52, 211, 153, 0.12);
+        border: 2px solid var(--quat);
+        border-radius: var(--r-sm);
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: var(--fg);
+        box-shadow: 2px 2px 0 var(--shadow);
+      }
+      .promo-tag.visible {
+        display: flex;
+      }
+      .promo-clear {
+        cursor: pointer;
+        color: var(--muted-fg);
+        font-size: 0.75rem;
+        margin-left: 4px;
+      }
+      .promo-clear:hover {
+        color: var(--secondary);
+      }
+
+      /* Order summary card */
+      .order-summary {
+        background: var(--card);
+        border: 2px solid var(--fg);
+        border-radius: var(--r-xl);
+        box-shadow: 6px 6px 0 var(--shadow);
+        overflow: hidden;
+        position: sticky;
+        top: 80px;
+      }
+      .os-header {
+        padding: 18px 20px;
+        border-bottom: 2px solid var(--border);
+      }
+      .os-title {
+        font-family: var(--fh);
+        font-size: 1.05rem;
+        font-weight: 800;
+      }
+
+      .os-body {
+        padding: 20px;
+      }
+      .os-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 0.83rem;
+      }
+      .os-label {
+        font-weight: 600;
+        color: var(--muted-fg);
+      }
+      .os-value {
+        font-weight: 700;
+        color: var(--fg);
+      }
+      .os-value.green {
+        color: var(--quat);
+        font-weight: 800;
+      }
+      .os-value.strike {
+        text-decoration: line-through;
+        color: var(--muted-fg);
+      }
+
+      .os-divider {
+        height: 2px;
+        background: var(--border);
+        margin: 14px 0;
+      }
+      .os-total-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+      }
+      .os-total-label {
+        font-family: var(--fh);
+        font-size: 1rem;
+        font-weight: 800;
+      }
+      .os-total-value {
+        font-family: var(--fh);
+        font-size: 1.5rem;
+        font-weight: 900;
+      }
+
+      .os-trust {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding-top: 14px;
+        border-top: 2px solid var(--border);
+        margin-top: 4px;
+      }
+      .trust-line {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--muted-fg);
+      }
+      .trust-icon {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--muted);
+        border: 1.5px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.65rem;
+        flex-shrink: 0;
+      }
+
+      /* ══════════════════════════════════════════════════════════════
+   CHECKOUT PAGE
+══════════════════════════════════════════════════════════════ */
+      .checkout-layout {
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 28px;
+        align-items: start;
+      }
+
+      /* Progress steps */
+      .checkout-steps {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        margin-bottom: 32px;
+        background: var(--card);
+        border: 2px solid var(--fg);
+        border-radius: 999px;
+        overflow: hidden;
+        box-shadow: 3px 3px 0 var(--shadow);
+      }
+      .step {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 11px 14px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--muted-fg);
+        border-right: 2px solid var(--border);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .step:last-child {
+        border-right: none;
+      }
+      .step.active {
+        background: var(--accent);
+        color: #fff;
+      }
+      .step.done {
+        background: var(--quat);
+        color: var(--fg);
+      }
+      .step.done .step-num,
+      .step.active .step-num {
+        background: rgba(255, 255, 255, 0.25);
+        border-color: rgba(255, 255, 255, 0.4);
+      }
+      .step-num {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        background: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--fh);
+        font-size: 0.7rem;
+        font-weight: 800;
+        flex-shrink: 0;
+      }
+      .step-label {
+        white-space: nowrap;
+      }
+
+      /* Checkout form panels */
+      .form-panel {
+        background: var(--card);
+        border: 2px solid var(--fg);
+        border-radius: var(--r-xl);
+        box-shadow: 4px 4px 0 var(--shadow);
+        overflow: hidden;
+        margin-bottom: 16px;
+      }
+      .fp-header {
+        padding: 16px 22px;
+        border-bottom: 2px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .fp-title {
+        font-family: var(--fh);
+        font-size: 1rem;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .fp-step-badge {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 2px solid var(--fg);
+        box-shadow: 2px 2px 0 var(--shadow);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--fh);
+        font-size: 0.72rem;
+        font-weight: 800;
+        background: var(--accent);
+        color: #fff;
+      }
+      .fp-body {
+        padding: 22px;
+      }
+      .fp-done-badge {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--quat);
+        letter-spacing: 0.05em;
+      }
+
+      /* Form fields */
+      .field-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .field-row.single {
+        grid-template-columns: 1fr;
+      }
+      .field-row.triple {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .field-label {
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted-fg);
+      }
+      .field-input {
+        border: 2px solid var(--border);
+        border-radius: var(--r-md);
+        padding: 10px 14px;
+        font-family: var(--fb);
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: var(--input);
+        color: var(--fg);
+        outline: none;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+        width: 100%;
+      }
+      .field-input:focus {
+        border-color: var(--accent);
+        box-shadow: 3px 3px 0 var(--accent);
+      }
+      .field-input::placeholder {
+        color: var(--muted-fg);
+      }
+      .field-input.error {
+        border-color: var(--secondary);
+        box-shadow: 2px 2px 0 var(--secondary);
+      }
+      .field-select {
+        border: 2px solid var(--border);
+        border-radius: var(--r-md);
+        padding: 10px 14px;
+        font-family: var(--fb);
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: var(--input);
+        color: var(--fg);
+        outline: none;
+        cursor: pointer;
+        width: 100%;
+      }
+      .field-select:focus {
+        border-color: var(--accent);
+        box-shadow: 3px 3px 0 var(--accent);
+      }
+
+      /* Card number field with icon */
+      .card-field {
+        position: relative;
+      }
+      .card-field .field-input {
+        padding-right: 48px;
+      }
+      .card-brand-icon {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 32px;
+        height: 20px;
+        border-radius: 4px;
+        border: 1.5px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.55rem;
+        font-weight: 800;
+        color: var(--accent);
+        background: var(--muted);
+      }
+
+      /* Payment method tabs */
+      .pay-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .pay-tab {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 12px 8px;
+        border: 2px solid var(--border);
+        border-radius: var(--r-md);
+        cursor: pointer;
+        transition: all 0.15s var(--ease);
+        background: var(--card);
+      }
+      .pay-tab.active {
+        border-color: var(--fg);
+        box-shadow: 3px 3px 0 var(--shadow);
+      }
+      .pay-tab:hover:not(.active) {
+        border-color: var(--accent);
+      }
+      .pay-tab-icon {
+        font-size: 1.2rem;
+      }
+      .pay-tab-label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: var(--muted-fg);
+      }
+      .pay-tab.active .pay-tab-label {
+        color: var(--fg);
+      }
+
+      /* Config card - OS/region selector */
+      .config-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .config-opt {
+        border: 2px solid var(--border);
+        border-radius: var(--r-md);
+        padding: 10px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.15s var(--ease);
+        background: var(--card);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+      .config-opt.active {
+        border-color: var(--fg);
+        background: rgba(139, 92, 246, 0.06);
+        box-shadow: 2px 2px 0 var(--shadow);
+      }
+      .config-opt:hover:not(.active) {
+        border-color: var(--accent);
+      }
+      .config-opt-icon {
+        font-size: 1.1rem;
+      }
+      .config-opt-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--fg);
+      }
+      .config-opt-sub {
+        font-size: 0.62rem;
+        font-weight: 600;
+        color: var(--muted-fg);
+      }
+      .config-opt.active .config-opt-sub {
+        color: var(--accent);
+      }
+
+      /* SSH key */
+      .ssh-area {
+        border: 2px solid var(--border);
+        border-radius: var(--r-md);
+        padding: 10px 14px;
+        font-family: monospace;
+        font-size: 0.72rem;
+        background: var(--muted);
+        color: var(--fg);
+        outline: none;
+        width: 100%;
+        height: 80px;
+        resize: none;
+      }
+      .ssh-area:focus {
+        border-color: var(--accent);
+        box-shadow: 3px 3px 0 var(--accent);
+        outline: none;
+      }
+
+      /* Review items inside checkout summary */
+      .review-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .review-item:last-child {
+        border-bottom: none;
+      }
+      .ri-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: var(--r-sm);
+        border: 2px solid var(--fg);
+        box-shadow: 2px 2px 0 var(--shadow);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+      }
+      .ri-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .ri-name {
+        font-weight: 700;
+        font-size: 0.82rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ri-meta {
+        font-size: 0.68rem;
+        color: var(--muted-fg);
+        font-weight: 600;
+        margin-top: 1px;
+      }
+      .ri-price {
+        font-family: var(--fh);
+        font-size: 0.9rem;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      /* Animated checkmark */
+      @keyframes checkPop {
+        0% {
+          transform: scale(0) rotate(-30deg);
+          opacity: 0;
+        }
+        70% {
+          transform: scale(1.15) rotate(5deg);
+        }
+        100% {
+          transform: scale(1) rotate(0);
+          opacity: 1;
+        }
+      }
+      .success-check {
+        animation: checkPop 0.5s var(--ease) both;
+      }
+
+      /* ═══════════════════════════════════════ ORDER SUCCESS */
+      .success-page {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 64px 32px;
+        max-width: 560px;
+        margin: 0 auto;
+      }
+      .success-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: var(--quat);
+        border: 2px solid var(--fg);
+        box-shadow: 5px 5px 0 var(--shadow);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin-bottom: 24px;
+      }
+      .success-title {
+        font-family: var(--fh);
+        font-size: 1.9rem;
+        font-weight: 900;
+        margin-bottom: 10px;
+      }
+      .success-desc {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--muted-fg);
+        line-height: 1.65;
+        margin-bottom: 28px;
+      }
+      .success-details {
+        background: var(--card);
+        border: 2px solid var(--fg);
+        border-radius: var(--r-xl);
+        box-shadow: 4px 4px 0 var(--shadow);
+        padding: 20px;
+        width: 100%;
+        margin-bottom: 24px;
+        text-align: left;
+      }
+      .sd-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.82rem;
+      }
+      .sd-row:last-child {
+        border-bottom: none;
+      }
+      .sd-key {
+        font-weight: 600;
+        color: var(--muted-fg);
+      }
+      .sd-val {
+        font-weight: 800;
+        color: var(--fg);
+      }
+      .sd-val.mono {
+        font-family: monospace;
+        font-size: 0.75rem;
+        color: var(--accent);
+      }
+
+      /* ═══════════════════════════════════════ TOAST */
+      #toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9999;
+        background: var(--fg);
+        color: #fff;
+        border: 2px solid var(--fg);
+        border-radius: var(--r-md);
+        padding: 12px 18px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
+        display: none;
+        align-items: center;
+        gap: 8px;
+        animation: fadeUp 0.25s var(--ease);
+      }
+
+      /* ═══════════════════════════════════════ RESPONSIVE */
+      @media (max-width: 960px) {
+        .cart-layout,
+        .checkout-layout {
+          grid-template-columns: 1fr;
+        }
+        .order-summary,
+        .checkout-right {
+          position: static;
+        }
+        .wishlist-grid {
+          grid-template-columns: 1fr;
+        }
+        .wrap {
+          padding: 24px 20px;
+        }
+        .topbar {
+          padding: 0 16px;
+        }
+        .topbar-tabs .tab-btn span.tab-label {
+          display: none;
+        }
+        .checkout-steps .step-label {
+          display: none;
+        }
+      }
+      @media (max-width: 540px) {
+        .config-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .field-row {
+          grid-template-columns: 1fr;
+        }
+        .field-row.triple {
+          grid-template-columns: 1fr 1fr;
+        }
+        .pay-tabs {
+          flex-wrap: wrap;
+        }
+        .wishlist-summary {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ═══════════════════════════ TOPBAR -->
+    <header class="topbar">
+      <a href="#" class="brand-logo">
+        <div class="brand-box">Digital<span class="loka">Loka</span></div>
+      </a>
+
+      <div class="topbar-tabs">
+        <button class="tab-btn active" onclick="showPage('wishlist',this)">
+          <svg
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+            />
+          </svg>
+          <span class="tab-label">Wishlist</span>
+          <span class="tab-count" id="wish-count">3</span>
+        </button>
+        <button class="tab-btn" onclick="showPage('cart',this)">
+          <svg
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <path d="M16 10a4 4 0 0 1-8 0" />
+          </svg>
+          <span class="tab-label">Cart</span>
+          <span class="tab-count" id="cart-count">2</span>
+        </button>
+        <button class="tab-btn" onclick="showPage('checkout',this)">
+          <svg
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <rect x="1" y="4" width="22" height="16" rx="2" />
+            <line x1="1" y1="10" x2="23" y2="10" />
+          </svg>
+          <span class="tab-label">Checkout</span>
+        </button>
+      </div>
+
+      <div class="topbar-right">
+        <button class="icon-btn">
+          <svg
+            width="15"
+            height="15"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+        </button>
+        <div class="avatar">AL</div>
+      </div>
+    </header>
+
+    <!-- ══════════════════════════════════════════════════════════
+     WISHLIST PAGE
+══════════════════════════════════════════════════════════ -->
+    <div class="page active" id="page-wishlist">
+      <div class="wrap">
+        <div class="page-header">
+          <div class="page-title">Wishlist ❤️</div>
+          <div class="page-sub">
+            3 products saved — add to cart when you're ready
+          </div>
+        </div>
+
+        <div class="wishlist-grid" id="wishlist-grid">
+          <!-- Item 1 -->
+          <div class="wish-card" id="wc-1">
+            <div class="wish-card-top">
+              <div
+                class="prod-icon"
+                style="background: linear-gradient(135deg, #ede9fe, #ddd6fe)"
+              >
+                🖥️
+              </div>
+              <div class="wish-card-info">
+                <div class="wish-type">VPS Account</div>
+                <div class="wish-name">Developer Pro — SGP1</div>
+                <div class="wish-desc">
+                  2 vCPU · 4 GB RAM · 80 GB NVMe · 4 TB bandwidth. Root SSH +
+                  web dashboard, weekly snapshots, dedicated IPv4.
+                </div>
+                <div style="display: flex; gap: 7px; flex-wrap: wrap">
+                  <span class="badge b-green" style="font-size: 0.58rem"
+                    ><span class="dot"></span>Available</span
+                  >
+                  <span class="badge b-amber" style="font-size: 0.58rem"
+                    >🔥 Most popular</span
+                  >
+                </div>
+              </div>
+            </div>
+            <div class="wish-specs">
+              <span class="spec-pill"><strong>2 vCPU</strong></span>
+              <span class="spec-pill"><strong>4 GB</strong> RAM</span>
+              <span class="spec-pill"><strong>80 GB</strong> NVMe</span>
+              <span class="spec-pill">SGP1 🇸🇬</span>
+              <span class="spec-pill">99.99% SLA</span>
+            </div>
+            <div class="wish-card-footer">
+              <div class="wish-price">
+                <div class="wish-price-orig">$29/mo</div>
+                <div class="wish-price-main">
+                  $24<span class="wish-price-period">/mo</span>
+                </div>
+              </div>
+              <div class="wish-actions">
+                <button
+                  class="remove-btn"
+                  title="Remove from wishlist"
+                  onclick="removeWish(1)"
+                >
+                  ✕
+                </button>
+                <button
+                  class="btn btn-ghost btn-sm"
+                  onclick="moveToCart(1,'Developer Pro — SGP1','$24','vps',this)"
+                >
+                  Add to cart
+                </button>
+                <button
+                  class="btn btn-accent btn-sm"
+                  onclick="showPage('checkout',document.querySelector('[onclick*=checkout]'))"
+                >
+                  Buy now
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Item 2 -->
+          <div class="wish-card" id="wc-2">
+            <div class="wish-card-top">
+              <div
+                class="prod-icon"
+                style="background: linear-gradient(135deg, #d1fae5, #a7f3d0)"
+              >
+                📊
+              </div>
+              <div class="wish-card-info">
+                <div class="wish-type">SaaS Account</div>
+                <div class="wish-name">IndexNow — Pro Plan</div>
+                <div class="wish-desc">
+                  SEO keyword rank tracking SaaS. Track 500 keywords, daily
+                  refreshes, competitor tracking, API access, export to CSV.
+                </div>
+                <div style="display: flex; gap: 7px; flex-wrap: wrap">
+                  <span class="badge b-green" style="font-size: 0.58rem"
+                    ><span class="dot"></span>Active</span
+                  >
+                  <span class="badge b-accent" style="font-size: 0.58rem"
+                    >✨ New</span
+                  >
+                </div>
+              </div>
+            </div>
+            <div class="wish-specs">
+              <span class="spec-pill"><strong>500</strong> keywords</span>
+              <span class="spec-pill"><strong>Daily</strong> refresh</span>
+              <span class="spec-pill">API access</span>
+              <span class="spec-pill">Export CSV</span>
+            </div>
+            <div class="wish-card-footer">
+              <div class="wish-price">
+                <div class="wish-price-main">
+                  $19<span class="wish-price-period">/mo</span>
+                </div>
+              </div>
+              <div class="wish-actions">
+                <button
+                  class="remove-btn"
+                  title="Remove from wishlist"
+                  onclick="removeWish(2)"
+                >
+                  ✕
+                </button>
+                <button
+                  class="btn btn-ghost btn-sm"
+                  onclick="moveToCart(2,'IndexNow Pro Plan','$19','saas',this)"
+                >
+                  Add to cart
+                </button>
+                <button
+                  class="btn btn-accent btn-sm"
+                  onclick="showPage('checkout',document.querySelector('[onclick*=checkout]'))"
+                >
+                  Buy now
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Item 3 -->
+          <div class="wish-card" id="wc-3">
+            <div class="wish-card-top">
+              <div
+                class="prod-icon"
+                style="background: linear-gradient(135deg, #fce7f3, #fbcfe8)"
+              >
+                🤖
+              </div>
+              <div class="wish-card-info">
+                <div class="wish-type">AI Account</div>
+                <div class="wish-name">Prodvo — Starter</div>
+                <div class="wish-desc">
+                  AI coding agent SaaS. Unlimited code generation sessions,
+                  GitHub integration, project memory, priority queue.
+                </div>
+                <div style="display: flex; gap: 7px; flex-wrap: wrap">
+                  <span class="badge b-green" style="font-size: 0.58rem"
+                    ><span class="dot"></span>Available</span
+                  >
+                  <span class="badge b-pink" style="font-size: 0.58rem"
+                    >🏷 Sale</span
+                  >
+                </div>
+              </div>
+            </div>
+            <div class="wish-specs">
+              <span class="spec-pill"><strong>Unlimited</strong> sessions</span>
+              <span class="spec-pill">GitHub sync</span>
+              <span class="spec-pill">Project memory</span>
+            </div>
+            <div class="wish-card-footer">
+              <div class="wish-price">
+                <div class="wish-price-orig">$29/mo</div>
+                <div class="wish-price-main">
+                  $15<span class="wish-price-period">/mo</span>
+                </div>
+              </div>
+              <div class="wish-actions">
+                <button
+                  class="remove-btn"
+                  title="Remove from wishlist"
+                  onclick="removeWish(3)"
+                >
+                  ✕
+                </button>
+                <button
+                  class="btn btn-ghost btn-sm"
+                  onclick="moveToCart(3,'Prodvo Starter','$15','ai',this)"
+                >
+                  Add to cart
+                </button>
+                <button
+                  class="btn btn-accent btn-sm"
+                  onclick="showPage('checkout',document.querySelector('[onclick*=checkout]'))"
+                >
+                  Buy now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Wishlist summary bar -->
+        <div class="wishlist-summary" id="wishlist-summary">
+          <div class="ws-left">
+            <div class="ws-stat">
+              <div class="ws-stat-val" id="ws-count">3</div>
+              <div class="ws-stat-lbl">Saved</div>
+            </div>
+            <div class="ws-stat">
+              <div class="ws-stat-val">$58</div>
+              <div class="ws-stat-lbl">Total/mo</div>
+            </div>
+            <div class="ws-stat">
+              <div class="ws-stat-val" style="color: var(--quat)">$18</div>
+              <div class="ws-stat-lbl">You save</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap">
+            <button class="btn btn-ghost btn-sm" onclick="clearWishlist()">
+              Clear wishlist
+            </button>
+            <button class="btn btn-accent" onclick="addAllToCart()">
+              <svg
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                viewBox="0 0 24 24"
+              >
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <path d="M16 10a4 4 0 0 1-8 0" />
+              </svg>
+              Add all to cart
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+     CART PAGE
+══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-cart">
+      <div class="wrap">
+        <div class="page-header">
+          <div class="page-title">Your Cart 🛒</div>
+          <div class="page-sub">
+            Review your items and billing before proceeding to checkout
+          </div>
+        </div>
+
+        <div class="cart-layout">
+          <div>
+            <div class="cart-items" id="cart-items-list">
+              <!-- Cart Item 1 -->
+              <div class="cart-item" id="ci-1">
+                <div
+                  class="prod-icon"
+                  style="background: linear-gradient(135deg, #ede9fe, #ddd6fe)"
+                >
+                  🖥️
+                </div>
+                <div class="cart-item-info">
+                  <div class="ci-type">VPS Account</div>
+                  <div class="ci-name">Developer Pro — SGP1</div>
+                  <div class="ci-meta">
+                    <span class="ci-spec"><strong>2 vCPU</strong></span>
+                    <span class="ci-spec-sep">·</span>
+                    <span class="ci-spec"><strong>4 GB</strong> RAM</span>
+                    <span class="ci-spec-sep">·</span>
+                    <span class="ci-spec"><strong>80 GB</strong> NVMe</span>
+                    <span class="ci-spec-sep">·</span>
+                    <span class="ci-spec">Singapore 🇸🇬</span>
+                  </div>
+                  <div class="ci-billing" style="margin-top: 10px">
+                    <div
+                      class="ci-billing-opt active"
+                      onclick="setBillingCart(this,'monthly','ci-1-price','$24')"
+                    >
+                      Monthly
+                    </div>
+                    <div
+                      class="ci-billing-opt"
+                      onclick="setBillingCart(this,'annual','ci-1-price','$19')"
+                    >
+                      Annual
+                      <span class="ci-save-tag">–20%</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="cart-item-right">
+                  <div>
+                    <div class="ci-price" id="ci-1-price">$24</div>
+                    <div class="ci-period">/month</div>
+                  </div>
+                  <button class="ci-remove" onclick="removeCartItem(1)">
+                    <svg
+                      width="11"
+                      height="11"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      viewBox="0 0 24 24"
+                    >
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <path d="M10 11v6" />
+                      <path d="M14 11v6" />
+                    </svg>
+                    Remove
+                  </button>
+                </div>
+              </div>
+
+              <!-- Cart Item 2 -->
+              <div class="cart-item" id="ci-2">
+                <div
+                  class="prod-icon"
+                  style="background: linear-gradient(135deg, #d1fae5, #a7f3d0)"
+                >
+                  📊
+                </div>
+                <div class="cart-item-info">
+                  <div class="ci-type">SaaS Account</div>
+                  <div class="ci-name">IndexNow — Pro Plan</div>
+                  <div class="ci-meta">
+                    <span class="ci-spec"><strong>500</strong> keywords</span>
+                    <span class="ci-spec-sep">·</span>
+                    <span class="ci-spec">Daily refresh</span>
+                    <span class="ci-spec-sep">·</span>
+                    <span class="ci-spec">API access</span>
+                  </div>
+                  <div class="ci-billing" style="margin-top: 10px">
+                    <div
+                      class="ci-billing-opt active"
+                      onclick="setBillingCart(this,'monthly','ci-2-price','$19')"
+                    >
+                      Monthly
+                    </div>
+                    <div
+                      class="ci-billing-opt"
+                      onclick="setBillingCart(this,'annual','ci-2-price','$15')"
+                    >
+                      Annual
+                      <span class="ci-save-tag">–21%</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="cart-item-right">
+                  <div>
+                    <div class="ci-price" id="ci-2-price">$19</div>
+                    <div class="ci-period">/month</div>
+                  </div>
+                  <button class="ci-remove" onclick="removeCartItem(2)">
+                    <svg
+                      width="11"
+                      height="11"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      viewBox="0 0 24 24"
+                    >
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <path d="M10 11v6" />
+                      <path d="M14 11v6" />
+                    </svg>
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Promo code -->
+            <div class="promo-row" style="margin-top: 12px">
+              <svg
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"
+                />
+                <line x1="7" y1="7" x2="7.01" y2="7" />
+              </svg>
+              <input
+                class="promo-input"
+                id="promoInput"
+                placeholder="Promo code (try LAUNCH20)"
+              />
+              <div class="promo-tag" id="promoTag">
+                <span>🎉 LAUNCH20 — 20% off</span>
+                <span class="promo-clear" onclick="clearPromo()">✕</span>
+              </div>
+              <button class="btn btn-sm" onclick="applyPromo()">Apply</button>
+            </div>
+          </div>
+
+          <!-- ORDER SUMMARY -->
+          <div>
+            <div class="order-summary">
+              <div class="os-header">
+                <div class="os-title">Order summary</div>
+              </div>
+              <div class="os-body">
+                <div class="os-line">
+                  <span class="os-label">Developer Pro (monthly)</span>
+                  <span class="os-value" id="os-line-1">$24.00</span>
+                </div>
+                <div class="os-line">
+                  <span class="os-label">IndexNow Pro (monthly)</span>
+                  <span class="os-value" id="os-line-2">$19.00</span>
+                </div>
+                <div class="os-line" id="promo-line" style="display: none">
+                  <span class="os-label" style="color: var(--quat)"
+                    >🎉 LAUNCH20 (–20%)</span
+                  >
+                  <span class="os-value green" id="os-discount">–$8.60</span>
+                </div>
+                <div class="os-divider"></div>
+                <div class="os-line">
+                  <span class="os-label">Subtotal</span>
+                  <span class="os-value" id="os-subtotal">$43.00</span>
+                </div>
+                <div class="os-line">
+                  <span class="os-label">Tax (11% PPN)</span>
+                  <span class="os-value" id="os-tax">$4.73</span>
+                </div>
+                <div class="os-divider"></div>
+                <div class="os-total-row">
+                  <span class="os-total-label">Total due today</span>
+                  <span class="os-total-value" id="os-total">$47.73</span>
+                </div>
+                <button
+                  class="btn btn-accent btn-full btn-lg"
+                  onclick="showPage('checkout',document.querySelectorAll('.tab-btn')[2])"
+                >
+                  Proceed to checkout →
+                </button>
+                <div class="os-trust">
+                  <div class="trust-line">
+                    <div class="trust-icon">🔒</div>
+                    SSL encrypted checkout
+                  </div>
+                  <div class="trust-line">
+                    <div class="trust-icon">🛡️</div>
+                    7-day money back guarantee
+                  </div>
+                  <div class="trust-line">
+                    <div class="trust-icon">⚡</div>
+                    Instant account activation
+                  </div>
+                  <div class="trust-line">
+                    <div class="trust-icon">🔄</div>
+                    Cancel anytime, no lock-in
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+     CHECKOUT PAGE
+══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-checkout">
+      <div class="wrap">
+        <div class="page-header">
+          <div class="page-title">Checkout</div>
+          <div class="page-sub">
+            Complete your order — accounts activate in ~60 seconds
+          </div>
+        </div>
+
+        <!-- Progress steps -->
+        <div class="checkout-steps">
+          <div class="step done" id="step-1">
+            <div class="step-num">✓</div>
+            <span class="step-label">Cart</span>
+          </div>
+          <div class="step active" id="step-2">
+            <div class="step-num">2</div>
+            <span class="step-label">Account</span>
+          </div>
+          <div class="step" id="step-3">
+            <div class="step-num">3</div>
+            <span class="step-label">Configure</span>
+          </div>
+          <div class="step" id="step-4">
+            <div class="step-num">4</div>
+            <span class="step-label">Payment</span>
+          </div>
+          <div class="step" id="step-5">
+            <div class="step-num">5</div>
+            <span class="step-label">Review</span>
+          </div>
+        </div>
+
+        <div class="checkout-layout">
+          <!-- LEFT: FORMS -->
+          <div id="checkout-forms">
+            <!-- STEP 2: Account Details -->
+            <div class="form-panel" id="panel-account">
+              <div class="fp-header">
+                <div class="fp-title">
+                  <div class="fp-step-badge">2</div>
+                  Account Details
+                </div>
+                <div
+                  class="fp-done-badge"
+                  id="account-done"
+                  style="display: none"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    viewBox="0 0 24 24"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Done
+                </div>
+              </div>
+              <div class="fp-body">
+                <div class="field-row">
+                  <div class="field">
+                    <div class="field-label">First Name</div>
+                    <input
+                      class="field-input"
+                      type="text"
+                      placeholder="Aldo"
+                      id="f-fname"
+                    />
+                  </div>
+                  <div class="field">
+                    <div class="field-label">Last Name</div>
+                    <input
+                      class="field-input"
+                      type="text"
+                      placeholder="Santoso"
+                      id="f-lname"
+                    />
+                  </div>
+                </div>
+                <div class="field-row single">
+                  <div class="field">
+                    <div class="field-label">Email Address</div>
+                    <input
+                      class="field-input"
+                      type="email"
+                      placeholder="aldo@yourcompany.com"
+                      id="f-email"
+                    />
+                  </div>
+                </div>
+                <div class="field-row single">
+                  <div class="field">
+                    <div class="field-label">Password (new account)</div>
+                    <input
+                      class="field-input"
+                      type="password"
+                      placeholder="Min. 8 characters"
+                      id="f-pass"
+                    />
+                  </div>
+                </div>
+                <div style="margin-top: 14px">
+                  <button class="btn btn-accent" onclick="advanceStep(2)">
+                    Continue to configuration →
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 3: Server Configuration -->
+            <div
+              class="form-panel"
+              id="panel-config"
+              style="opacity: 0.5; pointer-events: none"
+            >
+              <div class="fp-header">
+                <div class="fp-title">
+                  <div
+                    class="fp-step-badge"
+                    style="background: var(--muted-fg)"
+                  >
+                    3
+                  </div>
+                  Server Configuration
+                </div>
+                <div
+                  class="fp-done-badge"
+                  id="config-done"
+                  style="display: none"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    viewBox="0 0 24 24"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Done
+                </div>
+              </div>
+              <div class="fp-body">
+                <div class="field-label" style="margin-bottom: 10px">
+                  Operating System
+                </div>
+                <div class="config-grid">
+                  <div
+                    class="config-opt active"
+                    onclick="selectConfig(this,'os')"
+                  >
+                    <div class="config-opt-icon">🐧</div>
+                    <div class="config-opt-label">Ubuntu 24.04</div>
+                    <div class="config-opt-sub">Recommended</div>
+                  </div>
+                  <div class="config-opt" onclick="selectConfig(this,'os')">
+                    <div class="config-opt-icon">🌀</div>
+                    <div class="config-opt-label">Debian 12</div>
+                    <div class="config-opt-sub">Stable LTS</div>
+                  </div>
+                  <div class="config-opt" onclick="selectConfig(this,'os')">
+                    <div class="config-opt-icon">⛰️</div>
+                    <div class="config-opt-label">Rocky Linux 9</div>
+                    <div class="config-opt-sub">Enterprise</div>
+                  </div>
+                </div>
+
+                <div class="field-label" style="margin: 14px 0 10px">
+                  Region
+                </div>
+                <div class="config-grid">
+                  <div
+                    class="config-opt active"
+                    onclick="selectConfig(this,'region')"
+                  >
+                    <div class="config-opt-icon">🇸🇬</div>
+                    <div class="config-opt-label">Singapore</div>
+                    <div class="config-opt-sub">SGP1 · ~4ms</div>
+                  </div>
+                  <div class="config-opt" onclick="selectConfig(this,'region')">
+                    <div class="config-opt-icon">🇺🇸</div>
+                    <div class="config-opt-label">New York</div>
+                    <div class="config-opt-sub">NYC1 · ~180ms</div>
+                  </div>
+                  <div class="config-opt" onclick="selectConfig(this,'region')">
+                    <div class="config-opt-icon">🇩🇪</div>
+                    <div class="config-opt-label">Frankfurt</div>
+                    <div class="config-opt-sub">FRA1 · ~200ms</div>
+                  </div>
+                </div>
+
+                <div class="field-label" style="margin: 14px 0 6px">
+                  SSH Public Key
+                  <span
+                    style="
+                      font-weight: 500;
+                      text-transform: none;
+                      letter-spacing: 0;
+                      color: var(--muted-fg);
+                    "
+                    >(optional — paste your public key)</span
+                  >
+                </div>
+                <textarea
+                  class="ssh-area"
+                  placeholder="ssh-rsa AAAAB3NzaC1yc2EAAAA... or ssh-ed25519 AAAAC3Nza..."
+                ></textarea>
+
+                <div style="margin-top: 14px">
+                  <button class="btn btn-accent" onclick="advanceStep(3)">
+                    Continue to payment →
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 4: Payment -->
+            <div
+              class="form-panel"
+              id="panel-payment"
+              style="opacity: 0.5; pointer-events: none"
+            >
+              <div class="fp-header">
+                <div class="fp-title">
+                  <div
+                    class="fp-step-badge"
+                    style="background: var(--muted-fg)"
+                  >
+                    4
+                  </div>
+                  Payment
+                </div>
+                <div
+                  class="fp-done-badge"
+                  id="payment-done"
+                  style="display: none"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    viewBox="0 0 24 24"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Done
+                </div>
+              </div>
+              <div class="fp-body">
+                <div class="pay-tabs">
+                  <div class="pay-tab active" onclick="selectPayTab(this)">
+                    <div class="pay-tab-icon">💳</div>
+                    <div class="pay-tab-label">Card</div>
+                  </div>
+                  <div class="pay-tab" onclick="selectPayTab(this)">
+                    <div class="pay-tab-icon">🏦</div>
+                    <div class="pay-tab-label">Bank Transfer</div>
+                  </div>
+                  <div class="pay-tab" onclick="selectPayTab(this)">
+                    <div class="pay-tab-icon">📱</div>
+                    <div class="pay-tab-label">QRIS / GoPay</div>
+                  </div>
+                  <div class="pay-tab" onclick="selectPayTab(this)">
+                    <div class="pay-tab-icon">🅿️</div>
+                    <div class="pay-tab-label">PayPal</div>
+                  </div>
+                </div>
+
+                <div class="field-row single">
+                  <div class="field">
+                    <div class="field-label">Cardholder Name</div>
+                    <input
+                      class="field-input"
+                      type="text"
+                      placeholder="Aldo Santoso"
+                    />
+                  </div>
+                </div>
+                <div class="field-row single">
+                  <div class="field">
+                    <div class="field-label">Card Number</div>
+                    <div class="card-field">
+                      <input
+                        class="field-input"
+                        type="text"
+                        placeholder="0000  0000  0000  0000"
+                        id="cardNum"
+                        oninput="formatCard(this)"
+                      />
+                      <div class="card-brand-icon" id="cardBrandIcon">CARD</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="field-row triple">
+                  <div class="field">
+                    <div class="field-label">Exp. Month</div>
+                    <select class="field-select">
+                      <option value="">MM</option>
+                      <option>01</option>
+                      <option>02</option>
+                      <option>03</option>
+                      <option>04</option>
+                      <option>05</option>
+                      <option>06</option>
+                      <option>07</option>
+                      <option>08</option>
+                      <option>09</option>
+                      <option>10</option>
+                      <option>11</option>
+                      <option>12</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <div class="field-label">Exp. Year</div>
+                    <select class="field-select">
+                      <option>2026</option>
+                      <option>2027</option>
+                      <option>2028</option>
+                      <option>2029</option>
+                      <option>2030</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <div class="field-label">CVV</div>
+                    <input
+                      class="field-input"
+                      type="text"
+                      placeholder="•••"
+                      maxlength="4"
+                    />
+                  </div>
+                </div>
+                <div style="margin-top: 14px">
+                  <button class="btn btn-accent" onclick="advanceStep(4)">
+                    Review order →
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 5: Review & Place Order -->
+            <div
+              class="form-panel"
+              id="panel-review"
+              style="opacity: 0.5; pointer-events: none"
+            >
+              <div class="fp-header">
+                <div class="fp-title">
+                  <div
+                    class="fp-step-badge"
+                    style="background: var(--muted-fg)"
+                  >
+                    5
+                  </div>
+                  Review &amp; Place Order
+                </div>
+              </div>
+              <div class="fp-body">
+                <div
+                  style="
+                    background: var(--muted);
+                    border: 2px solid var(--border);
+                    border-radius: var(--r-lg);
+                    padding: 14px 16px;
+                    margin-bottom: 16px;
+                    font-size: 0.82rem;
+                    font-weight: 600;
+                    color: var(--muted-fg);
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 8px;
+                  "
+                >
+                  <span style="font-size: 1rem; flex-shrink: 0">🔒</span>
+                  <span
+                    >Your accounts will be created and activated
+                    <strong style="color: var(--fg)">instantly</strong> after
+                    payment. Credentials will be sent to your email within 60
+                    seconds.</span
+                  >
+                </div>
+
+                <div
+                  style="
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    margin-bottom: 20px;
+                  "
+                >
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      font-size: 0.82rem;
+                      padding: 8px 0;
+                      border-bottom: 1px solid var(--border);
+                    "
+                  >
+                    <span style="font-weight: 600; color: var(--muted-fg)"
+                      >Name</span
+                    ><span style="font-weight: 800">Aldo Santoso</span>
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      font-size: 0.82rem;
+                      padding: 8px 0;
+                      border-bottom: 1px solid var(--border);
+                    "
+                  >
+                    <span style="font-weight: 600; color: var(--muted-fg)"
+                      >Email</span
+                    ><span style="font-weight: 800">aldo@yourcompany.com</span>
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      font-size: 0.82rem;
+                      padding: 8px 0;
+                      border-bottom: 1px solid var(--border);
+                    "
+                  >
+                    <span style="font-weight: 600; color: var(--muted-fg)"
+                      >OS</span
+                    ><span style="font-weight: 800">Ubuntu 24.04 LTS</span>
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      font-size: 0.82rem;
+                      padding: 8px 0;
+                      border-bottom: 1px solid var(--border);
+                    "
+                  >
+                    <span style="font-weight: 600; color: var(--muted-fg)"
+                      >Region</span
+                    ><span style="font-weight: 800">🇸🇬 Singapore (SGP1)</span>
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      font-size: 0.82rem;
+                      padding: 8px 0;
+                    "
+                  >
+                    <span style="font-weight: 600; color: var(--muted-fg)"
+                      >Payment</span
+                    ><span style="font-weight: 800">💳 •••• 4242</span>
+                  </div>
+                </div>
+
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 12px;
+                    background: rgba(139, 92, 246, 0.06);
+                    border: 2px solid var(--accent);
+                    border-radius: var(--r-md);
+                    margin-bottom: 16px;
+                    font-size: 0.78rem;
+                    font-weight: 600;
+                  "
+                >
+                  <input
+                    type="checkbox"
+                    id="terms-check"
+                    style="
+                      width: 16px;
+                      height: 16px;
+                      accent-color: var(--accent);
+                      cursor: pointer;
+                    "
+                  />
+                  <label for="terms-check" style="cursor: pointer"
+                    >I agree to the
+                    <a href="#" style="color: var(--accent); font-weight: 700"
+                      >Terms of Service</a
+                    >
+                    and
+                    <a href="#" style="color: var(--accent); font-weight: 700"
+                      >Privacy Policy</a
+                    >. I understand subscriptions auto-renew monthly.</label
+                  >
+                </div>
+
+                <button
+                  class="btn btn-quat btn-lg btn-full"
+                  onclick="placeOrder()"
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    viewBox="0 0 24 24"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Place order — $47.73/mo
+                </button>
+                <div
+                  style="
+                    text-align: center;
+                    font-size: 0.72rem;
+                    font-weight: 600;
+                    color: var(--muted-fg);
+                    margin-top: 10px;
+                  "
+                >
+                  🔒 SSL secured · Your card is charged monthly until you cancel
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Order summary sticky -->
+          <div>
+            <div class="order-summary" style="top: 80px">
+              <div class="os-header">
+                <div class="os-title">Your order</div>
+              </div>
+              <div class="os-body" style="padding: 16px 20px">
+                <!-- items -->
+                <div style="margin-bottom: 14px">
+                  <div class="review-item">
+                    <div
+                      class="ri-icon"
+                      style="
+                        background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+                      "
+                    >
+                      🖥️
+                    </div>
+                    <div class="ri-info">
+                      <div class="ri-name">Developer Pro — SGP1</div>
+                      <div class="ri-meta">
+                        VPS · 2 vCPU / 4 GB / 80 GB · Monthly
+                      </div>
+                    </div>
+                    <div class="ri-price">$24</div>
+                  </div>
+                  <div class="review-item">
+                    <div
+                      class="ri-icon"
+                      style="
+                        background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+                      "
+                    >
+                      📊
+                    </div>
+                    <div class="ri-info">
+                      <div class="ri-name">IndexNow Pro Plan</div>
+                      <div class="ri-meta">SaaS · 500 keywords · Monthly</div>
+                    </div>
+                    <div class="ri-price">$19</div>
+                  </div>
+                </div>
+
+                <div class="os-divider"></div>
+                <div class="os-line">
+                  <span class="os-label">Subtotal</span
+                  ><span class="os-value">$43.00</span>
+                </div>
+                <div class="os-line">
+                  <span class="os-label">Tax (11% PPN)</span
+                  ><span class="os-value">$4.73</span>
+                </div>
+                <div class="os-divider"></div>
+                <div class="os-total-row" style="margin-bottom: 10px">
+                  <span class="os-total-label">Total/mo</span>
+                  <span class="os-total-value">$47.73</span>
+                </div>
+
+                <div
+                  class="os-trust"
+                  style="padding-top: 10px; border-top: 2px solid var(--border)"
+                >
+                  <div class="trust-line">
+                    <div class="trust-icon">⚡</div>
+                    Activation in ~60 seconds
+                  </div>
+                  <div class="trust-line">
+                    <div class="trust-icon">🔄</div>
+                    Cancel anytime
+                  </div>
+                  <div class="trust-line">
+                    <div class="trust-icon">🛡️</div>
+                    7-day refund guarantee
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+     ORDER SUCCESS (hidden until place order)
+══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-success">
+      <div class="wrap">
+        <div class="success-page">
+          <div class="success-icon success-check">✓</div>
+          <div class="success-title">Order confirmed! 🎉</div>
+          <div class="success-desc">
+            Your accounts are being provisioned right now. Expect an email with
+            your credentials and server IP within <strong>60 seconds</strong>.
+            Your dashboard is now unlocked.
+          </div>
+          <div class="success-details">
+            <div class="sd-row">
+              <span class="sd-key">Order ID</span
+              ><span class="sd-val">#ORD-0091</span>
+            </div>
+            <div class="sd-row">
+              <span class="sd-key">Email</span
+              ><span class="sd-val">aldo@yourcompany.com</span>
+            </div>
+            <div class="sd-row">
+              <span class="sd-key">Developer Pro VPS</span
+              ><span class="sd-val mono" id="sd-ip">Provisioning…</span>
+            </div>
+            <div class="sd-row">
+              <span class="sd-key">IndexNow Pro</span
+              ><span class="sd-val">Account active</span>
+            </div>
+            <div class="sd-row">
+              <span class="sd-key">Total charged</span
+              ><span class="sd-val">$47.73/mo</span>
+            </div>
+            <div class="sd-row">
+              <span class="sd-key">Next renewal</span
+              ><span class="sd-val">May 4, 2026</span>
+            </div>
+          </div>
+          <div
+            style="
+              display: flex;
+              gap: 10px;
+              flex-wrap: wrap;
+              justify-content: center;
+            "
+          >
+            <button
+              class="btn btn-accent"
+              onclick="showPage('wishlist',document.querySelectorAll('.tab-btn')[0])"
+            >
+              <svg
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                viewBox="0 0 24 24"
+              >
+                <rect x="3" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="3" width="7" height="7" rx="1" />
+                <rect x="3" y="14" width="7" height="7" rx="1" />
+                <rect x="14" y="14" width="7" height="7" rx="1" />
+              </svg>
+              Go to Dashboard
+            </button>
+            <button
+              class="btn btn-ghost"
+              onclick="showPage('wishlist',document.querySelectorAll('.tab-btn')[0])"
+            >
+              Continue shopping →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast"></div>
+
+    <script>
+      /* ── PAGE NAV ──────────────────────────────────────────── */
+      function showPage(id, tabEl) {
+        document
+          .querySelectorAll(".page")
+          .forEach((p) => p.classList.remove("active"));
+        document.getElementById("page-" + id).classList.add("active");
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((t) => t.classList.remove("active"));
+        if (tabEl) tabEl.classList.add("active");
+        window.scrollTo(0, 0);
+      }
+
+      /* ── TOAST ─────────────────────────────────────────────── */
+      let toastT;
+      function toast(msg, bg) {
+        const el = document.getElementById("toast");
+        el.style.background = bg || "var(--fg)";
+        el.style.borderColor = "var(--fg)";
+        el.style.color = "#fff";
+        el.textContent = msg;
+        el.style.display = "flex";
+        clearTimeout(toastT);
+        toastT = setTimeout(() => (el.style.display = "none"), 3000);
+      }
+
+      /* ── WISHLIST ──────────────────────────────────────────── */
+      let wishCount = 3;
+      function removeWish(id) {
+        const el = document.getElementById("wc-" + id);
+        if (!el) return;
+        el.style.transition = "opacity 0.2s, transform 0.2s";
+        el.style.opacity = "0";
+        el.style.transform = "scale(0.95)";
+        setTimeout(() => {
+          el.remove();
+          wishCount--;
+          updateWishCount();
+        }, 200);
+        toast("Removed from wishlist", "var(--secondary)");
+      }
+      function moveToCart(id, name, price, type, btn) {
+        btn.textContent = "✓ In cart";
+        btn.disabled = true;
+        btn.style.background = "var(--quat)";
+        btn.style.color = "var(--fg)";
+        toast(`✅ "${name}" added to cart`, "var(--accent)");
+        const cartCount =
+          parseInt(document.getElementById("cart-count").textContent) + 1;
+        document.getElementById("cart-count").textContent = cartCount;
+      }
+      function addAllToCart() {
+        document.querySelectorAll(".wish-card").forEach((c) => {
+          const btn = c.querySelector(".btn-ghost");
+          if (btn && !btn.disabled) {
+            btn.textContent = "✓ In cart";
+            btn.disabled = true;
+            btn.style.background = "var(--quat)";
+            btn.style.color = "var(--fg)";
+          }
+        });
+        document.getElementById("cart-count").textContent = "3";
+        toast("✅ All items added to cart!", "var(--accent)");
+      }
+      function clearWishlist() {
+        document.querySelectorAll(".wish-card").forEach((el) => {
+          el.style.opacity = "0";
+          el.style.transform = "scale(0.95)";
+          setTimeout(() => el.remove(), 200);
+        });
+        wishCount = 0;
+        setTimeout(updateWishCount, 250);
+        toast("Wishlist cleared", "var(--muted-fg)");
+      }
+      function updateWishCount() {
+        document.getElementById("wish-count").textContent = wishCount;
+        document.getElementById("ws-count").textContent = wishCount;
+        const grid = document.getElementById("wishlist-grid");
+        if (wishCount === 0) {
+          grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon">💔</div><div class="empty-title">Your wishlist is empty</div><div class="empty-desc">Save products you love to revisit them later.</div><button class="btn btn-accent" onclick="showPage('wishlist',document.querySelectorAll('.tab-btn')[0])">Browse products</button></div></div>`;
+          document.getElementById("wishlist-summary").style.display = "none";
+        }
+      }
+
+      /* ── CART ──────────────────────────────────────────────── */
+      let promoActive = false;
+      function removeCartItem(id) {
+        const el = document.getElementById("ci-" + id);
+        if (!el) return;
+        el.style.transition = "opacity 0.2s, transform 0.2s";
+        el.style.opacity = "0";
+        el.style.transform = "translateX(20px)";
+        setTimeout(() => {
+          el.remove();
+          recalcCart();
+        }, 200);
+        const cc =
+          parseInt(document.getElementById("cart-count").textContent) - 1;
+        document.getElementById("cart-count").textContent = Math.max(0, cc);
+        toast("Item removed from cart", "var(--secondary)");
+      }
+      function setBillingCart(el, type, priceId, price) {
+        const parent = el.parentElement;
+        parent
+          .querySelectorAll(".ci-billing-opt")
+          .forEach((o) => o.classList.remove("active"));
+        el.classList.add("active");
+        document.getElementById(priceId).textContent = price;
+        recalcCart();
+      }
+      function recalcCart() {
+        const prices = document.querySelectorAll(".ci-price");
+        let sub = 0;
+        prices.forEach((p) => {
+          const v = parseFloat(p.textContent.replace("$", ""));
+          if (!isNaN(v)) sub += v;
+        });
+        const discount = promoActive ? sub * 0.2 : 0;
+        const taxable = sub - discount;
+        const tax = taxable * 0.11;
+        const total = taxable + tax;
+        const fmt = (v) => "$" + v.toFixed(2);
+        document.getElementById("os-subtotal").textContent = fmt(sub);
+        document.getElementById("os-tax").textContent = fmt(tax);
+        document.getElementById("os-total").textContent = fmt(total);
+        if (promoActive)
+          document.getElementById("os-discount").textContent =
+            "–" + fmt(discount);
+      }
+      function applyPromo() {
+        const val = document
+          .getElementById("promoInput")
+          .value.trim()
+          .toUpperCase();
+        if (val === "LAUNCH20") {
+          promoActive = true;
+          document.getElementById("promoTag").classList.add("visible");
+          document.getElementById("promoInput").style.display = "none";
+          document.getElementById("promo-line").style.display = "flex";
+          recalcCart();
+          toast("🎉 Promo code applied — 20% off!", "var(--quat)");
+        } else {
+          document.getElementById("promoInput").classList.add("error");
+          toast("❌ Invalid promo code", "var(--secondary)");
+          setTimeout(
+            () =>
+              document.getElementById("promoInput").classList.remove("error"),
+            1500,
+          );
+        }
+      }
+      function clearPromo() {
+        promoActive = false;
+        document.getElementById("promoTag").classList.remove("visible");
+        document.getElementById("promoInput").style.display = "block";
+        document.getElementById("promoInput").value = "";
+        document.getElementById("promo-line").style.display = "none";
+        recalcCart();
+      }
+
+      /* ── CHECKOUT ──────────────────────────────────────────── */
+      let currentStep = 2;
+      function advanceStep(step) {
+        // Validate
+        if (step === 2) {
+          const email = document.getElementById("f-email").value;
+          const pass = document.getElementById("f-pass").value;
+          if (!email || !pass) {
+            toast("❌ Please fill in all fields", "var(--secondary)");
+            return;
+          }
+        }
+
+        // Mark current panel done
+        const panels = {
+          2: "panel-account",
+          3: "panel-config",
+          4: "panel-payment",
+        };
+        const doneIds = {
+          2: "account-done",
+          3: "config-done",
+          4: "payment-done",
+        };
+        const panelId = panels[step];
+        if (panelId) {
+          document.getElementById(doneIds[step]).style.display = "flex";
+        }
+
+        // Unlock next panel
+        currentStep = step + 1;
+        const nextPanels = {
+          3: "panel-config",
+          4: "panel-payment",
+          5: "panel-review",
+        };
+        const nextPanel = document.getElementById(nextPanels[step]);
+        if (nextPanel) {
+          nextPanel.style.opacity = "1";
+          nextPanel.style.pointerEvents = "auto";
+          nextPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        // Update step indicators
+        document.querySelectorAll(".step").forEach((s, i) => {
+          const n = i + 1;
+          s.classList.remove("active", "done");
+          if (n < currentStep) s.classList.add("done");
+          else if (n === currentStep) s.classList.add("active");
+          if (n < currentStep) s.querySelector(".step-num").textContent = "✓";
+        });
+
+        toast("✅ Step saved — continue below", "var(--accent)");
+      }
+
+      function selectConfig(el, group) {
+        el.closest(".config-grid")
+          .querySelectorAll(".config-opt")
+          .forEach((o) => o.classList.remove("active"));
+        el.classList.add("active");
+      }
+      function selectPayTab(el) {
+        el.closest(".pay-tabs")
+          .querySelectorAll(".pay-tab")
+          .forEach((t) => t.classList.remove("active"));
+        el.classList.add("active");
+      }
+
+      function formatCard(input) {
+        let v = input.value.replace(/\D/g, "").substring(0, 16);
+        input.value = v.replace(/(.{4})/g, "$1  ").trim();
+        const icon = document.getElementById("cardBrandIcon");
+        if (v.startsWith("4")) icon.textContent = "VISA";
+        else if (v.startsWith("5")) icon.textContent = "MC";
+        else if (v.startsWith("3")) icon.textContent = "AMEX";
+        else icon.textContent = "CARD";
+      }
+
+      function placeOrder() {
+        if (!document.getElementById("terms-check").checked) {
+          toast("❌ Please agree to the Terms of Service", "var(--secondary)");
+          return;
+        }
+        const btn = event.target;
+        btn.disabled = true;
+        btn.textContent = "⏳ Processing payment…";
+        btn.style.background = "var(--tertiary)";
+        btn.style.color = "var(--fg)";
+        setTimeout(() => {
+          // simulate IP
+          document.getElementById("sd-ip").textContent =
+            "128.199." +
+            Math.floor(Math.random() * 255) +
+            "." +
+            Math.floor(Math.random() * 255);
+          showPage("success", null);
+          document
+            .querySelectorAll(".tab-btn")
+            .forEach((t) => t.classList.remove("active"));
+        }, 2200);
+        toast("🔒 Securing payment…", "var(--accent)");
+      }
+    </script>
+  </body>
+</html>

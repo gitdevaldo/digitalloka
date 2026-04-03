@@ -7,7 +7,7 @@ import { useWishlist } from '@/context/wishlist-context';
 import { useCart } from '@/context/cart-context';
 import { LoginDialog } from '@/components/ui/login-dialog';
 import { FloatingBar } from '@/components/layout/floating-bar';
-import { SlidersHorizontal, ShoppingBag, Heart } from 'lucide-react';
+import { SlidersHorizontal, ShoppingBag, Heart, ShoppingCart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const THUMBS = ['thumb-purple', 'thumb-pink', 'thumb-amber', 'thumb-green', 'thumb-blue', 'thumb-red', 'thumb-teal', 'thumb-orange'];
@@ -88,7 +88,7 @@ export default function CatalogPage() {
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const wishlistCtx = useWishlist();
   const { isInWishlist, toggleWishlist } = wishlistCtx;
-  const { addItem: addToCart } = useCart();
+  const { addItem: addToCart, isInCart } = useCart();
   const router = useRouter();
 
   const handleWishlist = async (e: React.MouseEvent, productId: number) => {
@@ -98,6 +98,12 @@ export default function CatalogPage() {
     if (result === 'login_required') {
       setShowLoginDialog(true);
     }
+  };
+
+  const handleAddToCart = (e: React.MouseEvent, productId: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isInCart(productId)) addToCart(productId);
   };
 
   const handleBuy = (e: React.MouseEvent, productId: number) => {
@@ -371,6 +377,14 @@ export default function CatalogPage() {
                       title={isInWishlist(p.id) ? 'Remove from wishlist' : 'Add to wishlist'}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill={isInWishlist(p.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    </button>
+                    <button
+                      className={`add-cart-btn${isInCart(p.id) ? ' in-cart' : ''}`}
+                      onClick={e => handleAddToCart(e, p.id)}
+                      disabled={isInCart(p.id)}
+                    >
+                      <ShoppingCart size={13} />
+                      <span>{isInCart(p.id) ? 'In Cart' : 'Add to Cart'}</span>
                     </button>
                     <button className="buy-btn" onClick={e => handleBuy(e, p.id)}>Buy Now</button>
                   </div>

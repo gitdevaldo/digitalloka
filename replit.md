@@ -77,13 +77,17 @@ src/
 - Brand logo: Purple bg box with white "Digital" + amber "Loka"
 - Catalog layout: Fixed topbar + left sidebar (240px / --sidebar-w) with filter chips + main content with hero strip
 - Shared Topbar component: All areas (catalog, dashboard, admin) use same `Topbar` component with variant prop
-- Wishlist: Context-based (`WishlistProvider`), stored in Supabase `wishlists` table, login dialog for unauthenticated users. Dedicated page at `/wishlist`
-- Cart: Context-based (`CartProvider`), stored in localStorage (`digitalloka_cart`). Dedicated page at `/cart`
-- Checkout: `/checkout` page — creates orders via `/api/user/checkout`, shows success with order number
-- Shared `FloatingBar` component (`src/components/layout/floating-bar.tsx`): fixed bottom bar that slides up after scrolling 200px and hides near footer (IntersectionObserver on `.catalog-footer`). Different content per page:
-  - Homepage: Filter / Cart / Wishlist buttons
-  - Product detail: Product name + price | Wishlist | Buy Now
+- Wishlist: Context-based (`WishlistProvider`), stored in Supabase `wishlists` table, login dialog for unauthenticated users. Dedicated page at `/wishlist` with 2-col grid, thick border cards, remove/add-to-cart/buy-now actions, summary bar
+- Cart: Context-based (`CartProvider`), stored in localStorage (`digitalloka_cart`). Dedicated page at `/cart` with 2-col layout (items + sticky order summary), quantity controls, remove buttons
+- Checkout: `/checkout` page — multi-step wizard (Account/Payment/Review) with sticky order summary, creates orders via `/api/user/cart-checkout`, success page with green circle icon + order details card
+- "Add to Cart" button on homepage product cards (`add-cart-btn` class) and product detail page (shows "Already in Cart" when in cart)
+- Shared `FloatingBar` component (`src/components/layout/floating-bar.tsx`): fixed bottom bar that slides up after scrolling 200px and hides near footer (IntersectionObserver on `.catalog-footer`). Props: `alwaysVisible` (skip scroll), `mobileOnly` (hidden at ≥769px via `.mobile-only-bar`). Different content per page:
+  - Homepage: Filter / Cart / Wishlist buttons (mobileOnly)
+  - Product detail: Product name + price | Wishlist | Buy Now (alwaysVisible)
 - Mobile (≤768px): Header shows only Login/Dashboard button; sidebar hidden; filter opens slide-up panel overlay
+- Inner page CSS classes: `.inner-wrap`, `.wish-card`, `.cart-item`, `.cart-layout`, `.order-summary`, `.form-panel`, `.checkout-steps`, `.success-page`, `.success-icon-circle`, `.prod-icon`, `.spec-pill`, `.remove-btn`
+- Empty state styling: `.empty-state` with `.empty-icon`, `.empty-title`, `.empty-desc` or `.icon/h3/p`
+- Button disabled states: `.btn:disabled` and `.btn.btn-disabled` (opacity 0.4, no transform), `.add-cart-btn:disabled` (cursor not-allowed)
 
 ## Database (Supabase PostgreSQL)
 Tables: `users`, `products`, `product_categories`, `product_types`, `product_stock_items`, `orders`, `order_items`, `transactions`, `payment_events`, `entitlements`, `site_settings`, `audit_logs`, `wishlists`
