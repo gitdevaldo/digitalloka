@@ -13,25 +13,22 @@ export async function processWebhook(payload: Record<string, unknown>) {
   const idempotencyKey = String(payload.idempotency_key || '');
   if (!idempotencyKey) throw new Error('Missing idempotency_key');
 
-  const { data: existing } = await admin
-    .from('payment_events')
-    .select('id')
-    .eq('idempotency_key', idempotencyKey)
-    .limit(1);
-
-  if (existing && existing.length > 0) {
-    return { processed: false, duplicate: true, message: 'Duplicate payment event ignored' };
-  }
-
   const provider = String(payload.provider || 'manual');
 
-  await admin.from('payment_events').insert({
+  const { error: insertError } = await admin.from('payment_events').insert({
     provider,
     event_id: String(payload.event_id || ''),
     idempotency_key: idempotencyKey,
     status: 'received',
     payload,
   });
+
+  if (insertError) {
+    if (insertError.code === '23505') {
+      return { processed: false, duplicate: true, message: 'Duplicate payment event ignored' };
+    }
+    throw new Error(insertError.message);
+  }
 
   const orderId = Number(payload.order_id);
   if (!orderId) throw new Error('Invalid order_id');
@@ -42,47 +39,18 @@ export async function processWebhook(payload: Record<string, unknown>) {
   const status = String(payload.status || 'pending');
 
   if (status === 'paid') {
-    await admin.from('transactions').upsert({
-      order_id: order.id,
-      provider,
-      provider_ref: String(payload.provider_ref || ''),
-      idempotency_key: idempotencyKey,
-      status: 'paid',
-      amount: Number(payload.amount || order.total_amount),
-      currency: String(payload.currency || order.currency),
-      paid_at: new Date().toISOString(),
-      verified_at: new Date().toISOString(),
-      payload,
+    const { error: rpcError } = await admin.rpc('process_payment_atomic', {
+      p_order_id: order.id,
+      p_user_id: order.user_id,
+      p_provider: provider,
+      p_provider_ref: String(payload.provider_ref || ''),
+      p_idempotency_key: idempotencyKey,
+      p_amount: Number(payload.amount || order.total_amount),
+      p_currency: String(payload.currency || order.currency),
+      p_payload: payload,
     });
 
-    await admin.from('orders').update({ status: 'paid', payment_status: 'paid' }).eq('id', order.id);
-
-    const { data: items } = await admin.from('order_items').select('id, product_id').eq('order_id', order.id);
-    if (items) {
-      for (const item of items) {
-        const { data: existing } = await admin
-          .from('entitlements')
-          .select('id')
-          .eq('order_item_id', item.id)
-          .eq('user_id', order.user_id)
-          .limit(1);
-
-        if (!existing || existing.length === 0) {
-          await admin.from('entitlements').insert({
-            user_id: order.user_id,
-            product_id: item.product_id,
-            order_item_id: item.id,
-            status: 'active',
-            starts_at: new Date().toISOString(),
-            meta: { source_order_id: order.id },
-          });
-        }
-      }
-    }
-
-    await admin.from('payment_events')
-      .update({ status: 'processed', processed_at: new Date().toISOString() })
-      .eq('idempotency_key', idempotencyKey);
+    if (rpcError) throw new Error(rpcError.message);
 
     return { processed: true, duplicate: false, order_id: order.id, status: 'paid' };
   }

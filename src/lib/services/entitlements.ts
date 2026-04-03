@@ -1,5 +1,14 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 
+export async function createEntitlementsForOrder(orderId: number, userId: string) {
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin.rpc('create_entitlements_for_order', {
+    p_order_id: orderId,
+    p_user_id: userId,
+  });
+  if (error) throw new Error(error.message);
+}
+
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
   pending: ['active', 'revoked'],
   active: ['expired', 'revoked'],

@@ -111,7 +111,7 @@ Key design decisions:
 2. **Magic Link Auth** - Passwordless login for users and admin (PKCE flow)
 3. **Dashboard** - Live data stats (products/droplets/orders/entitlements), droplet management (power on/off/reboot), product entitlements with revoke, order history, digital downloads via API action, license keys, account edit modal, support ticket modal
 4. **Admin Panel** - Product CRUD with dedicated create/edit pages (full-page forms), product types with schema builder (dedicated pages), product stocks with per-item Edit/Delete actions, user management (role/block modals), order fulfillment (status transition modal), entitlement lifecycle (inline Activate/Pending/Revoke/+30d buttons), droplet admin (power action modal), site settings (4 config panels with API load/save and data-setting-key attributes), audit logs with CSV export and payload viewer, overview with live API-fetched stats. ID formatting: PRD-001 (products), ENT-001 (entitlements), ORD-0001 (orders), EVT-0001 (audit). Account edit modal, support ticket modal
-5. **Commerce** - Checkout flow, payment webhooks with idempotency, entitlement provisioning
+5. **Commerce** - Atomic checkout flow (via PostgreSQL RPC functions), payment webhooks with idempotency + atomic processing, collision-resistant order numbers (crypto.randomUUID), shared entitlement provisioning logic
 6. **Route Protection** - Middleware guards `/dashboard/*` and `/admin/*` routes; admin role check via Supabase
 
 ## Legacy Archives

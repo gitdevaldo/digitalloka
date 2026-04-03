@@ -1,4 +1,6 @@
+import crypto from 'crypto';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { createEntitlementsForOrder } from '@/lib/services/entitlements';
 
 const ALLOWED_STATUS_TRANSITIONS: Record<string, string[]> = {
   pending: ['paid', 'cancelled'],
@@ -6,6 +8,10 @@ const ALLOWED_STATUS_TRANSITIONS: Record<string, string[]> = {
   fulfilled: [],
   cancelled: [],
 };
+
+export function generateOrderNumber(): string {
+  return 'ORD-' + crypto.randomUUID().replace(/-/g, '').substring(0, 12).toUpperCase();
+}
 
 export async function listUserOrders(userId: string, page = 1, perPage = 20) {
   const admin = createSupabaseAdminClient();
@@ -79,7 +85,7 @@ export async function updateOrderStatus(orderId: number, newStatus: string) {
   if (error) throw new Error(error.message);
 
   if (newStatus === 'paid') {
-    await ensureEntitlementsForPaidOrder(orderId, order.user_id);
+    await createEntitlementsForOrder(orderId, order.user_id);
   }
 
   return await getOrderById(orderId);
@@ -100,64 +106,31 @@ export async function createCheckoutOrder(userId: string, payload: { product_id:
 
   const quantity = Math.min(Math.max(payload.quantity || 1, 1), 50);
   const lineTotal = product.price_amount * quantity;
-  const orderNumber = 'ORD-' + Math.random().toString(36).substring(2, 12).toUpperCase();
+  const orderNumber = generateOrderNumber();
 
-  const { data: order, error: orderError } = await admin.from('orders').insert({
-    user_id: userId,
-    order_number: orderNumber,
-    status: 'pending',
-    payment_status: 'pending',
-    subtotal_amount: lineTotal,
-    total_amount: lineTotal,
-    currency: product.price_currency,
-    meta: { affiliate_code: payload.affiliate_code || null },
-  }).select().single();
+  const items = [
+    {
+      product_id: product.id,
+      item_name: product.name,
+      quantity,
+      unit_price: product.price_amount,
+      line_total: lineTotal,
+      meta: { product_slug: product.slug },
+    },
+  ];
 
-  if (orderError) throw new Error(orderError.message);
-
-  await admin.from('order_items').insert({
-    order_id: order.id,
-    product_id: product.id,
-    item_name: product.name,
-    quantity,
-    unit_price: product.price_amount,
-    line_total: lineTotal,
-    meta: { product_slug: product.slug },
+  const { data: orderId, error: rpcError } = await admin.rpc('create_checkout_order_atomic', {
+    p_user_id: userId,
+    p_order_number: orderNumber,
+    p_currency: product.price_currency,
+    p_subtotal: lineTotal,
+    p_total: lineTotal,
+    p_meta: { affiliate_code: payload.affiliate_code || null },
+    p_items: items,
+    p_provider: 'manual',
   });
 
-  await admin.from('transactions').insert({
-    order_id: order.id,
-    provider: 'manual',
-    status: 'pending',
-    amount: lineTotal,
-    currency: product.price_currency,
-  });
+  if (rpcError) throw new Error(rpcError.message);
 
-  return await getOrderById(order.id);
-}
-
-async function ensureEntitlementsForPaidOrder(orderId: number, userId: string) {
-  const admin = createSupabaseAdminClient();
-  const { data: items } = await admin.from('order_items').select('id, product_id').eq('order_id', orderId);
-  if (!items) return;
-
-  for (const item of items) {
-    const { data: existing } = await admin
-      .from('entitlements')
-      .select('id')
-      .eq('order_item_id', item.id)
-      .eq('user_id', userId)
-      .limit(1);
-
-    if (existing && existing.length > 0) continue;
-
-    await admin.from('entitlements').insert({
-      user_id: userId,
-      product_id: item.product_id,
-      order_item_id: item.id,
-      status: 'active',
-      starts_at: new Date().toISOString(),
-      meta: { source_order_id: orderId },
-    });
-  }
+  return await getOrderById(orderId);
 }

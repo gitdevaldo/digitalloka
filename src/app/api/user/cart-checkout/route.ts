@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { generateOrderNumber } from '@/lib/services/orders';
 
 export async function POST(request: NextRequest) {
   const userId = await getSessionUserId();
@@ -27,14 +28,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Products not found' }, { status: 422 });
     }
 
-    const productMap = new Map(products.map(p => [p.id, p]));
+    const productMap = new Map(products.map((p: { id: number; name: string; slug: string; price_amount: number; price_currency: string }) => [p.id, p]));
 
     let subtotal = 0;
     let currency = 'USD';
     const orderItems: { product_id: number; item_name: string; quantity: number; unit_price: number; line_total: number; meta: object }[] = [];
 
     for (const item of items) {
-      const product = productMap.get(item.product_id);
+      const product = productMap.get(item.product_id) as { id: number; name: string; slug: string; price_amount: number; price_currency: string } | undefined;
       if (!product) continue;
       if (!product.price_amount || product.price_amount <= 0) continue;
 
@@ -57,34 +58,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No valid items in cart' }, { status: 422 });
     }
 
-    const orderNumber = 'ORD-' + Math.random().toString(36).substring(2, 12).toUpperCase();
+    const orderNumber = generateOrderNumber();
 
-    const { data: order, error: orderError } = await admin.from('orders').insert({
-      user_id: userId,
-      order_number: orderNumber,
-      status: 'pending',
-      payment_status: 'pending',
-      subtotal_amount: subtotal,
-      total_amount: subtotal,
-      currency,
-      meta: {},
-    }).select().single();
-
-    if (orderError) throw new Error(orderError.message);
-
-    for (const oi of orderItems) {
-      await admin.from('order_items').insert({ order_id: order.id, ...oi });
-    }
-
-    await admin.from('transactions').insert({
-      order_id: order.id,
-      provider: 'manual',
-      status: 'pending',
-      amount: subtotal,
-      currency,
+    const { data: orderId, error: rpcError } = await admin.rpc('create_checkout_order_atomic', {
+      p_user_id: userId,
+      p_order_number: orderNumber,
+      p_currency: currency,
+      p_subtotal: subtotal,
+      p_total: subtotal,
+      p_meta: {},
+      p_items: orderItems,
+      p_provider: 'manual',
     });
 
-    return NextResponse.json({ data: { order_number: orderNumber, total: subtotal, currency } }, { status: 201 });
+    if (rpcError) throw new Error(rpcError.message);
+
+    return NextResponse.json({ data: { order_id: orderId, order_number: orderNumber, total: subtotal, currency } }, { status: 201 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Checkout failed';
     return NextResponse.json({ error: message }, { status: 422 });
