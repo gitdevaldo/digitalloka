@@ -11,6 +11,11 @@ import { Modal } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
+function formatOrderId(row: Record<string, unknown>): string {
+  if (row.order_number) return row.order_number as string;
+  return `ORD-${String(row.id).padStart(4, '0')}`;
+}
+
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +46,7 @@ export default function AdminOrdersPage() {
         body: JSON.stringify({ status: value }),
       });
       if (!res.ok) { const r = await res.json(); showToast(r.error || 'Update failed'); return; }
-      showToast('Order updated');
+      showToast('Order status updated.');
       setSelected(null);
       loadOrders();
     } catch { showToast('Update failed'); }
@@ -49,14 +54,23 @@ export default function AdminOrdersPage() {
   }
 
   const columns = [
-    { key: 'order_number', label: 'Order ID', render: (row: Record<string, unknown>) => <span style={{ fontWeight: 700 }}>{row.order_number as string}</span> },
-    { key: 'user', label: 'User', render: (row: Record<string, unknown>) => { const u = row.user as Record<string, unknown> | undefined; return <span style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)' }}>{(u?.email as string) || '—'}</span>; } },
-    { key: 'items', label: 'Items', render: (row: Record<string, unknown>) => <span style={{ fontSize: '0.78rem' }}>{(row.items as unknown[])?.length || 0}</span> },
+    { key: 'order_number', label: 'Order ID', render: (row: Record<string, unknown>) => <span style={{ fontWeight: 700 }}>{formatOrderId(row)}</span> },
+    { key: 'user', label: 'User', render: (row: Record<string, unknown>) => { const u = row.user as Record<string, unknown> | undefined; return <span style={{ fontSize: '0.78rem', fontFamily: 'monospace', color: 'var(--muted-foreground)' }}>{(u?.email as string) || (row.user_id as string) || '—'}</span>; } },
+    { key: 'items', label: 'Items', render: (row: Record<string, unknown>) => <span style={{ textAlign: 'center', fontWeight: 700 }}>{(row.items as unknown[])?.length || 0}</span> },
     { key: 'total_amount', label: 'Total', render: (row: Record<string, unknown>) => <span style={{ fontFamily: 'var(--font-h)', fontWeight: 800 }}>{formatCurrency(row.total_amount as number, row.currency as string)}</span> },
-    { key: 'payment_status', label: 'Payment', render: (row: Record<string, unknown>) => <StatusBadge variant={row.payment_status as string || 'pending'} label={row.payment_status as string || 'pending'} /> },
-    { key: 'fulfillment_status', label: 'Fulfillment', render: (row: Record<string, unknown>) => <StatusBadge variant={row.fulfillment_status as string || 'pending'} label={row.fulfillment_status as string || 'pending'} /> },
+    { key: 'payment_status', label: 'Payment', render: (row: Record<string, unknown>) => <StatusBadge variant={String(row.payment_status || 'pending').toLowerCase()} label={String(row.payment_status || 'pending').toLowerCase()} /> },
+    { key: 'fulfillment_status', label: 'Fulfillment', render: (row: Record<string, unknown>) => <StatusBadge variant={String(row.status || 'pending').toLowerCase()} label={String(row.status || 'pending').toLowerCase()} /> },
     { key: 'created_at', label: 'Created', style: { fontSize: '0.72rem', color: 'var(--muted-foreground)' } as React.CSSProperties, render: (row: Record<string, unknown>) => <span>{formatDate(row.created_at as string)}</span> },
-    { key: 'actions', label: 'Actions', render: (row: Record<string, unknown>) => <Button size="sm" onClick={() => setSelected(row)}>View</Button> },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (row: Record<string, unknown>) => (
+        <div className="flex gap-1">
+          <Button size="sm" onClick={() => setSelected(row)}>View</Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelected(row)}>Update</Button>
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -85,21 +99,20 @@ export default function AdminOrdersPage() {
         </Panel>
       )}
 
-      <Modal open={!!selected} onClose={() => setSelected(null)} title={`Order: ${selected?.order_number || ''}`}>
+      <Modal open={!!selected} onClose={() => setSelected(null)} title={`Order: ${selected ? formatOrderId(selected) : ''}`}>
         {selected && (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3 text-[0.82rem]">
-              <div><span className="text-muted-foreground font-semibold block text-xs uppercase">Order ID</span><span className="font-bold">{selected.order_number as string}</span></div>
+              <div><span className="text-muted-foreground font-semibold block text-xs uppercase">Order ID</span><span className="font-bold">{formatOrderId(selected)}</span></div>
               <div><span className="text-muted-foreground font-semibold block text-xs uppercase">Total</span><span className="font-heading font-extrabold">{formatCurrency(selected.total_amount as number, selected.currency as string)}</span></div>
               <div><span className="text-muted-foreground font-semibold block text-xs uppercase">User</span><span className="font-mono text-[0.75rem]">{(selected.user as Record<string, unknown>)?.email as string || '—'}</span></div>
               <div><span className="text-muted-foreground font-semibold block text-xs uppercase">Created</span><span>{formatDate(selected.created_at as string)}</span></div>
             </div>
             <div className="border-t border-border pt-3">
-              <span className="text-xs font-bold uppercase text-muted-foreground block mb-2">Current Status: <strong>{selected.status as string || 'pending'}</strong></span>
-              <span className="text-[0.72rem] text-muted-foreground block mb-2">Allowed transitions: pending → paid → fulfilled, or cancel at any step</span>
+              <span className="text-xs font-bold uppercase text-muted-foreground block mb-2">Update Status</span>
               <div className="flex gap-2 flex-wrap">
                 {['pending', 'paid', 'fulfilled', 'cancelled'].map(s => (
-                  <Button key={s} size="sm" variant={selected.status === s ? 'accent' : 'ghost'} onClick={() => updateStatus(s)} disabled={saving || selected.status === s}>{s}</Button>
+                  <Button key={s} size="sm" variant={String(selected.status || 'pending').toLowerCase() === s ? 'accent' : 'ghost'} onClick={() => updateStatus(s)} disabled={saving || String(selected.status || 'pending').toLowerCase() === s}>{s}</Button>
                 ))}
               </div>
             </div>

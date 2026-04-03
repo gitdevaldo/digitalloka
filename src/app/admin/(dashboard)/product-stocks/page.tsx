@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
 import { AdminTable } from '@/components/ui/admin-table';
@@ -14,6 +15,7 @@ import { formatDate } from '@/lib/utils';
 const inputClass = "w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent";
 
 export default function ProductStocksPage() {
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -25,9 +27,23 @@ export default function ProductStocksPage() {
   const [rows, setRows] = useState('');
   const [importing, setImporting] = useState(false);
   const [stockFilter, setStockFilter] = useState('');
+  const [editStock, setEditStock] = useState<Record<string, unknown> | null>(null);
+  const [editCredentials, setEditCredentials] = useState('');
+  const [editStatus, setEditStatus] = useState('unsold');
+  const [editSaving, setEditSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<Record<string, unknown> | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => { loadProducts(); }, []);
+
+  useEffect(() => {
+    const productId = searchParams.get('product');
+    if (productId && products.length > 0) {
+      const product = products.find(p => String(p.id) === productId);
+      if (product) openStockManagement(product);
+    }
+  }, [searchParams, products]);
 
   async function loadProducts() {
     setLoading(true);
@@ -87,6 +103,81 @@ export default function ProductStocksPage() {
     finally { setImporting(false); }
   }
 
+  function openEditStock(stock: Record<string, unknown>) {
+    const cred = stock.credential_data as Record<string, string> | undefined;
+    const credHeaders = cred ? Object.keys(cred) : [];
+    const credValues = cred ? credHeaders.map(h => cred[h] || '') : [];
+    setEditStock(stock);
+    setEditCredentials(credValues.join('|'));
+    setEditStatus(stock.status as string || 'unsold');
+  }
+
+  async function handleEditSave() {
+    if (!editStock) return;
+    const cred = editStock.credential_data as Record<string, string> | undefined;
+    const credHeaders = cred ? Object.keys(cred) : [];
+    const editedValues = editCredentials.trim();
+
+    if (!editedValues) {
+      showToast('Values are required.');
+      return;
+    }
+
+    if (!['unsold', 'sold'].includes(editStatus)) {
+      showToast('Invalid status.');
+      return;
+    }
+
+    const values = editedValues.split('|').map(v => v.trim());
+    if (values.length !== credHeaders.length) {
+      showToast('Value count must match existing header count.');
+      return;
+    }
+
+    const nextCredentialData: Record<string, string> = {};
+    credHeaders.forEach((header, index) => {
+      nextCredentialData[header] = values[index] || '';
+    });
+
+    setEditSaving(true);
+    try {
+      const res = await fetch(`/api/admin/product-stocks/${editStock.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          credential_data: nextCredentialData,
+          status: editStatus,
+        }),
+      });
+      if (!res.ok) {
+        const result = await res.json();
+        showToast(result.error || 'Update failed');
+        return;
+      }
+      showToast('Stock item updated.');
+      setEditStock(null);
+      refreshStocks();
+    } catch { showToast('Update failed'); }
+    finally { setEditSaving(false); }
+  }
+
+  async function handleDelete() {
+    if (!deleteConfirm) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/product-stocks/${deleteConfirm.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const result = await res.json();
+        showToast(result.error || 'Delete failed');
+        return;
+      }
+      showToast('Stock item deleted.');
+      setDeleteConfirm(null);
+      refreshStocks();
+    } catch { showToast('Delete failed'); }
+    finally { setDeleting(false); }
+  }
+
   const filtered = products.filter(p => {
     if (!search) return true;
     const s = search.toLowerCase();
@@ -107,7 +198,7 @@ export default function ProductStocksPage() {
       key: 'id',
       label: 'ID',
       render: (row: Record<string, unknown>) => (
-        <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: 'var(--muted-foreground)' }}>{String(row.id).slice(0, 8)}</span>
+        <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: 'var(--muted-foreground)' }}>{`PRD-${String(row.id).padStart(3, '0')}`}</span>
       ),
     },
     {
@@ -198,6 +289,16 @@ export default function ProductStocksPage() {
       style: { fontSize: '0.72rem', color: 'var(--muted-foreground)' } as React.CSSProperties,
       render: (row: Record<string, unknown>) => <span>{row.sold_at ? formatDate(row.sold_at as string) : '—'}</span>,
     },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (row: Record<string, unknown>) => (
+        <div className="flex gap-1">
+          <Button size="sm" onClick={() => openEditStock(row)}>Edit</Button>
+          <Button size="sm" variant="ghost" style={{ color: 'var(--secondary)' }} onClick={() => setDeleteConfirm(row)}>Delete</Button>
+        </div>
+      ),
+    },
   ];
 
   if (selectedProduct) {
@@ -205,7 +306,7 @@ export default function ProductStocksPage() {
       <div style={{ animation: 'fadeUp 0.28s var(--ease)' }}>
         <PageHeader
           title="Manage Product Stocks"
-          subtitle={`/admin/products/${String(selectedProduct.id).slice(0, 8)}/stocks — stock entries for ${selectedProduct.name}`}
+          subtitle={`/admin/products/${selectedProduct.id}/stocks — stock entries for ${selectedProduct.name}`}
           actions={
             <div className="flex gap-2">
               <Button size="sm" onClick={() => { setSelectedProduct(null); setStocks([]); }}>Back</Button>
@@ -267,6 +368,53 @@ export default function ProductStocksPage() {
               <Button type="button" variant="ghost" onClick={() => setAddStockOpen(false)}>Cancel</Button>
             </div>
           </form>
+        </Modal>
+
+        <Modal open={!!editStock} onClose={() => setEditStock(null)} title="Edit Stock Item">
+          {editStock && (
+            <div className="space-y-3">
+              <label className="block">
+                <span className="text-xs font-bold uppercase text-muted-foreground">
+                  Credential Values (| separated) — Headers: {editStock.credential_data ? Object.keys(editStock.credential_data as Record<string, string>).join(' | ') : ''}
+                </span>
+                <textarea
+                  value={editCredentials}
+                  onChange={(e) => setEditCredentials(e.target.value)}
+                  className={inputClass}
+                  rows={3}
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-bold uppercase text-muted-foreground">Status</span>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="unsold">unsold</option>
+                  <option value="sold">sold</option>
+                </select>
+              </label>
+              <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-border">
+                <Button variant="accent" onClick={handleEditSave} disabled={editSaving}>
+                  {editSaving ? 'Saving...' : 'Update Stock'}
+                </Button>
+                <Button variant="ghost" onClick={() => setEditStock(null)}>Cancel</Button>
+              </div>
+            </div>
+          )}
+        </Modal>
+
+        <Modal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} title="Delete Stock Item">
+          <div className="space-y-3">
+            <div style={{ fontSize: '0.82rem', color: 'var(--muted-foreground)' }}>Delete this stock item?</div>
+            <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-border">
+              <Button variant="accent" style={{ background: 'var(--secondary)' }} onClick={handleDelete} disabled={deleting}>
+                {deleting ? 'Deleting...' : 'Delete'}
+              </Button>
+              <Button variant="ghost" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+            </div>
+          </div>
         </Modal>
       </div>
     );

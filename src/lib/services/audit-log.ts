@@ -39,5 +39,20 @@ export async function listAuditLogs(filters: Record<string, string>, page = 1, p
 
   const { data, count, error } = await query.order('created_at', { ascending: false }).range(from, to);
   if (error) throw new Error(error.message);
-  return { data: data || [], total: count || 0, page, per_page: perPage };
+
+  const mapped = (data || []).map((row: Record<string, unknown>) => {
+    const changes = (row.changes as Record<string, unknown>) || {};
+    const actionStr = String(row.action || '').toLowerCase();
+    let result = 'ok';
+    if (changes.error || actionStr.includes('fail')) result = 'fail';
+    else if (changes.warning) result = 'warn';
+
+    return {
+      ...row,
+      actor: row.actor_user_id || 'system',
+      result,
+    };
+  });
+
+  return { data: mapped, total: count || 0, page, per_page: perPage };
 }

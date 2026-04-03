@@ -1,13 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ButtonLink } from '@/components/ui/button';
 import { Panel } from '@/components/ui/panel';
 import { AdminTable } from '@/components/ui/admin-table';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { PageHeader } from '@/components/layout/page-header';
+import { formatDate, formatCurrency } from '@/lib/utils';
+
+interface OverviewStats {
+  products: number;
+  entitlements: number;
+  users: number;
+  orders: number;
+  droplets: number;
+  actions: number;
+  revenue: string;
+  audit: number;
+  productsSub: string;
+  entitlementsSub: string;
+  usersSub: string;
+  ordersSub: string;
+  dropletsSub: string;
+  actionsSub: string;
+  revenueSub: string;
+  auditSub: string;
+  pendingOrders: number;
+  expiringEntitlements: number;
+  dropletsInAction: number;
+}
+
+interface AuditRow {
+  actor: string;
+  action: string;
+  result: string;
+  ts: string;
+}
 
 export default function AdminOverviewPage() {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<OverviewStats>({
     products: 0, entitlements: 0, users: 0, orders: 0,
     droplets: 0, actions: 0, revenue: '$0.00', audit: 0,
     productsSub: '0 active', entitlementsSub: '0 expiring soon',
@@ -16,6 +47,102 @@ export default function AdminOverviewPage() {
     revenueSub: 'From paid orders', auditSub: '0 failures',
     pendingOrders: 0, expiringEntitlements: 0, dropletsInAction: 0,
   });
+  const [auditRows, setAuditRows] = useState<AuditRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => { loadAllData(); }, []);
+
+  async function loadAllData() {
+    setLoading(true);
+    try {
+      const [productsRes, ordersRes, entitlementsRes, usersRes, dropletsRes, auditRes] = await Promise.allSettled([
+        fetch('/api/admin/products').then(r => r.json()),
+        fetch('/api/admin/orders').then(r => r.json()),
+        fetch('/api/admin/entitlements').then(r => r.json()),
+        fetch('/api/admin/users').then(r => r.json()),
+        fetch('/api/admin/droplets').then(r => r.json()),
+        fetch('/api/admin/audit-logs').then(r => r.json()),
+      ]);
+
+      const products = productsRes.status === 'fulfilled' ? (productsRes.value.data || []) : [];
+      const orders = ordersRes.status === 'fulfilled' ? (ordersRes.value.data || []) : [];
+      const entitlements = entitlementsRes.status === 'fulfilled' ? (entitlementsRes.value.data || []) : [];
+      const users = usersRes.status === 'fulfilled' ? (usersRes.value.data || []) : [];
+      const dropletsRaw = dropletsRes.status === 'fulfilled' ? (dropletsRes.value.droplets || dropletsRes.value.data || []) : [];
+      const audit = auditRes.status === 'fulfilled' ? (auditRes.value.data || []) : [];
+
+      const activeProducts = products.filter((p: Record<string, unknown>) => Boolean(p.is_visible)).length;
+      const activeEntitlements = entitlements.filter((e: Record<string, unknown>) => e.status === 'active').length;
+
+      const now = new Date();
+      const upper = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const expiringEntitlements = entitlements.filter((e: Record<string, unknown>) => {
+        if (e.status === 'expiring') return true;
+        const expiryDate = e.expires_at ? new Date(e.expires_at as string) : null;
+        if (!expiryDate || isNaN(expiryDate.getTime())) return false;
+        return expiryDate >= now && expiryDate <= upper;
+      }).length;
+
+      const blockedUsers = users.filter((u: Record<string, unknown>) => !u.is_active).length;
+      const pendingOrders = orders.filter((o: Record<string, unknown>) => (o.status || 'pending') === 'pending').length;
+
+      const droplets = Array.isArray(dropletsRaw) ? dropletsRaw : [];
+      const dropletsInAction = droplets.filter((d: Record<string, unknown>) => !['running', 'stopped'].includes(String(d.status || 'stopped').toLowerCase())).length;
+
+      const revenueMtd = orders
+        .filter((o: Record<string, unknown>) => String(o.payment_status || '').toLowerCase() === 'paid')
+        .reduce((total: number, o: Record<string, unknown>) => total + Number(o.total_amount || 0), 0);
+
+      const auditFailures = audit.filter((e: Record<string, unknown>) => ['fail', 'failed'].includes(String(e.result || '').toLowerCase())).length;
+
+      const actionUserCount = new Set(
+        droplets
+          .filter((d: Record<string, unknown>) => !['running', 'stopped'].includes(String(d.status || 'stopped').toLowerCase()))
+          .map((d: Record<string, unknown>) => d.owner_email || d.owner_user_id)
+          .filter(Boolean)
+      ).size;
+
+      setStats({
+        products: products.length,
+        entitlements: activeEntitlements,
+        users: users.length,
+        orders: orders.length,
+        droplets: droplets.length,
+        actions: dropletsInAction,
+        revenue: formatCurrency(revenueMtd, 'USD'),
+        audit: audit.length,
+        productsSub: `${activeProducts} active`,
+        entitlementsSub: `${expiringEntitlements} expiring soon`,
+        usersSub: `${blockedUsers} blocked`,
+        ordersSub: `${pendingOrders} pending`,
+        dropletsSub: `${dropletsInAction} in action`,
+        actionsSub: `${actionUserCount} users affected`,
+        revenueSub: 'From paid orders',
+        auditSub: `${auditFailures} failures`,
+        pendingOrders,
+        expiringEntitlements,
+        dropletsInAction,
+      });
+
+      setAuditRows(audit.slice(0, 4).map((e: Record<string, unknown>) => ({
+        actor: String(e.actor || 'system'),
+        action: String(e.action || ''),
+        result: String(e.result || 'ok').toLowerCase(),
+        ts: formatDate(e.created_at as string),
+      })));
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const auditColumns = [
+    { key: 'actor', label: 'Actor', render: (row: AuditRow) => <span className="font-mono text-[0.78rem]">{row.actor}</span> },
+    { key: 'action', label: 'Action', render: (row: AuditRow) => <span className="font-bold">{row.action}</span> },
+    { key: 'result', label: 'Result', render: (row: AuditRow) => <StatusBadge variant={row.result === 'ok' ? 'active' : row.result === 'fail' || row.result === 'failed' ? 'stopped' : 'pending'} label={row.result} /> },
+    { key: 'time', label: 'Time', render: (row: AuditRow) => <span className="text-[0.72rem] text-muted-foreground">{row.ts}</span> },
+  ];
 
   return (
     <div style={{ animation: 'fadeUp 0.28s var(--ease)' }}>
@@ -30,42 +157,45 @@ export default function AdminOverviewPage() {
         }
       />
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
-        {[
-          { icon: '📦', label: 'Total Products', value: stats.products, sub: stats.productsSub, bg: 'rgba(139,92,246,0.1)' },
-          { icon: '✅', label: 'Active Entitlements', value: stats.entitlements, sub: stats.entitlementsSub, bg: 'rgba(52,211,153,0.12)' },
-          { icon: '👥', label: 'Total Users', value: stats.users, sub: stats.usersSub, bg: 'rgba(244,114,182,0.12)' },
-          { icon: '🛒', label: 'Total Orders', value: stats.orders, sub: stats.ordersSub, bg: 'rgba(251,191,36,0.15)' },
-          { icon: '🖥️', label: 'Managed Droplets', value: stats.droplets, sub: stats.dropletsSub, bg: 'rgba(139,92,246,0.1)' },
-          { icon: '⚡', label: 'Actions In Progress', value: stats.actions, sub: stats.actionsSub, bg: 'rgba(244,114,182,0.12)' },
-          { icon: '💰', label: 'Revenue (MTD)', value: stats.revenue, sub: stats.revenueSub, bg: 'rgba(52,211,153,0.12)' },
-          { icon: '📊', label: 'Audit Events (24h)', value: stats.audit, sub: stats.auditSub, bg: 'rgba(251,191,36,0.15)' },
-        ].map((s, i) => (
-          <div
-            key={i}
-            className="bg-card border-2 border-foreground rounded-[var(--r-xl)] p-5 relative overflow-hidden shadow-[4px_4px_0_var(--shadow)] transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_var(--shadow)]"
-            style={{ animation: `fadeUp 0.3s var(--ease) both`, animationDelay: `${i * 0.03}s` }}
-          >
-            <div className="absolute -top-4 -right-4 w-14 h-14 rounded-full border-2 border-foreground opacity-[0.06]" />
-            <div className="w-9 h-9 rounded-[var(--r-sm)] border-2 border-foreground flex items-center justify-center mb-3 text-base shadow-[2px_2px_0_var(--shadow)]" style={{ background: s.bg }}>{s.icon}</div>
-            <div className="text-[0.62rem] font-extrabold uppercase tracking-[0.09em] text-muted-foreground mb-0.5">{s.label}</div>
-            <div className="font-heading text-[1.8rem] font-black leading-none">{s.value}</div>
-            <div className="text-[0.68rem] font-semibold text-muted-foreground mt-1">{s.sub}</div>
-          </div>
-        ))}
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-32 bg-card border-2 border-border rounded-xl animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+          {[
+            { icon: '📦', label: 'Total Products', value: stats.products, sub: stats.productsSub, bg: 'rgba(139,92,246,0.1)' },
+            { icon: '✅', label: 'Active Entitlements', value: stats.entitlements, sub: stats.entitlementsSub, bg: 'rgba(52,211,153,0.12)' },
+            { icon: '👥', label: 'Total Users', value: stats.users, sub: stats.usersSub, bg: 'rgba(244,114,182,0.12)' },
+            { icon: '🛒', label: 'Total Orders', value: stats.orders, sub: stats.ordersSub, bg: 'rgba(251,191,36,0.15)' },
+            { icon: '🖥️', label: 'Managed Droplets', value: stats.droplets, sub: stats.dropletsSub, bg: 'rgba(139,92,246,0.1)' },
+            { icon: '⚡', label: 'Actions In Progress', value: stats.actions, sub: stats.actionsSub, bg: 'rgba(244,114,182,0.12)' },
+            { icon: '💰', label: 'Revenue (MTD)', value: stats.revenue, sub: stats.revenueSub, bg: 'rgba(52,211,153,0.12)' },
+            { icon: '📊', label: 'Audit Events (24h)', value: stats.audit, sub: stats.auditSub, bg: 'rgba(251,191,36,0.15)' },
+          ].map((s, i) => (
+            <div
+              key={i}
+              className="bg-card border-2 border-foreground rounded-[var(--r-xl)] p-5 relative overflow-hidden shadow-[4px_4px_0_var(--shadow)] transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_var(--shadow)]"
+              style={{ animation: `fadeUp 0.3s var(--ease) both`, animationDelay: `${i * 0.03}s` }}
+            >
+              <div className="absolute -top-4 -right-4 w-14 h-14 rounded-full border-2 border-foreground opacity-[0.06]" />
+              <div className="w-9 h-9 rounded-[var(--r-sm)] border-2 border-foreground flex items-center justify-center mb-3 text-base shadow-[2px_2px_0_var(--shadow)]" style={{ background: s.bg }}>{s.icon}</div>
+              <div className="text-[0.62rem] font-extrabold uppercase tracking-[0.09em] text-muted-foreground mb-0.5">{s.label}</div>
+              <div className="font-heading text-[1.8rem] font-black leading-none">{s.value}</div>
+              <div className="text-[0.68rem] font-semibold text-muted-foreground mt-1">{s.sub}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
         <Panel title="🚨 Critical Audit Events" actions={<ButtonLink href="/admin/audit-logs" size="sm">All logs →</ButtonLink>}>
           <AdminTable
-            columns={[
-              { key: 'actor', label: 'Actor' },
-              { key: 'action', label: 'Action' },
-              { key: 'result', label: 'Result' },
-              { key: 'time', label: 'Time' },
-            ]}
-            rows={[]}
-            emptyText="No critical events"
+            columns={auditColumns}
+            rows={auditRows}
+            emptyText="No audit data available."
           />
         </Panel>
 

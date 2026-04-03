@@ -8,13 +8,28 @@ import { AdminTable } from '@/components/ui/admin-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Modal } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast';
 import { formatDate } from '@/lib/utils';
+
+function formatProductId(id: number | string): string {
+  return `PRD-${String(id).padStart(3, '0')}`;
+}
+
+function formatPriceCompact(amount: number, currency = 'USD'): string {
+  const n = Number(amount || 0);
+  if (isNaN(n)) return `${currency.toUpperCase()} 0`;
+  const isInt = Math.floor(n) === n;
+  if (isInt) return `${currency.toUpperCase()} ${n.toLocaleString('en-US')}`;
+  const trimmed = n.toFixed(2).replace(/\.00$/, '').replace(/(\.\d*[1-9])0$/, '$1');
+  return `${currency.toUpperCase()} ${trimmed}`;
+}
 
 export default function AdminProductsPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewPayload, setViewPayload] = useState<Record<string, unknown> | null>(null);
   const { showToast } = useToast();
 
   useEffect(() => { loadProducts(); }, []);
@@ -28,12 +43,33 @@ export default function AdminProductsPage() {
     finally { setLoading(false); }
   }
 
+  async function toggleVisibility(product: Record<string, unknown>) {
+    const isVisible = Boolean(product.is_visible);
+    try {
+      const res = await fetch(`/api/admin/products/${product.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: product.name,
+          slug: product.slug,
+          product_type: product.product_type,
+          status: product.status,
+          short_description: product.short_description || null,
+          catalog_visibility: isVisible ? 'hidden' : 'visible',
+        }),
+      });
+      if (!res.ok) { showToast('Failed to update visibility'); return; }
+      showToast(`Product ${isVisible ? 'hidden' : 'visible'}.`);
+      loadProducts();
+    } catch { showToast('Failed to update visibility'); }
+  }
+
   const columns = [
     {
       key: 'id',
       label: 'ID',
       render: (row: Record<string, unknown>) => (
-        <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: 'var(--muted-foreground)' }}>{String(row.id).slice(0, 8)}</span>
+        <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: 'var(--muted-foreground)' }}>{formatProductId(row.id as number)}</span>
       ),
     },
     {
@@ -63,14 +99,14 @@ export default function AdminProductsPage() {
       label: 'Category',
       render: (row: Record<string, unknown>) => {
         const cat = row.category as Record<string, unknown> | undefined;
-        return <span>{(cat?.name as string) || '—'}</span>;
+        return <span style={{ color: 'var(--muted-foreground)' }}>{(cat?.name as string) || 'General'}</span>;
       },
     },
     {
       key: 'catalog_visibility',
       label: 'Visibility',
       render: (row: Record<string, unknown>) => (
-        <StatusBadge variant={(row.catalog_visibility as string) === 'visible' ? 'active' : 'stopped'} label={row.catalog_visibility as string || 'visible'} />
+        <StatusBadge variant={Boolean(row.is_visible) ? 'active' : 'stopped'} label={Boolean(row.is_visible) ? 'visible' : 'hidden'} />
       ),
     },
     {
@@ -79,7 +115,7 @@ export default function AdminProductsPage() {
       render: (row: Record<string, unknown>) => {
         const prices = row.prices as Record<string, unknown>[] | undefined;
         const price = prices?.[0];
-        return <span style={{ fontFamily: 'var(--font-h)', fontWeight: 800 }}>{price ? `$${price.amount}` : '—'}</span>;
+        return <span style={{ fontFamily: 'var(--font-h)', fontWeight: 800 }}>{price ? formatPriceCompact(Number(price.amount), String(price.currency || 'USD')) : '—'}</span>;
       },
     },
     {
@@ -91,11 +127,22 @@ export default function AdminProductsPage() {
     {
       key: 'actions',
       label: 'Actions',
-      render: (row: Record<string, unknown>) => (
-        <div className="flex gap-1">
-          <Button size="sm" onClick={() => router.push(`/admin/products/${row.id}/edit`)}>Edit</Button>
-        </div>
-      ),
+      render: (row: Record<string, unknown>) => {
+        const isVisible = Boolean(row.is_visible);
+        const isAvailable = String(row.status || '').toLowerCase() === 'available';
+        return (
+          <div className="flex gap-1">
+            {isVisible && isAvailable ? (
+              <Button size="sm" onClick={() => router.push(`/admin/product-stocks?product=${row.id}`)}>Stocks</Button>
+            ) : (
+              <Button size="sm" variant="ghost" disabled title="Only active products can manage stocks">Stocks</Button>
+            )}
+            <Button size="sm" onClick={() => router.push(`/admin/products/${row.id}/edit`)}>Edit</Button>
+            <Button size="sm" variant="ghost" onClick={() => toggleVisibility(row)}>{isVisible ? 'Hide' : 'Show'}</Button>
+            <Button size="sm" variant="ghost" onClick={() => setViewPayload(row)}>View</Button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -136,6 +183,10 @@ export default function AdminProductsPage() {
           </div>
         </Panel>
       )}
+
+      <Modal open={!!viewPayload} onClose={() => setViewPayload(null)} title="Product Details">
+        <pre className="text-[0.72rem] font-mono bg-muted p-4 rounded-lg overflow-auto max-h-[400px] whitespace-pre-wrap">{JSON.stringify(viewPayload, null, 2)}</pre>
+      </Modal>
     </div>
   );
 }

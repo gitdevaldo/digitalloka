@@ -6,9 +6,14 @@ import { Panel } from '@/components/ui/panel';
 import { AdminTable } from '@/components/ui/admin-table';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Modal } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast';
 import { formatDate } from '@/lib/utils';
+
+function formatAuditId(id: number | string): string {
+  return `EVT-${String(id).padStart(4, '0')}`;
+}
 
 export default function AdminAuditLogsPage() {
   const [logs, setLogs] = useState<Record<string, unknown>[]>([]);
@@ -31,7 +36,7 @@ export default function AdminAuditLogsPage() {
 
   function exportCSV() {
     if (logs.length === 0) { showToast('No logs to export'); return; }
-    const headers = ['id', 'actor_user_id', 'action', 'target_type', 'target_id', 'created_at'];
+    const headers = ['id', 'actor', 'action', 'target_type', 'target_id', 'result', 'created_at'];
     const csvRows = [headers.join(',')];
     logs.forEach(log => {
       csvRows.push(headers.map(h => `"${String(log[h] || '')}"`).join(','));
@@ -46,28 +51,25 @@ export default function AdminAuditLogsPage() {
     showToast('CSV exported');
   }
 
-  const resultColor = (r: string) => r === 'fail' ? 'var(--secondary)' : r === 'warn' ? 'var(--tertiary)' : 'var(--quaternary)';
-
   const columns = [
-    { key: 'id', label: 'Event ID', render: (row: Record<string, unknown>) => <span style={{ fontFamily: 'monospace', fontSize: '0.68rem', color: 'var(--muted-foreground)' }}>{String(row.id).slice(0, 8)}</span> },
-    { key: 'actor_user_id', label: 'Actor', render: (row: Record<string, unknown>) => <span style={{ fontSize: '0.78rem', fontFamily: 'monospace' }}>{(row.actor_user_id as string) || 'system'}</span> },
-    { key: 'action', label: 'Action', render: (row: Record<string, unknown>) => <span style={{ fontWeight: 600, fontSize: '0.78rem' }}>{row.action as string}</span> },
-    { key: 'target_type', label: 'Target Type', style: { fontSize: '0.78rem', color: 'var(--muted-foreground)' } as React.CSSProperties },
-    { key: 'target_id', label: 'Target ID', render: (row: Record<string, unknown>) => <span style={{ fontFamily: 'monospace', fontSize: '0.68rem', color: 'var(--muted-foreground)' }}>{row.target_id ? String(row.target_id).slice(0, 8) : '—'}</span> },
+    { key: 'id', label: 'Event ID', render: (row: Record<string, unknown>) => <span style={{ fontFamily: 'monospace', fontSize: '0.68rem', color: 'var(--muted-foreground)' }}>{formatAuditId(row.id as number)}</span> },
+    { key: 'actor', label: 'Actor', render: (row: Record<string, unknown>) => <span style={{ fontSize: '0.78rem', fontFamily: 'monospace', fontWeight: 700 }}>{(row.actor as string) || (row.actor_user_id as string) || 'system'}</span> },
+    { key: 'action', label: 'Action', render: (row: Record<string, unknown>) => <span style={{ fontWeight: 700, fontSize: '0.78rem' }}>{row.action as string}</span> },
+    { key: 'target_type', label: 'Target Type', render: (row: Record<string, unknown>) => <span className="inline-flex items-center bg-muted rounded-full text-[0.65rem] font-bold text-muted-foreground" style={{ padding: '2px 8px', border: '1.5px solid var(--border)' }}>{row.target_type as string}</span> },
+    { key: 'target_id', label: 'Target ID', render: (row: Record<string, unknown>) => <span style={{ fontFamily: 'monospace', fontSize: '0.68rem', color: 'var(--muted-foreground)' }}>{(row.target_id as string) || '—'}</span> },
     {
       key: 'result',
       label: 'Result',
       render: (row: Record<string, unknown>) => {
-        const changes = (row.changes as Record<string, unknown>) || {};
-        const result = row.action && String(row.action).toLowerCase().includes('fail') ? 'fail' : changes.error ? 'fail' : changes.warning ? 'warn' : 'ok';
-        return <span style={{ fontSize: '0.72rem', fontWeight: 700, color: resultColor(result) }}>{result.toUpperCase()}</span>;
+        const result = String(row.result || 'ok').toLowerCase();
+        return <StatusBadge variant={result === 'ok' ? 'active' : result === 'fail' || result === 'failed' ? 'stopped' : 'pending'} label={result} />;
       },
     },
     { key: 'created_at', label: 'Timestamp', style: { fontSize: '0.72rem', color: 'var(--muted-foreground)' } as React.CSSProperties, render: (row: Record<string, unknown>) => <span>{row.created_at ? formatDate(row.created_at as string) : '—'}</span> },
     {
       key: 'payload',
       label: 'Payload',
-      render: (row: Record<string, unknown>) => <Button size="sm" onClick={() => setSelectedPayload((row.changes as Record<string, unknown>) || {})}>View</Button>,
+      render: (row: Record<string, unknown>) => <Button size="sm" variant="ghost" onClick={() => setSelectedPayload((row.changes as Record<string, unknown>) || row)}>Payload</Button>,
     },
   ];
 
