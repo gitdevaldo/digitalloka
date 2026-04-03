@@ -27,13 +27,15 @@ const ICON_COLORS: Record<string, string> = {
 };
 
 export default function CartPage() {
-  const { items, removeItem, clearCart } = useCart();
+  const { items, removeItem, clearCart, hydrated } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    if (!hydrated) return;
+
     if (items.length === 0) {
       setProducts([]);
       setLoading(false);
@@ -41,6 +43,7 @@ export default function CartPage() {
     }
 
     setFetchError(false);
+    setLoading(true);
     fetch('/api/cart/products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -50,7 +53,7 @@ export default function CartPage() {
       .then(d => setProducts(d.data || []))
       .catch(() => setFetchError(true))
       .finally(() => setLoading(false));
-  }, [items.length]);
+  }, [hydrated, items.length]);
 
   const getCartItem = (productId: number) => items.find(i => i.productId === productId);
   const cartProducts = products.filter(p => items.some(i => i.productId === p.id));
@@ -70,9 +73,11 @@ export default function CartPage() {
         </Link>
         <div className="page-title">Shopping Cart</div>
         <div className="page-sub">
-          {cartProducts.length > 0
-            ? `${cartProducts.length} item${cartProducts.length !== 1 ? 's' : ''} in your cart`
-            : 'Your cart is empty'}
+          {loading
+            ? ''
+            : cartProducts.length > 0
+              ? `${cartProducts.length} item${cartProducts.length !== 1 ? 's' : ''} in your cart`
+              : 'Your cart is empty'}
         </div>
       </div>
 

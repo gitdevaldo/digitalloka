@@ -35,7 +35,7 @@ const STEPS = [
 ];
 
 export default function CheckoutPage() {
-  const { items, clearCart } = useCart();
+  const { items, clearCart, hydrated } = useCart();
   const { isLoggedIn } = useWishlist();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,12 +57,15 @@ export default function CheckoutPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => {
+    if (!hydrated) return;
+
     if (items.length === 0) {
       setProducts([]);
       setLoading(false);
       return;
     }
     setFetchError(false);
+    setLoading(true);
     fetch('/api/cart/products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -72,7 +75,7 @@ export default function CheckoutPage() {
       .then(d => setProducts(d.data || []))
       .catch(() => setFetchError(true))
       .finally(() => setLoading(false));
-  }, [items.length]);
+  }, [hydrated, items.length]);
 
   const getQty = (productId: number) => items.find(i => i.productId === productId)?.quantity || 1;
   const cartProducts = products.filter(p => items.some(i => i.productId === p.id));
