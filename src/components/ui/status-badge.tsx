@@ -15,15 +15,15 @@ const badgeVariants: Record<string, string> = {
 };
 
 const dotColors: Record<string, string> = {
-  running: 'bg-emerald-800',
-  active: 'bg-emerald-800',
-  stopped: 'bg-rose-800',
-  starting: 'bg-amber-800',
-  pending: 'bg-amber-800',
-  paid: 'bg-emerald-800',
+  running: 'bg-[#065f46]',
+  active: 'bg-[#065f46]',
+  stopped: 'bg-[#9f1239]',
+  starting: 'bg-[#78350f]',
+  pending: 'bg-[#78350f]',
+  paid: 'bg-[#065f46]',
   cancelled: 'bg-gray-500',
-  fulfilled: 'bg-violet-200',
-  revoked: 'bg-rose-800',
+  fulfilled: 'bg-[#ede9fe]',
+  revoked: 'bg-[#9f1239]',
   expired: 'bg-gray-500',
 };
 
@@ -38,14 +38,15 @@ export function StatusBadge({ variant = 'active', label, showDot = true, classNa
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full',
-        'text-[0.62rem] font-extrabold uppercase tracking-wide',
-        'border-2 border-foreground whitespace-nowrap shadow-pop-sm',
+        'inline-flex items-center gap-1 rounded-full',
+        'text-[0.62rem] font-extrabold uppercase',
+        'border-2 border-foreground whitespace-nowrap',
         badgeVariants[variant] || 'bg-muted text-muted-foreground',
         className
       )}
+      style={{ padding: '3px 9px', letterSpacing: '0.05em', boxShadow: '2px 2px 0 var(--shadow)' }}
     >
-      {showDot && <span className={cn('w-1.5 h-1.5 rounded-full', dotColors[variant] || 'bg-gray-500')} />}
+      {showDot && <span className={cn('rounded-full', dotColors[variant] || 'bg-gray-500')} style={{ width: 6, height: 6 }} />}
       {label}
     </span>
   );

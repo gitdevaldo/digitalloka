@@ -114,7 +114,10 @@ export default function ProductTypesPage() {
                     <td><StatusBadge variant={t.is_active ? 'active' : 'stopped'} label={t.is_active ? 'Active' : 'Inactive'} /></td>
                     <td style={{ color: 'var(--muted-foreground)', fontSize: '0.74rem' }}>{t.description || '—'}</td>
                     <td>
-                      <span className="inline-flex items-center px-2 py-0.5 bg-muted border border-border rounded-full text-[0.65rem] font-bold text-muted-foreground">
+                      <span
+                        className="inline-flex items-center bg-muted rounded-full text-[0.65rem] font-bold text-muted-foreground"
+                        style={{ padding: '2px 8px', border: '1.5px solid var(--border)' }}
+                      >
                         {(t.fields || []).length} fields
                       </span>
                     </td>

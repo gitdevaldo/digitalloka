@@ -4,11 +4,12 @@ interface PanelProps {
   title?: string;
   actions?: React.ReactNode;
   variant?: 'dashboard' | 'admin';
+  noPad?: boolean;
   children: React.ReactNode;
   className?: string;
 }
 
-export function Panel({ title, actions, variant = 'dashboard', children, className }: PanelProps) {
+export function Panel({ title, actions, noPad, children, className }: PanelProps) {
   return (
     <div className={cn('bg-card border-2 border-foreground rounded-[14px] overflow-hidden mb-5 shadow-pop', className)}>
       {(title || actions) && (
@@ -17,7 +18,7 @@ export function Panel({ title, actions, variant = 'dashboard', children, classNa
           {actions}
         </div>
       )}
-      <div className="p-5">{children}</div>
+      <div className={noPad ? '' : (title ? 'p-5' : 'p-4')}>{children}</div>
     </div>
   );
 }
