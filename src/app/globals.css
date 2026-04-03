@@ -1546,9 +1546,9 @@ input[type="range"] {
 
 /* ── Inner Pages (Wishlist, Cart, Checkout) ── */
 .inner-wrap {
-  max-width: none;
-  margin: 0;
-  padding: 40px 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px;
   position: relative;
   z-index: 1;
 }
@@ -1627,7 +1627,7 @@ input[type="range"] {
 .wishlist-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 16px;
 }
 .wish-card {
   background: var(--card);
@@ -1790,8 +1790,8 @@ input[type="range"] {
 /* ═══ CART PAGE ═══ */
 .cart-layout {
   display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 32px;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
   align-items: start;
 }
 .cart-items {
@@ -2061,8 +2061,8 @@ input[type="range"] {
 
 .checkout-layout {
   display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 32px;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
   align-items: start;
 }
 
