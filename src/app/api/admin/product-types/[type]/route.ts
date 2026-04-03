@@ -9,38 +9,31 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const { type } = await params;
   const body = await request.json();
   const admin = createSupabaseAdminClient();
-  const settingKey = `product_type.${type}`;
 
-  const { data: existing } = await admin
-    .from('site_settings')
-    .select('id, setting_value')
-    .eq('setting_key', settingKey)
+  const updates: Record<string, unknown> = {};
+  if (body.label !== undefined) updates.label = body.label;
+  if (body.description !== undefined) updates.description = body.description;
+  if (body.is_active !== undefined) updates.is_active = body.is_active;
+  if (body.fields !== undefined) updates.fields = body.fields;
+
+  const { data, error } = await admin
+    .from('product_types')
+    .update(updates)
+    .eq('type_key', type)
+    .select()
     .single();
 
-  if (!existing) return NextResponse.json({ error: 'Product type not found' }, { status: 404 });
-
-  const current = (existing.setting_value as Record<string, unknown>) || {};
-  const updated = {
-    ...current,
-    label: body.label ?? current.label,
-    description: body.description ?? current.description,
-    is_active: body.is_active ?? current.is_active,
-    schema: body.fields ? { fields: body.fields } : current.schema,
-  };
-
-  const { error } = await admin
-    .from('site_settings')
-    .update({ setting_value: updated, updated_by: userId })
-    .eq('id', existing.id);
-
   if (error) return NextResponse.json({ error: error.message }, { status: 422 });
+  if (!data) return NextResponse.json({ error: 'Product type not found' }, { status: 404 });
+
   return NextResponse.json({
     data: {
-      type,
-      label: updated.label,
-      description: updated.description,
-      is_active: updated.is_active,
-      fields: (updated.schema as Record<string, unknown>)?.fields || [],
+      id: data.id,
+      type: data.type_key,
+      label: data.label,
+      description: data.description || '',
+      is_active: data.is_active,
+      fields: data.fields || [],
     },
   });
 }
@@ -51,12 +44,11 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
 
   const { type } = await params;
   const admin = createSupabaseAdminClient();
-  const settingKey = `product_type.${type}`;
 
   const { error } = await admin
-    .from('site_settings')
+    .from('product_types')
     .delete()
-    .eq('setting_key', settingKey);
+    .eq('type_key', type);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 422 });
   return NextResponse.json({ deleted: true });
