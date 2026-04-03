@@ -16,7 +16,7 @@ interface Product {
   price_currency: string;
   price_billing_period: string;
   category: { name: string } | null;
-  icon_emoji: string;
+
 }
 
 const ICON_COLORS: Record<string, string> = {
@@ -446,7 +446,7 @@ export default function CheckoutPage() {
                     {cartProducts.map(product => (
                       <div className="review-item" key={product.id}>
                         <div className="ri-icon" style={{ background: ICON_COLORS[getCatSlug(product)] || ICON_COLORS.template }}>
-                          {product.icon_emoji || '📦'}
+                          {'📦'}
                         </div>
                         <div className="ri-info">
                           <div className="ri-name">{product.name}</div>

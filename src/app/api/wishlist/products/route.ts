@@ -24,7 +24,7 @@ export async function GET() {
 
   const { data: products, error } = await admin
     .from('products')
-    .select('id, name, slug, short_description, price_amount, price_currency, price_billing_period, status, icon_emoji, category:product_categories(name, slug)')
+    .select('id, name, slug, short_description, price_amount, price_currency, price_billing_period, status, category:product_categories(name, slug)')
     .in('id', productIds)
     .eq('is_visible', true);
 

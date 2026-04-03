@@ -19,7 +19,6 @@ interface Product {
   price_billing_period: string;
   category: { name: string } | null;
   status: string;
-  icon_emoji: string;
 }
 
 const ICON_COLORS: Record<string, string> = {
@@ -122,7 +121,7 @@ export default function WishlistPage() {
                 <div className="wish-card" key={product.id}>
                   <div className="wish-card-top">
                     <div className="prod-icon" style={{ background: iconBg }}>
-                      {product.icon_emoji || '📦'}
+                      {'📦'}
                     </div>
                     <div className="wish-card-info">
                       <div className="wish-type">{product.category?.name || 'Product'}</div>

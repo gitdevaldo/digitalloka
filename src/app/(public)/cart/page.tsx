@@ -16,7 +16,6 @@ interface Product {
   price_currency: string;
   price_billing_period: string;
   category: { name: string } | null;
-  icon_emoji: string;
 }
 
 const ICON_COLORS: Record<string, string> = {
@@ -109,7 +108,7 @@ export default function CartPage() {
                 return (
                   <div className="cart-item" key={product.id}>
                     <div className="prod-icon" style={{ background: iconBg }}>
-                      {product.icon_emoji || '📦'}
+                      {'📦'}
                     </div>
                     <div className="cart-item-info">
                       <div className="ci-type">{product.category?.name || 'Product'}</div>
@@ -157,7 +156,7 @@ export default function CartPage() {
                     return (
                       <div className="review-item" key={product.id}>
                         <div className="ri-icon" style={{ background: iconBg }}>
-                          {product.icon_emoji || '📦'}
+                          {'📦'}
                         </div>
                         <div className="ri-info">
                           <div className="ri-name">{product.name}</div>
