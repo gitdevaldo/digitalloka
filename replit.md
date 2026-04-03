@@ -77,7 +77,9 @@ src/
 - Brand logo: Purple bg box with white "Digital" + amber "Loka"
 - Catalog layout: Fixed topbar + left sidebar (240px / --sidebar-w) with filter chips + main content with hero strip
 - Shared Topbar component: All areas (catalog, dashboard, admin) use same `Topbar` component with variant prop
-- Wishlist: Context-based (`WishlistProvider`), stored in Supabase `wishlists` table, login dialog for unauthenticated users
+- Wishlist: Context-based (`WishlistProvider`), stored in Supabase `wishlists` table, login dialog for unauthenticated users. Dedicated page at `/wishlist`
+- Cart: Context-based (`CartProvider`), stored in localStorage (`digitalloka_cart`). Dedicated page at `/cart`
+- Checkout: `/checkout` page — creates orders via `/api/user/checkout`, shows success with order number
 - Shared `FloatingBar` component (`src/components/layout/floating-bar.tsx`): fixed bottom bar that slides up after scrolling 200px and hides near footer (IntersectionObserver on `.catalog-footer`). Different content per page:
   - Homepage: Filter / Cart / Wishlist buttons
   - Product detail: Product name + price | Wishlist | Buy Now

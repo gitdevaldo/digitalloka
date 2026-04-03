@@ -4,9 +4,11 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
 import { useWishlist } from '@/context/wishlist-context';
+import { useCart } from '@/context/cart-context';
 import { LoginDialog } from '@/components/ui/login-dialog';
 import { FloatingBar } from '@/components/layout/floating-bar';
 import { SlidersHorizontal, ShoppingBag, Heart } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const THUMBS = ['thumb-purple', 'thumb-pink', 'thumb-amber', 'thumb-green', 'thumb-blue', 'thumb-red', 'thumb-teal', 'thumb-orange'];
 const ICONS = ['🎨', '🚀', '📘', '⚡', '✅', '🤖', '🧩', '📊', '📱', '📕', '✍️', '📈'];
@@ -86,6 +88,8 @@ export default function CatalogPage() {
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const wishlistCtx = useWishlist();
   const { isInWishlist, toggleWishlist } = wishlistCtx;
+  const { addItem: addToCart } = useCart();
+  const router = useRouter();
 
   const handleWishlist = async (e: React.MouseEvent, productId: number) => {
     e.preventDefault();
@@ -94,6 +98,13 @@ export default function CatalogPage() {
     if (result === 'login_required') {
       setShowLoginDialog(true);
     }
+  };
+
+  const handleBuy = (e: React.MouseEvent, productId: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(productId);
+    router.push('/cart');
   };
   const [minRating, setMinRating] = useState(0);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -361,7 +372,7 @@ export default function CatalogPage() {
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill={isInWishlist(p.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                     </button>
-                    <button className="buy-btn" onClick={e => e.preventDefault()}>Buy Now</button>
+                    <button className="buy-btn" onClick={e => handleBuy(e, p.id)}>Buy Now</button>
                   </div>
                 </div>
               </Link>
@@ -390,11 +401,11 @@ export default function CatalogPage() {
           <SlidersHorizontal size={18} />
         </button>
         <div className="floating-bar-divider" />
-        <button className="floating-bar-btn">
+        <button className="floating-bar-btn" onClick={() => router.push('/cart')}>
           <ShoppingBag size={18} />
         </button>
         <div className="floating-bar-divider" />
-        <button className="floating-bar-btn">
+        <button className="floating-bar-btn" onClick={() => router.push('/wishlist')}>
           <Heart size={18} />
           {(wishlistCtx.count ?? 0) > 0 && (
             <span className="floating-bar-badge">{wishlistCtx.count}</span>

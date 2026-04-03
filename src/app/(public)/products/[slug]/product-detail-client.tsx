@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/utils';
 import { useWishlist } from '@/context/wishlist-context';
+import { useCart } from '@/context/cart-context';
 import { LoginDialog } from '@/components/ui/login-dialog';
 import { FloatingBar } from '@/components/layout/floating-bar';
 import { Heart, ShoppingCart } from 'lucide-react';
@@ -27,10 +29,12 @@ export interface ProductData {
 }
 
 export default function ProductDetailClient({ product }: { product: ProductData }) {
+  const router = useRouter();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { addItem: addToCart } = useCart();
   const wishlisted = isInWishlist(product.id);
 
   const handleWishlist = async () => {
@@ -38,6 +42,11 @@ export default function ProductDetailClient({ product }: { product: ProductData 
     if (result === 'login_required') {
       setShowLoginDialog(true);
     }
+  };
+
+  const handleBuyNow = () => {
+    addToCart(product.id);
+    router.push('/cart');
   };
 
   const isDroplet = product.product_type === 'vps_droplet';
@@ -197,7 +206,7 @@ export default function ProductDetailClient({ product }: { product: ProductData 
                 </>
               ) : (
                 <>
-                  <button className="btn btn-accent btn-lg btn-full">Buy Now</button>
+                  <button className="btn btn-accent btn-lg btn-full" onClick={handleBuyNow}>Buy Now</button>
                   <button className="btn btn-ghost btn-full" onClick={handleWishlist}>
                     {wishlisted ? '❤️ In Wishlist' : 'Add to wishlist'}
                   </button>
@@ -368,7 +377,7 @@ export default function ProductDetailClient({ product }: { product: ProductData 
           <Heart size={16} fill={wishlisted ? 'var(--secondary)' : 'none'} color={wishlisted ? 'var(--secondary)' : 'currentColor'} />
           <span>{wishlisted ? 'Saved' : 'Wishlist'}</span>
         </button>
-        <button className="floating-bar-btn accent">
+        <button className="floating-bar-btn accent" onClick={handleBuyNow}>
           <ShoppingCart size={16} />
           <span>Buy Now</span>
         </button>
