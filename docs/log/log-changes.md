@@ -1,5 +1,15 @@
 # Change Log
 
+## 2026-04-03 00:10
+- Short description: Fixed Product Stocks import form button spacing overlap.
+- What you do:
+  - Increased spacing between stock textarea and action buttons.
+  - Added dedicated top padding and divider line for action row to avoid visual collision with textarea border.
+  - Enabled action-row wrapping and mobile alignment so buttons keep safe spacing on narrow screens.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-03 00:05
 - Short description: Restored wishlist icon visibility on mobile topbar.
 - What you do:

@@ -1,6 +1,11 @@
 # Lessons
 
 - Date: 2026-04-03
+- Mistake: Left action buttons too close to textarea border in stock import form, causing visual overlap.
+- Rule: Form action rows must have explicit separation (margin/padding/divider) from field borders, especially after resizable textareas.
+- Enforcement: On form UI changes, check border/button clearance in both desktop and mobile breakpoints before finishing.
+
+- Date: 2026-04-03
 - Mistake: Hid wishlist action in mobile topbar while trying to reduce crowding.
 - Rule: Never hide primary actions on mobile (wishlist/cart); only reduce labels/count text if needed.
 - Enforcement: At small breakpoints, keep action buttons visible as icons and verify parity with desktop actions.

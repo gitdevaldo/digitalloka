@@ -310,7 +310,15 @@ body::before{
 }
 
 .psm-form-grid{display:grid;gap:12px;}
-.psm-form-actions{display:flex;justify-content:flex-end;gap:8px;}
+.psm-form-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:12px;
+  padding-top:10px;
+  border-top:1px solid var(--border);
+}
 
 .create-product-form{
   display:grid;
@@ -525,6 +533,7 @@ body::before{
   .tbl th,.tbl td{padding-top:8px;padding-bottom:8px;}
   .tbl th:first-child,.tbl td:first-child{padding-left:10px;}
   .tbl th:last-child,.tbl td:last-child{padding-right:10px;}
+  .psm-form-actions{justify-content:flex-start;}
 }
 </style>
 </head>
