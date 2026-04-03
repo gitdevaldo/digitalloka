@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const userId = await getSessionUserId();
+  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  const { id } = await params;
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from('product_stock_items')
+    .select('*, product:products(id, name, slug, product_type)')
+    .eq('id', Number(id))
+    .single();
+
+  if (error || !data) return NextResponse.json({ error: 'Stock not found' }, { status: 404 });
+  return NextResponse.json({ data });
+}
+
 async function hashCredentials(data: Record<string, unknown>): Promise<string> {
   const sorted = Object.keys(data).sort().reduce((acc: Record<string, unknown>, key) => {
     acc[key] = data[key];
