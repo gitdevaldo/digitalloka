@@ -100,6 +100,16 @@ Key design decisions:
 - **Droplets** are NOT stored in DB; they come from DigitalOcean API. Users have `droplet_ids` JSON column
 - **Product stocks** use `product_stock_items` table with `credential_data` JSON and `credential_hash` for dedup
 
+### Database Indexes (docs/sql/2026-04-03-database-indexes.sql)
+Run against Supabase to apply performance indexes:
+- `order_items(order_id)`, `transactions(order_id)` — RLS policy join acceleration
+- `payment_events(idempotency_key)` UNIQUE — idempotent payment processing
+- `products(is_visible, status, category_slug)` — catalog filter queries
+- `products(slug)` — slug lookups
+- `products(name)`, `products(short_description)` — GIN trigram indexes for ILIKE search (requires pg_trgm)
+- `entitlements(order_item_id, user_id)` — entitlement existence checks
+- `product_stock_items(product_id, credential_hash)` — already covered by existing unique index from initial migration
+
 ## Required Environment Variables
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key

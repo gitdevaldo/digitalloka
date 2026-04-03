@@ -1,5 +1,23 @@
 # Change Log
 
+## 2026-04-03 06:30
+- Short description: Database indexing and full-text search migration for performance and data integrity
+- What you do:
+  - Created idempotent SQL migration `docs/sql/2026-04-03-database-indexes.sql` with all required indexes.
+  - Enabled `pg_trgm` extension for trigram-based ILIKE search.
+  - Added B-tree indexes on `order_items(order_id)` and `transactions(order_id)` to speed up RLS policy EXISTS subqueries.
+  - Added unique index on `payment_events(idempotency_key)` for duplicate payment prevention and fast lookups.
+  - Added composite index on `products(is_visible, status, category_slug)` for catalog filter queries.
+  - Added B-tree index on `products(slug)` for slug lookups.
+  - Added GIN trigram indexes on `products(name)` and `products(short_description)` for fast ILIKE search.
+  - Added composite index on `entitlements(order_item_id, user_id)` for entitlement existence checks.
+  - Skipped `product_stock_items(product_id, credential_hash)` index — already covered by existing unique index `idx_product_stock_items_hash` from initial migration.
+  - All statements use `CREATE INDEX IF NOT EXISTS` / `CREATE EXTENSION IF NOT EXISTS` for idempotent execution.
+- File path that changes:
+  - `docs/sql/2026-04-03-database-indexes.sql` (new)
+  - `docs/log/log-changes.md`
+  - `replit.md`
+
 ## 2026-04-03 06:00
 - Short description: Laravel parity audit — T001-T004, T008 fixes for Next.js conversion
 - What you do:
