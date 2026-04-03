@@ -316,6 +316,9 @@ export default function CatalogPage() {
                   <div className="card-category">{p.categoryName}</div>
                   <div className="card-title">{p.title}</div>
                   <div className="card-desc">{p.desc}</div>
+                  <div className="card-rating">
+                    <span className="star">★</span> {p.rating} <span style={{ color: 'var(--muted-foreground)', fontWeight: 500 }}>({p.reviews})</span>
+                  </div>
                   <div className="card-tags">
                     {p.tags.map(t => <span key={t} className="card-tag">{t}</span>)}
                   </div>
@@ -324,9 +327,6 @@ export default function CatalogPage() {
                   <div className="price-block">
                     <div className="price-main">{formatCurrency(p.price, p.currency)}</div>
                     {p.originalPrice && <div className="price-original">{formatCurrency(p.originalPrice, p.currency)}</div>}
-                  </div>
-                  <div className="card-rating">
-                    <span className="star">★</span> {p.rating} <span style={{ color: 'var(--muted-foreground)', fontWeight: 500 }}>({p.reviews})</span>
                   </div>
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                     <button

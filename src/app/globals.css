@@ -556,6 +556,7 @@ input[type="range"] {
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--foreground);
+  margin-top: 4px;
 }
 .star { color: var(--tertiary); }
 
