@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
-import { TableShell } from '@/components/ui/table-shell';
+import { AdminTable } from '@/components/ui/admin-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,17 @@ export default function AdminOrdersPage() {
       .then((data) => { setOrders(data.data || []); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
+
+  const columns = [
+    { key: 'order_number', label: 'Order ID', render: (row: Record<string, unknown>) => <span style={{ fontWeight: 700 }}>{row.order_number as string}</span> },
+    { key: 'user', label: 'User', render: (row: Record<string, unknown>) => { const u = row.user as Record<string, unknown> | undefined; return <span style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)' }}>{(u?.email as string) || '—'}</span>; } },
+    { key: 'items', label: 'Items', render: (row: Record<string, unknown>) => <span style={{ fontSize: '0.78rem' }}>{(row.items as unknown[])?.length || 0}</span> },
+    { key: 'total_amount', label: 'Total', render: (row: Record<string, unknown>) => <span style={{ fontFamily: 'var(--font-h)', fontWeight: 800 }}>{formatCurrency(row.total_amount as number, row.currency as string)}</span> },
+    { key: 'payment_status', label: 'Payment', render: (row: Record<string, unknown>) => <StatusBadge variant={row.payment_status as string || 'pending'} label={row.payment_status as string || 'pending'} /> },
+    { key: 'fulfillment_status', label: 'Fulfillment', render: (row: Record<string, unknown>) => <StatusBadge variant={row.fulfillment_status as string || 'pending'} label={row.fulfillment_status as string || 'pending'} /> },
+    { key: 'created_at', label: 'Created', style: { fontSize: '0.72rem', color: 'var(--muted-foreground)' } as React.CSSProperties, render: (row: Record<string, unknown>) => <span>{formatDate(row.created_at as string)}</span> },
+    { key: 'actions', label: 'Actions', render: () => <Button size="sm">View</Button> },
+  ];
 
   return (
     <div style={{ animation: 'fadeUp 0.28s var(--ease)' }}>
@@ -39,27 +50,10 @@ export default function AdminOrdersPage() {
       ) : orders.length === 0 ? (
         <EmptyState icon="📋" title="No orders" description="Orders will appear here." />
       ) : (
-        <Panel variant="admin">
-          <TableShell variant="admin">
-            <thead><tr><th>Order ID</th><th>User</th><th>Items</th><th>Total</th><th>Payment</th><th>Fulfillment</th><th>Created</th><th>Actions</th></tr></thead>
-            <tbody>
-              {orders.map((o) => {
-                const user = o.user as Record<string, unknown> | undefined;
-                return (
-                  <tr key={o.id as number}>
-                    <td className="font-bold">{o.order_number as string}</td>
-                    <td className="text-[0.78rem] text-muted-foreground">{user?.email as string || '—'}</td>
-                    <td className="text-[0.78rem]">{(o.items as unknown[])?.length || 0}</td>
-                    <td className="font-heading font-extrabold">{formatCurrency(o.total_amount as number, o.currency as string)}</td>
-                    <td><StatusBadge variant={o.payment_status as string || 'pending'} label={o.payment_status as string || 'pending'} /></td>
-                    <td><StatusBadge variant={o.fulfillment_status as string || 'pending'} label={o.fulfillment_status as string || 'pending'} /></td>
-                    <td className="text-[0.72rem] text-muted-foreground">{formatDate(o.created_at as string)}</td>
-                    <td><Button size="sm">View</Button></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </TableShell>
+        <Panel noPad>
+          <div style={{ padding: 16 }}>
+            <AdminTable columns={columns} rows={orders} />
+          </div>
         </Panel>
       )}
     </div>

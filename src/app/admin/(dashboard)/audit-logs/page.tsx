@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
-import { TableShell } from '@/components/ui/table-shell';
+import { AdminTable } from '@/components/ui/admin-table';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
@@ -21,7 +21,30 @@ export default function AdminAuditLogsPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const resultColor = (r: string) => r === 'fail' ? 'text-secondary' : r === 'warn' ? 'text-tertiary' : 'text-quaternary';
+  const resultColor = (r: string) => r === 'fail' ? 'var(--secondary)' : r === 'warn' ? 'var(--tertiary)' : 'var(--quaternary)';
+
+  const columns = [
+    { key: 'id', label: 'Event ID', render: (row: Record<string, unknown>) => <span style={{ fontFamily: 'monospace', fontSize: '0.68rem', color: 'var(--muted-foreground)' }}>{String(row.id).slice(0, 8)}</span> },
+    { key: 'actor_user_id', label: 'Actor', render: (row: Record<string, unknown>) => <span style={{ fontSize: '0.78rem', fontFamily: 'monospace' }}>{(row.actor_user_id as string) || 'system'}</span> },
+    { key: 'action', label: 'Action', render: (row: Record<string, unknown>) => <span style={{ fontWeight: 600, fontSize: '0.78rem' }}>{row.action as string}</span> },
+    { key: 'target_type', label: 'Target Type', style: { fontSize: '0.78rem', color: 'var(--muted-foreground)' } as React.CSSProperties },
+    { key: 'target_id', label: 'Target ID', render: (row: Record<string, unknown>) => <span style={{ fontFamily: 'monospace', fontSize: '0.68rem', color: 'var(--muted-foreground)' }}>{row.target_id ? String(row.target_id).slice(0, 8) : '—'}</span> },
+    {
+      key: 'result',
+      label: 'Result',
+      render: (row: Record<string, unknown>) => {
+        const changes = (row.changes as Record<string, unknown>) || {};
+        const result = row.action && String(row.action).toLowerCase().includes('fail') ? 'fail' : changes.error ? 'fail' : changes.warning ? 'warn' : 'ok';
+        return <span style={{ fontSize: '0.72rem', fontWeight: 700, color: resultColor(result) }}>{result.toUpperCase()}</span>;
+      },
+    },
+    { key: 'created_at', label: 'Timestamp', style: { fontSize: '0.72rem', color: 'var(--muted-foreground)' } as React.CSSProperties, render: (row: Record<string, unknown>) => <span>{row.created_at ? formatDate(row.created_at as string) : '—'}</span> },
+    {
+      key: 'payload',
+      label: 'Payload',
+      render: (row: Record<string, unknown>) => <Button size="sm" onClick={() => setSelectedPayload((row.changes as Record<string, unknown>) || {})}>View</Button>,
+    },
+  ];
 
   return (
     <div style={{ animation: 'fadeUp 0.28s var(--ease)' }}>
@@ -51,29 +74,10 @@ export default function AdminAuditLogsPage() {
       ) : logs.length === 0 ? (
         <EmptyState icon="📝" title="No audit logs" description="Audit entries will appear here." />
       ) : (
-        <Panel variant="admin">
-          <TableShell variant="admin">
-            <thead><tr><th>Event ID</th><th>Actor</th><th>Action</th><th>Target Type</th><th>Target ID</th><th>Result</th><th>Timestamp</th><th>Payload</th></tr></thead>
-            <tbody>
-              {logs.map((log) => {
-                const changes = (log.changes as Record<string, unknown>) || {};
-                const result = log.action && String(log.action).toLowerCase().includes('fail') ? 'fail'
-                  : changes.error ? 'fail' : changes.warning ? 'warn' : 'ok';
-                return (
-                  <tr key={log.id as number}>
-                    <td className="font-mono text-[0.68rem] text-muted-foreground">{String(log.id).slice(0, 8)}</td>
-                    <td className="text-[0.78rem] font-mono">{(log.actor_user_id as string) || 'system'}</td>
-                    <td className="font-semibold text-[0.78rem]">{log.action as string}</td>
-                    <td className="text-[0.78rem] text-muted-foreground">{log.target_type as string}</td>
-                    <td className="font-mono text-[0.68rem] text-muted-foreground">{log.target_id ? String(log.target_id).slice(0, 8) : '—'}</td>
-                    <td className={`text-[0.72rem] font-bold ${resultColor(result)}`}>{result.toUpperCase()}</td>
-                    <td className="text-[0.72rem] text-muted-foreground">{log.created_at ? formatDate(log.created_at as string) : '—'}</td>
-                    <td><Button size="sm" onClick={() => setSelectedPayload(changes)}>View</Button></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </TableShell>
+        <Panel noPad>
+          <div style={{ padding: 16 }}>
+            <AdminTable columns={columns} rows={logs} />
+          </div>
         </Panel>
       )}
 

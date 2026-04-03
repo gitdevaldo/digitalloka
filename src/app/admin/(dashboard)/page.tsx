@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ButtonLink } from '@/components/ui/button';
 import { Panel } from '@/components/ui/panel';
-import { TableShell } from '@/components/ui/table-shell';
+import { AdminTable } from '@/components/ui/admin-table';
 import { PageHeader } from '@/components/layout/page-header';
 
 export default function AdminOverviewPage() {
@@ -57,12 +57,16 @@ export default function AdminOverviewPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
         <Panel title="🚨 Critical Audit Events" actions={<ButtonLink href="/admin/audit-logs" size="sm">All logs →</ButtonLink>}>
-          <TableShell variant="admin">
-            <thead><tr><th>Actor</th><th>Action</th><th>Result</th><th>Time</th></tr></thead>
-            <tbody>
-              <tr><td colSpan={4} className="text-center text-muted-foreground text-[0.8rem] py-6">No critical events</td></tr>
-            </tbody>
-          </TableShell>
+          <AdminTable
+            columns={[
+              { key: 'actor', label: 'Actor' },
+              { key: 'action', label: 'Action' },
+              { key: 'result', label: 'Result' },
+              { key: 'time', label: 'Time' },
+            ]}
+            rows={[]}
+            emptyText="No critical events"
+          />
         </Panel>
 
         <div className="bg-card border-2 border-foreground rounded-[14px] overflow-hidden shadow-[4px_4px_0_var(--shadow)]">

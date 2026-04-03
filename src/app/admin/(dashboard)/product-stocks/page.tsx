@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
-import { TableShell } from '@/components/ui/table-shell';
+import { AdminTable } from '@/components/ui/admin-table';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -37,6 +37,58 @@ export default function ProductStocksPage() {
     );
   });
 
+  const columns = [
+    {
+      key: 'id',
+      label: 'ID',
+      render: (row: Record<string, unknown>) => (
+        <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: 'var(--muted-foreground)' }}>{String(row.id).slice(0, 8)}</span>
+      ),
+    },
+    {
+      key: 'name',
+      label: 'Product',
+      render: (row: Record<string, unknown>) => (
+        <div>
+          <div style={{ fontWeight: 700 }}>{row.name as string}</div>
+          <div style={{ fontSize: '0.68rem', color: 'var(--muted-foreground)' }}>{row.slug as string}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'product_type',
+      label: 'Type',
+      render: (row: Record<string, unknown>) => (
+        <span
+          className="inline-flex items-center bg-muted rounded-full text-[0.65rem] font-bold text-muted-foreground"
+          style={{ padding: '2px 8px', border: '1.5px solid var(--border)' }}
+        >
+          {row.product_type as string}
+        </span>
+      ),
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      render: (row: Record<string, unknown>) => {
+        const cat = row.category as Record<string, unknown> | undefined;
+        return <span>{(cat?.name as string) || '—'}</span>;
+      },
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row: Record<string, unknown>) => (
+        <StatusBadge variant={row.status === 'available' ? 'active' : 'stopped'} label={row.status as string} />
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: () => <Button size="sm">Manage Stock</Button>,
+    },
+  ];
+
   return (
     <div style={{ animation: 'fadeUp 0.28s var(--ease)' }}>
       <PageHeader
@@ -47,7 +99,7 @@ export default function ProductStocksPage() {
 
       <div className="flex items-center gap-2 flex-wrap mb-4">
         <input
-          className="border-2 border-border rounded-[var(--r-sm)] px-3 py-1.5 font-body text-[0.75rem] font-medium bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)] flex-1 min-w-[200px]"
+          className="border-2 border-border rounded-[var(--r-sm)] px-3 py-1.5 font-body text-[0.75rem] font-medium bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)] min-w-[200px]"
           placeholder="Search active products by name/slug/type..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -55,31 +107,14 @@ export default function ProductStocksPage() {
       </div>
 
       {loading ? (
-        <Panel>
-          <div className="h-24 bg-muted rounded-lg animate-pulse" />
-        </Panel>
+        <Panel><div className="h-24 bg-muted rounded-lg animate-pulse" /></Panel>
       ) : filtered.length === 0 ? (
-        <EmptyState icon="📦" title="No products found" description={search ? 'No products match your search.' : 'Create a product first to manage stock.'} />
+        <EmptyState icon="📦" title="No products found" description={search ? 'No products match your search.' : 'No active products available for stock management.'} />
       ) : (
-        <Panel>
-          <TableShell variant="admin">
-            <thead><tr><th>ID</th><th>Product</th><th>Type</th><th>Category</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody>
-              {filtered.map((p) => {
-                const category = p.category as Record<string, unknown> | undefined;
-                return (
-                  <tr key={p.id as number}>
-                    <td className="font-mono text-[0.72rem] text-muted-foreground">{String(p.id).slice(0, 8)}</td>
-                    <td><div className="font-bold">{p.name as string}</div><div className="text-[0.68rem] text-muted-foreground">{p.slug as string}</div></td>
-                    <td><span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border rounded-full text-[0.68rem] font-bold text-muted-foreground">{p.product_type as string}</span></td>
-                    <td className="text-[0.8rem]">{category?.name as string || '—'}</td>
-                    <td><StatusBadge variant={p.status === 'available' ? 'active' : 'stopped'} label={p.status as string} /></td>
-                    <td><Button size="sm">Manage Stock</Button></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </TableShell>
+        <Panel noPad>
+          <div style={{ padding: 16 }}>
+            <AdminTable columns={columns} rows={filtered} emptyText="No active products available for stock management." />
+          </div>
         </Panel>
       )}
     </div>

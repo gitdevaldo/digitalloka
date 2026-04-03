@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
-import { TableShell } from '@/components/ui/table-shell';
+import { AdminTable } from '@/components/ui/admin-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,16 @@ export default function AdminUsersPage() {
       .then((data) => { setUsers(data.data || []); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
+
+  const columns = [
+    { key: 'id', label: 'User ID', render: (row: Record<string, unknown>) => <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: 'var(--muted-foreground)' }}>{String(row.id).slice(0, 8)}</span> },
+    { key: 'email', label: 'Email', render: (row: Record<string, unknown>) => <span style={{ fontWeight: 700 }}>{row.email as string}</span> },
+    { key: 'role', label: 'Role', render: (row: Record<string, unknown>) => <StatusBadge variant={(row.role as string) === 'admin' ? 'accent' : 'active'} label={row.role as string} showDot={false} /> },
+    { key: 'is_active', label: 'Status', render: (row: Record<string, unknown>) => <StatusBadge variant={(row.is_active as boolean) ? 'active' : 'stopped'} label={(row.is_active as boolean) ? 'Active' : 'Blocked'} /> },
+    { key: 'entitlements_count', label: 'Products', render: (row: Record<string, unknown>) => <span>{(row.entitlements_count as number) ?? 0}</span> },
+    { key: 'last_sign_in_at', label: 'Last Active', style: { fontSize: '0.72rem', color: 'var(--muted-foreground)' } as React.CSSProperties, render: (row: Record<string, unknown>) => <span>{row.last_sign_in_at ? formatDate(row.last_sign_in_at as string) : '—'}</span> },
+    { key: 'actions', label: 'Actions', render: () => <Button size="sm">Manage</Button> },
+  ];
 
   return (
     <div style={{ animation: 'fadeUp 0.28s var(--ease)' }}>
@@ -39,23 +49,10 @@ export default function AdminUsersPage() {
       ) : users.length === 0 ? (
         <EmptyState icon="👥" title="No users" description="Users will appear here." />
       ) : (
-        <Panel variant="admin">
-          <TableShell variant="admin">
-            <thead><tr><th>User ID</th><th>Email</th><th>Role</th><th>Status</th><th>Products</th><th>Last Active</th><th>Actions</th></tr></thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id as string}>
-                  <td className="font-mono text-[0.72rem] text-muted-foreground">{String(u.id).slice(0, 8)}</td>
-                  <td className="font-bold">{u.email as string}</td>
-                  <td><StatusBadge variant={(u.role as string) === 'admin' ? 'accent' : 'active'} label={u.role as string} showDot={false} /></td>
-                  <td><StatusBadge variant={(u.is_active as boolean) ? 'active' : 'stopped'} label={(u.is_active as boolean) ? 'Active' : 'Blocked'} /></td>
-                  <td className="text-[0.8rem]">{(u.entitlements_count as number) ?? 0}</td>
-                  <td className="text-[0.72rem] text-muted-foreground">{u.last_sign_in_at ? formatDate(u.last_sign_in_at as string) : '—'}</td>
-                  <td><Button size="sm">Manage</Button></td>
-                </tr>
-              ))}
-            </tbody>
-          </TableShell>
+        <Panel noPad>
+          <div style={{ padding: 16 }}>
+            <AdminTable columns={columns} rows={users} />
+          </div>
         </Panel>
       )}
     </div>

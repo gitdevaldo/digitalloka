@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
-import { TableShell } from '@/components/ui/table-shell';
+import { AdminTable } from '@/components/ui/admin-table';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -56,6 +56,57 @@ export default function ProductTypesPage() {
     return true;
   });
 
+  const columns = [
+    {
+      key: 'type',
+      label: 'Type Key',
+      render: (row: Record<string, unknown>) => (
+        <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: 'var(--muted-foreground)' }}>{row.type as string}</span>
+      ),
+    },
+    {
+      key: 'label',
+      label: 'Label',
+      render: (row: Record<string, unknown>) => (
+        <span style={{ fontWeight: 800 }}>{row.label as string}</span>
+      ),
+    },
+    {
+      key: 'is_active',
+      label: 'Status',
+      render: (row: Record<string, unknown>) => (
+        <StatusBadge variant={row.is_active ? 'active' : 'stopped'} label={row.is_active ? 'Active' : 'Inactive'} />
+      ),
+    },
+    {
+      key: 'description',
+      label: 'Description',
+      style: { color: 'var(--muted-foreground)', fontSize: '0.74rem' } as React.CSSProperties,
+    },
+    {
+      key: 'fields',
+      label: 'Fields',
+      render: (row: Record<string, unknown>) => (
+        <span
+          className="inline-flex items-center bg-muted rounded-full text-[0.65rem] font-bold text-muted-foreground"
+          style={{ padding: '2px 8px', border: '1.5px solid var(--border)' }}
+        >
+          {(row.fields as unknown[] || []).length} fields
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (row: Record<string, unknown>) => (
+        <div className="flex gap-1 flex-wrap">
+          <Button size="sm">Edit</Button>
+          <Button size="sm" variant="danger" onClick={() => deleteType(row.type as string)}>Delete</Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div style={{ animation: 'fadeUp 0.28s var(--ease)' }}>
       <PageHeader
@@ -88,49 +139,14 @@ export default function ProductTypesPage() {
       </div>
 
       {loading ? (
-        <Panel>
-          <div className="h-24 bg-muted rounded-lg animate-pulse" />
-        </Panel>
+        <Panel><div className="h-24 bg-muted rounded-lg animate-pulse" /></Panel>
       ) : filtered.length === 0 ? (
         <EmptyState icon="📦" title="No product types" description="Create a product type to define schemas for your products." />
       ) : (
-        <Panel>
-          <TableShell variant="admin">
-              <thead>
-                <tr>
-                  <th>Type Key</th>
-                  <th>Label</th>
-                  <th>Status</th>
-                  <th>Description</th>
-                  <th>Fields</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((t) => (
-                  <tr key={t.type}>
-                    <td style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: 'var(--muted-foreground)' }}>{t.type}</td>
-                    <td style={{ fontWeight: 800 }}>{t.label}</td>
-                    <td><StatusBadge variant={t.is_active ? 'active' : 'stopped'} label={t.is_active ? 'Active' : 'Inactive'} /></td>
-                    <td style={{ color: 'var(--muted-foreground)', fontSize: '0.74rem' }}>{t.description || '—'}</td>
-                    <td>
-                      <span
-                        className="inline-flex items-center bg-muted rounded-full text-[0.65rem] font-bold text-muted-foreground"
-                        style={{ padding: '2px 8px', border: '1.5px solid var(--border)' }}
-                      >
-                        {(t.fields || []).length} fields
-                      </span>
-                    </td>
-                    <td>
-                      <div className="flex gap-1 flex-wrap">
-                        <Button size="sm">Edit</Button>
-                        <Button size="sm" variant="danger" onClick={() => deleteType(t.type)}>Delete</Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </TableShell>
+        <Panel noPad>
+          <div style={{ padding: 16 }}>
+            <AdminTable columns={columns} rows={filtered as unknown as Record<string, unknown>[]} emptyText="No product type schema found." />
+          </div>
         </Panel>
       )}
 

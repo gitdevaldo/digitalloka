@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
-import { TableShell } from '@/components/ui/table-shell';
+import { AdminTable } from '@/components/ui/admin-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
@@ -63,6 +63,18 @@ export default function AdminDropletsPage() {
 
   const regions = [...new Set(droplets.map(d => d.region).filter(Boolean))] as string[];
 
+  const columns = [
+    { key: 'id', label: 'Droplet ID', render: (row: Record<string, unknown>) => <span style={{ fontFamily: 'monospace', fontSize: '0.72rem' }}>{row.id as number}</span> },
+    { key: 'owner_email', label: 'Owner', style: { fontSize: '0.78rem' } as React.CSSProperties },
+    { key: 'entitlement_id', label: 'Entitlement', render: (row: Record<string, unknown>) => <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: 'var(--muted-foreground)' }}>{row.entitlement_id ? String(row.entitlement_id).slice(0, 8) : '—'}</span> },
+    { key: 'region', label: 'Region', render: (row: Record<string, unknown>) => <span style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase' as const }}>{(row.region as string) || '—'}</span> },
+    { key: 'size', label: 'Plan', style: { fontSize: '0.78rem' } as React.CSSProperties },
+    { key: 'status', label: 'Status', render: (row: Record<string, unknown>) => <StatusBadge variant={(row.status as string) === 'active' ? 'running' : (row.status as string) === 'off' ? 'stopped' : 'starting'} label={row.status as string} /> },
+    { key: 'ip_address', label: 'IP', render: (row: Record<string, unknown>) => <span style={{ fontFamily: 'monospace', fontSize: '0.72rem' }}>{(row.ip_address as string) || '—'}</span> },
+    { key: 'updated_at', label: 'Last Action', style: { fontSize: '0.72rem', color: 'var(--muted-foreground)' } as React.CSSProperties, render: (row: Record<string, unknown>) => <span>{row.updated_at ? new Date(row.updated_at as string).toLocaleDateString() : '—'}</span> },
+    { key: 'actions', label: 'Actions', render: () => <Button size="sm">Actions</Button> },
+  ];
+
   return (
     <div style={{ animation: 'fadeUp 0.28s var(--ease)' }}>
       <PageHeader
@@ -104,31 +116,14 @@ export default function AdminDropletsPage() {
       </div>
 
       {loading ? (
-        <Panel>
-          <div className="h-24 bg-muted rounded-lg animate-pulse" />
-        </Panel>
+        <Panel><div className="h-24 bg-muted rounded-lg animate-pulse" /></Panel>
       ) : filtered.length === 0 ? (
         <EmptyState icon="🖥️" title="No droplets" description="Managed droplets will appear here when provisioned." />
       ) : (
-        <Panel>
-          <TableShell variant="admin">
-            <thead><tr><th>Droplet ID</th><th>Owner</th><th>Entitlement</th><th>Region</th><th>Plan</th><th>Status</th><th>IP</th><th>Last Action</th><th>Actions</th></tr></thead>
-            <tbody>
-              {filtered.map((d) => (
-                <tr key={d.id}>
-                  <td className="font-mono text-[0.72rem]">{d.id}</td>
-                  <td className="text-[0.78rem]">{d.owner_email || '—'}</td>
-                  <td className="font-mono text-[0.72rem] text-muted-foreground">{d.entitlement_id ? String(d.entitlement_id).slice(0, 8) : '—'}</td>
-                  <td className="text-[0.78rem] font-bold uppercase">{d.region || '—'}</td>
-                  <td className="text-[0.78rem]">{d.size || '—'}</td>
-                  <td><StatusBadge variant={d.status === 'active' ? 'running' : d.status === 'off' ? 'stopped' : 'starting'} label={d.status} /></td>
-                  <td className="font-mono text-[0.72rem]">{d.ip_address || '—'}</td>
-                  <td className="text-[0.72rem] text-muted-foreground">{d.updated_at ? new Date(d.updated_at).toLocaleDateString() : '—'}</td>
-                  <td><Button size="sm">Actions</Button></td>
-                </tr>
-              ))}
-            </tbody>
-          </TableShell>
+        <Panel noPad>
+          <div style={{ padding: 16 }}>
+            <AdminTable columns={columns} rows={filtered as unknown as Record<string, unknown>[]} />
+          </div>
         </Panel>
       )}
     </div>

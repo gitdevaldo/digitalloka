@@ -51,7 +51,7 @@ src/
 │       ├── admin/         # Admin CRUD (products, users, orders, settings, audit-logs, entitlements, product-types, product-stocks, droplets)
 │       └── payments/      # Webhook processing
 ├── components/
-│   ├── ui/                # Button, ButtonLink, StatusBadge, Panel, Modal, Toast, EmptyState, TableShell, AvatarChip
+│   ├── ui/                # Button, ButtonLink, StatusBadge, Panel, Modal, Toast, EmptyState, AdminTable, TableShell, AvatarChip
 │   └── layout/            # DashboardShell, Topbar, Sidebar, PageHeader, BrandLogo
 └── lib/
     ├── supabase/          # Server, browser, middleware clients
@@ -81,7 +81,7 @@ src/
 Tables: `users`, `products`, `product_categories`, `product_prices`, `product_stock_items`, `orders`, `order_items`, `order_item_deliveries`, `transactions`, `payment_events`, `entitlements`, `site_settings`, `audit_logs`, `user_product_actions`, `wishlist_items`, `jobs`, `job_batches`, `failed_jobs`, `migrations`
 
 Key design decisions:
-- **Product types** are stored in `site_settings` (group=`product_type`, key=`product_type.{type_key}`) — no dedicated table
+- **Product types** are stored in `product_types` table (type_key, label, description, is_active, fields JSONB). Legacy copy also in `site_settings`
 - **Droplets** are NOT stored in DB; they come from DigitalOcean API. Users have `droplet_ids` JSON column
 - **Product stocks** use `product_stock_items` table with `credential_data` JSON and `credential_hash` for dedup
 
