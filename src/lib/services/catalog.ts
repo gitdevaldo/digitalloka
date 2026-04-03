@@ -50,8 +50,8 @@ export async function listProducts(filters: ProductFilters) {
 
   const sortMap: Record<string, [string, { ascending: boolean }]> = {
     newest: ['created_at', { ascending: false }],
-    price_asc: ['name', { ascending: true }],
-    price_desc: ['name', { ascending: false }],
+    price_asc: ['price_amount', { ascending: true }],
+    price_desc: ['price_amount', { ascending: false }],
     rating: ['rating', { ascending: false }],
   };
   const [col, opts] = sortMap[filters.sort || ''] || ['name', { ascending: true }];
