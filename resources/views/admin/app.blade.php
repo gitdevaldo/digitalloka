@@ -773,6 +773,7 @@ body::before{
       <label style="display:flex;flex-direction:column;gap:6px">
         <span style="font-weight:700;font-size:0.8rem">Category</span>
         <select id="cp-category-id" class="setting-select"></select>
+        <input id="cp-category-name" class="setting-input" placeholder="Or add new category name (e.g. VPS)" style="margin-top:6px" />
       </label>
 
       <label style="display:flex;flex-direction:column;gap:6px">
@@ -1288,9 +1289,24 @@ function mapProducts(payload){
     defaultPriceCurrency: Array.isArray(p.prices) && p.prices[0] ? String(p.prices[0].currency || 'USD') : 'USD',
     defaultPriceName: Array.isArray(p.prices) && p.prices[0] ? String(p.prices[0].name || 'Standard') : 'Standard',
     defaultPriceBillingPeriod: Array.isArray(p.prices) && p.prices[0] ? String(p.prices[0].billing_period || '') : '',
-    price: Array.isArray(p.prices) && p.prices[0] ? `${p.prices[0].currency} ${Number(p.prices[0].amount || 0).toFixed(2)}` : (p.prices_count ? `${p.prices_count} prices` : '—'),
+    price: Array.isArray(p.prices) && p.prices[0] ? formatPriceCompact(p.prices[0].amount, p.prices[0].currency) : (p.prices_count ? `${p.prices_count} prices` : '—'),
     updated: fmtDate(p.updated_at || p.created_at),
   }));
+}
+
+function formatPriceCompact(amount, currency = 'USD'){
+  const n = Number(amount || 0);
+  if(Number.isNaN(n)){
+    return `${String(currency || 'USD').toUpperCase()} 0`;
+  }
+
+  const isInt = Math.floor(n) === n;
+  if(isInt){
+    return `${String(currency || 'USD').toUpperCase()} ${n.toLocaleString('en-US')}`;
+  }
+
+  const trimmed = n.toFixed(2).replace(/\.00$/, '').replace(/(\.\d*[1-9])0$/, '$1');
+  return `${String(currency || 'USD').toUpperCase()} ${trimmed}`;
 }
 
 function deriveCategoriesFromProducts(){
@@ -1622,7 +1638,7 @@ function renderProductCategoryOptions(selectedId = null){
   }
 
   const selectedValue = selectedId ?? select.value;
-  const options = ['<option value="">Uncategorized</option>']
+  const options = ['<option value="">Choose category or type new below</option>']
     .concat(DATA.categories.map((category) => `<option value="${category.id}">${escapeHtmlAttr(category.name)}</option>`));
 
   select.innerHTML = options.join('');
@@ -3184,12 +3200,16 @@ function createProduct(){
   const nameField = document.getElementById('cp-name');
   const slugField = document.getElementById('cp-slug');
   const visibleField = document.getElementById('cp-visible');
+  const categoryNameField = document.getElementById('cp-category-name');
 
   if(slugField){
     slugField.value = '';
   }
   if(visibleField){
     visibleField.value = 'visible';
+  }
+  if(categoryNameField){
+    categoryNameField.value = '';
   }
 
   nav('product-create', null);
@@ -3219,6 +3239,7 @@ function openProductFormForEdit(product){
   const priceNameField = document.getElementById('cp-price-name');
   const priceBillingPeriodField = document.getElementById('cp-price-billing-period');
   const visibleField = document.getElementById('cp-visible');
+  const categoryNameField = document.getElementById('cp-category-name');
   const submitButton = document.getElementById('cp-submit');
 
   if(nameField) nameField.value = product.name || '';
@@ -3232,6 +3253,7 @@ function openProductFormForEdit(product){
   if(priceNameField) priceNameField.value = product.defaultPriceName || 'Standard';
   if(priceBillingPeriodField) priceBillingPeriodField.value = product.defaultPriceBillingPeriod || '';
   if(visibleField) visibleField.value = product.visible ? 'visible' : 'hidden';
+  if(categoryNameField) categoryNameField.value = '';
   setProductDetailsValue(product.description || '');
 
   renderCreateProductTypeFields(product.type || 'digital');
@@ -3269,6 +3291,7 @@ async function submitCreateProduct(event){
   const type = (document.getElementById('cp-type')?.value || 'digital').trim();
   const status = (document.getElementById('cp-status')?.value || 'available').trim();
   const categoryIdRaw = (document.getElementById('cp-category-id')?.value || '').trim();
+  const categoryNameRaw = (document.getElementById('cp-category-name')?.value || '').trim();
   const priceAmountRaw = (document.getElementById('cp-price-amount')?.value || '').trim();
   const priceCurrency = (document.getElementById('cp-price-currency')?.value || 'USD').trim().toUpperCase();
   const priceName = (document.getElementById('cp-price-name')?.value || 'Standard').trim();
@@ -3301,6 +3324,11 @@ async function submitCreateProduct(event){
     return;
   }
 
+  if(categoryIdRaw !== '' && categoryNameRaw !== ''){
+    showToast('⚠️ Use category select or category name, not both.','fail');
+    return;
+  }
+
   const priceAmount = priceAmountRaw !== '' ? Number(priceAmountRaw) : null;
   if(priceAmountRaw !== '' && (Number.isNaN(priceAmount) || priceAmount < 0)){
     showToast('⚠️ Price amount must be a valid non-negative number.','fail');
@@ -3325,6 +3353,7 @@ async function submitCreateProduct(event){
         product_type: type,
         status,
         category_id: categoryId,
+        category_name: categoryIdRaw === '' ? (categoryNameRaw || null) : null,
         price_amount: priceAmount,
         price_currency: priceCurrency || 'USD',
         price_name: priceName || 'Standard',

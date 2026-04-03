@@ -1,5 +1,17 @@
 # Change Log
 
+## 2026-04-03 05:30
+- Short description: Fixed product category input and removed trailing .00 in admin product price table
+- What you do:
+  - Added category name input (`cp-category-name`) in product create/edit form so new categories can be added directly.
+  - Updated create/edit product submit payload to support `category_name` when category select is empty.
+  - Added guard to prevent submitting both `category_id` and `category_name` at the same time.
+  - Updated products table price formatter to use compact display (no forced `.00` suffix for integer prices).
+  - Updated category select placeholder text to clarify category select vs manual category name input.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-03 05:20
 - Short description: Added production runtime configs for global API concurrency and throughput
 - What you do:
