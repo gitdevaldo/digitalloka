@@ -1552,6 +1552,10 @@ input[type="range"] {
   position: relative;
   z-index: 1;
 }
+.inner-wrap.inner-wide {
+  max-width: none;
+  padding: 40px 60px;
+}
 .page-header {
   margin-bottom: 32px;
 }
