@@ -31,6 +31,29 @@ This folder contains Phase 1 migration scaffolding for moving DigitalLoka from N
   - `DIGITALOCEAN_DROPLET_CACHE_SECONDS`
   - `DIGITALOCEAN_ACTIONS_CACHE_SECONDS`
 
+## Production runtime setup (Nginx + PHP-FPM)
+
+Use the included deployment templates:
+
+1. Nginx virtual host: `deploy/nginx/digitalloka.conf`
+2. PHP-FPM pool: `deploy/php-fpm/www.conf`
+3. Supervisor worker: `deploy/supervisor/laravel-worker.conf`
+
+Recommended deploy sequence:
+
+1. Copy code to `/var/www/digitalloka`
+2. Configure env (`CACHE_STORE=redis`, `SESSION_DRIVER=redis`, Redis connection vars)
+3. Install deps and optimize:
+   - `composer install --no-dev --optimize-autoloader`
+   - `php artisan migrate --force`
+   - `php artisan optimize`
+   - `php artisan config:cache`
+   - `php artisan route:cache`
+4. Reload services:
+   - `systemctl reload nginx`
+   - `systemctl restart php-fpm` (or `php8.2-fpm`)
+   - `supervisorctl reread && supervisorctl update && supervisorctl restart digitalloka-worker:*`
+
 ## Immediate Next Tasks
 
 1. Bootstrap a full Laravel app kernel and providers.

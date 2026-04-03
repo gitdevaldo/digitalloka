@@ -1,5 +1,21 @@
 # Change Log
 
+## 2026-04-03 05:20
+- Short description: Added production runtime configs for global API concurrency and throughput
+- What you do:
+  - Added Nginx vhost template for Laravel public root + FastCGI tuning.
+  - Added PHP-FPM pool template with dynamic process manager worker settings.
+  - Added Supervisor template for queue workers.
+  - Updated `.env.example` to use Redis-backed cache/session defaults for performance.
+  - Updated README with deployment sequence and service reload steps.
+- File path that changes:
+  - `deploy/nginx/digitalloka.conf` (new)
+  - `deploy/php-fpm/www.conf` (new)
+  - `deploy/supervisor/laravel-worker.conf` (new)
+  - `.env.example`
+  - `README.md`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-03 05:10
 - Short description: Applied global API performance improvements (auth/session caching, DigitalOcean caching/timeouts, local concurrency guidance)
 - What you do:
