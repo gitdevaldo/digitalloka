@@ -5,9 +5,10 @@ import { useState, useEffect, useRef } from 'react';
 interface FloatingBarProps {
   children: React.ReactNode;
   alwaysVisible?: boolean;
+  mobileOnly?: boolean;
 }
 
-export function FloatingBar({ children, alwaysVisible = false }: FloatingBarProps) {
+export function FloatingBar({ children, alwaysVisible = false, mobileOnly = false }: FloatingBarProps) {
   const [visible, setVisible] = useState(alwaysVisible);
   const footerVisible = useRef(false);
   const scrolledPast = useRef(alwaysVisible);
@@ -44,7 +45,7 @@ export function FloatingBar({ children, alwaysVisible = false }: FloatingBarProp
   }, [alwaysVisible]);
 
   return (
-    <div className={`floating-bar${visible ? ' visible' : ''}`}>
+    <div className={`floating-bar${visible ? ' visible' : ''}${mobileOnly ? ' mobile-only-bar' : ''}`}>
       <div className="floating-bar-inner">
         {children}
       </div>

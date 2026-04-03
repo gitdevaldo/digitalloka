@@ -1484,6 +1484,9 @@ input[type="range"] {
   background: var(--border);
   flex-shrink: 0;
 }
+@media(min-width:769px) {
+  .floating-bar.mobile-only-bar { display: none !important; }
+}
 @media(max-width:640px) {
   .floating-bar { bottom: 12px; }
   .floating-bar-inner { padding: 6px 8px; }
