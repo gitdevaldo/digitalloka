@@ -202,6 +202,21 @@ export default function ProductDetailClient({ product }: { product: ProductData 
               {isDroplet && <div className="card-spec-row"><span className="cs-key">Access</span><span className="cs-val mono">root SSH + dashboard</span></div>}
               <div className="card-spec-row"><span className="cs-key">Renewal</span><span className="cs-val">{isDroplet ? 'Auto-renews, cancel anytime' : 'Auto-renews'}</span></div>
             </div>
+
+            <div className="card-trust">
+              <div className="trust-item">
+                <span className="trust-icon">🔒</span>
+                <span>Secure checkout</span>
+              </div>
+              <div className="trust-item">
+                <span className="trust-icon">⚡</span>
+                <span>Instant delivery</span>
+              </div>
+              <div className="trust-item">
+                <span className="trust-icon">💬</span>
+                <span>Customer support</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
