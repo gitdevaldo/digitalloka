@@ -79,9 +79,11 @@ src/
 - Shared Topbar component: All areas (catalog, dashboard, admin) use same `Topbar` component with variant prop
 - Wishlist: Context-based (`WishlistProvider`), stored in Supabase `wishlists` table, login dialog for unauthenticated users
 - Sticky buy bar on product detail page: shows product name + price + Buy Now + wishlist when scrolled past hero, hides near footer
+- Mobile (≤768px): Header shows only Login/Dashboard button; sidebar hidden; bottom nav bar with Filter/Cart/Wishlist; filter opens slide-up panel overlay
+- Mobile bottom nav component: `src/components/layout/mobile-bottom-nav.tsx`
 
 ## Database (Supabase PostgreSQL)
-Tables: `users`, `products`, `product_categories`, `product_prices`, `product_stock_items`, `orders`, `order_items`, `order_item_deliveries`, `transactions`, `payment_events`, `entitlements`, `site_settings`, `audit_logs`, `user_product_actions`, `wishlist_items`, `jobs`, `job_batches`, `failed_jobs`, `migrations`
+Tables: `users`, `products`, `product_categories`, `product_prices`, `product_types`, `product_stock_items`, `orders`, `order_items`, `transactions`, `payment_events`, `entitlements`, `site_settings`, `audit_logs`, `wishlists`
 
 Key design decisions:
 - **Product types** are stored in `product_types` table (type_key, label, description, is_active, fields JSONB). Legacy copy also in `site_settings`

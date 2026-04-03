@@ -27,14 +27,14 @@ export function Topbar({ variant = 'dashboard', searchPlaceholder, onSearch, chi
 
   const defaultRightContent = isCatalog ? (
     <>
-      <a href="#" className="btn btn-ghost" id="wishlistButton">
+      <a href="#" className="btn btn-ghost desktop-only" id="wishlistButton">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
         </svg>
         <span className="tb-label">Wishlist</span>
         <span className="tb-wishlist-count">({wishlist?.count ?? 0})</span>
       </a>
-      <a href="#" className="btn btn-accent" id="cartButton">
+      <a href="#" className="btn btn-accent desktop-only" id="cartButton">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
         </svg>

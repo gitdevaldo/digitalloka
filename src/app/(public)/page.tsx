@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
 import { useWishlist } from '@/context/wishlist-context';
 import { LoginDialog } from '@/components/ui/login-dialog';
+import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 
 const THUMBS = ['thumb-purple', 'thumb-pink', 'thumb-amber', 'thumb-green', 'thumb-blue', 'thumb-red', 'thumb-teal', 'thumb-orange'];
 const ICONS = ['🎨', '🚀', '📘', '⚡', '✅', '🤖', '🧩', '📊', '📱', '📕', '✍️', '📈'];
@@ -79,6 +80,7 @@ export default function CatalogPage() {
   const [sort, setSort] = useState('featured');
   const [maxPrice, setMaxPrice] = useState(200);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const { isInWishlist, toggleWishlist } = useWishlist();
 
   const handleWishlist = async (e: React.MouseEvent, productId: number) => {
@@ -166,98 +168,104 @@ export default function CatalogPage() {
     new: ['badge-quaternary', '✨ New'],
   };
 
+  const sidebarContent = (
+    <>
+      <div className="sidebar-section">
+        <div className="sidebar-title">Category</div>
+        <div className="filter-chip-group">
+          <div className={`filter-chip ${category === 'all' ? 'active' : ''}`} onClick={() => { setCategory('all'); setMobileFilterOpen(false); }}>
+            <div className="dot"></div>
+            All Products
+            <span className="chip-count">{products.length}</span>
+          </div>
+          {['template', 'ui-kit', 'plugin', 'ebook', 'course'].map(cat => (
+            <div key={cat} className={`filter-chip ${category === cat ? 'active' : ''}`} onClick={() => { setCategory(cat); setMobileFilterOpen(false); }}>
+              <div className="dot"></div>
+              {cat.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              <span className="chip-count">{categoryCounts[cat] ?? 0}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="sidebar-divider"></div>
+
+      <div className="sidebar-section">
+        <div className="sidebar-title">Price Range</div>
+        <div className="price-range">
+          <div className="range-row">
+            <span>$0</span>
+            <span>${maxPrice}</span>
+          </div>
+          <input type="range" min="0" max="200" value={maxPrice} onChange={e => setMaxPrice(Number(e.target.value))} />
+          <div style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', fontWeight: 500 }}>
+            Under <span style={{ fontWeight: 700, color: 'var(--foreground)' }}>${maxPrice}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="sidebar-divider"></div>
+
+      <div className="sidebar-section">
+        <div className="sidebar-title">Rating</div>
+        <div className="filter-chip-group">
+          <div className={`filter-chip ${minRating === 0 ? '' : ''}`} onClick={() => toggleRating(0)}>
+            <span style={{ color: 'var(--tertiary)' }}>★★★★★</span> Any
+          </div>
+          <div className={`filter-chip ${minRating === 4 ? 'active' : ''}`} onClick={() => toggleRating(4)}>
+            <span style={{ color: 'var(--tertiary)' }}>★★★★</span> + &amp; up
+          </div>
+          <div className={`filter-chip ${minRating === 3 ? 'active' : ''}`} onClick={() => toggleRating(3)}>
+            <span style={{ color: 'var(--tertiary)' }}>★★★</span> + &amp; up
+          </div>
+        </div>
+      </div>
+
+      <div className="sidebar-divider"></div>
+
+      <div className="sidebar-section">
+        <div className="sidebar-title">Tags</div>
+        <div className="tag-cloud">
+          {['Figma', 'React', 'Tailwind', 'Next.js', 'WordPress', 'Notion', 'AI', 'SaaS'].map(tag => (
+            <div key={tag} className={`tag ${selectedTags.includes(tag.toLowerCase()) ? 'active' : ''}`} onClick={() => toggleTag(tag.toLowerCase())}>
+              {tag}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="sidebar-divider"></div>
+
+      <div className="sidebar-section">
+        <div className="sidebar-title">Status</div>
+        <div className="filter-chip-group">
+          <div className={`filter-chip ${selectedStatus.includes('sale') ? 'active' : ''}`} onClick={() => toggleStatus('sale')}>
+            <div className="dot" style={{ background: 'var(--secondary)', borderColor: 'var(--secondary)' }}></div>
+            On Sale
+          </div>
+          <div className={`filter-chip ${selectedStatus.includes('new') ? 'active' : ''}`} onClick={() => toggleStatus('new')}>
+            <div className="dot" style={{ background: 'var(--quaternary)', borderColor: 'var(--quaternary)' }}></div>
+            New Arrivals
+          </div>
+          <div className={`filter-chip ${selectedStatus.includes('bestseller') ? 'active' : ''}`} onClick={() => toggleStatus('bestseller')}>
+            <div className="dot" style={{ background: 'var(--tertiary)', borderColor: 'var(--tertiary)' }}></div>
+            Bestsellers
+          </div>
+        </div>
+      </div>
+
+      <div style={{ marginTop: '8px' }}>
+        <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', fontSize: '0.8rem' }} onClick={() => { resetAllFilters(); setMobileFilterOpen(false); }}>
+          Reset All Filters
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <>
       <aside className="catalog-sidebar">
-        <div className="sidebar-section">
-          <div className="sidebar-title">Category</div>
-          <div className="filter-chip-group">
-            <div className={`filter-chip ${category === 'all' ? 'active' : ''}`} onClick={() => setCategory('all')}>
-              <div className="dot"></div>
-              All Products
-              <span className="chip-count">{products.length}</span>
-            </div>
-            {['template', 'ui-kit', 'plugin', 'ebook', 'course'].map(cat => (
-              <div key={cat} className={`filter-chip ${category === cat ? 'active' : ''}`} onClick={() => setCategory(cat)}>
-                <div className="dot"></div>
-                {cat.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                <span className="chip-count">{categoryCounts[cat] ?? 0}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="sidebar-divider"></div>
-
-        <div className="sidebar-section">
-          <div className="sidebar-title">Price Range</div>
-          <div className="price-range">
-            <div className="range-row">
-              <span>$0</span>
-              <span>${maxPrice}</span>
-            </div>
-            <input type="range" min="0" max="200" value={maxPrice} onChange={e => setMaxPrice(Number(e.target.value))} />
-            <div style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', fontWeight: 500 }}>
-              Under <span style={{ fontWeight: 700, color: 'var(--foreground)' }}>${maxPrice}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="sidebar-divider"></div>
-
-        <div className="sidebar-section">
-          <div className="sidebar-title">Rating</div>
-          <div className="filter-chip-group">
-            <div className={`filter-chip ${minRating === 0 ? '' : ''}`} onClick={() => toggleRating(0)}>
-              <span style={{ color: 'var(--tertiary)' }}>★★★★★</span> Any
-            </div>
-            <div className={`filter-chip ${minRating === 4 ? 'active' : ''}`} onClick={() => toggleRating(4)}>
-              <span style={{ color: 'var(--tertiary)' }}>★★★★</span>+ &amp; up
-            </div>
-            <div className={`filter-chip ${minRating === 4.5 ? 'active' : ''}`} onClick={() => toggleRating(4.5)}>
-              <span style={{ color: 'var(--tertiary)' }}>★★★★½</span> 4.5+
-            </div>
-          </div>
-        </div>
-
-        <div className="sidebar-divider"></div>
-
-        <div className="sidebar-section">
-          <div className="sidebar-title">Tags</div>
-          <div className="tag-cloud">
-            {['Figma', 'React', 'Tailwind', 'Next.js', 'WordPress', 'Notion', 'AI', 'SaaS'].map(tag => (
-              <div key={tag} className={`tag ${selectedTags.includes(tag.toLowerCase()) ? 'active' : ''}`} onClick={() => toggleTag(tag.toLowerCase())}>
-                {tag}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="sidebar-divider"></div>
-
-        <div className="sidebar-section">
-          <div className="sidebar-title">Status</div>
-          <div className="filter-chip-group">
-            <div className={`filter-chip ${selectedStatus.includes('sale') ? 'active' : ''}`} onClick={() => toggleStatus('sale')}>
-              <div className="dot" style={{ background: 'var(--secondary)', borderColor: 'var(--secondary)' }}></div>
-              On Sale
-            </div>
-            <div className={`filter-chip ${selectedStatus.includes('new') ? 'active' : ''}`} onClick={() => toggleStatus('new')}>
-              <div className="dot" style={{ background: 'var(--quaternary)', borderColor: 'var(--quaternary)' }}></div>
-              New Arrivals
-            </div>
-            <div className={`filter-chip ${selectedStatus.includes('bestseller') ? 'active' : ''}`} onClick={() => toggleStatus('bestseller')}>
-              <div className="dot" style={{ background: 'var(--tertiary)', borderColor: 'var(--tertiary)' }}></div>
-              Bestsellers
-            </div>
-          </div>
-        </div>
-
-        <div style={{ marginTop: '8px' }}>
-          <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', fontSize: '0.8rem' }} onClick={resetAllFilters}>
-            Reset All Filters
-          </button>
-        </div>
+        {sidebarContent}
       </aside>
 
       <main className="catalog-main">
@@ -358,6 +366,22 @@ export default function CatalogPage() {
         )}
       </main>
       <LoginDialog open={showLoginDialog} onClose={() => setShowLoginDialog(false)} />
+
+      {mobileFilterOpen && (
+        <div className="mobile-filter-overlay" onClick={() => setMobileFilterOpen(false)}>
+          <div className="mobile-filter-panel" onClick={e => e.stopPropagation()}>
+            <div className="mobile-filter-header">
+              <span className="mobile-filter-title">Filters</span>
+              <button className="mobile-filter-close" onClick={() => setMobileFilterOpen(false)}>✕</button>
+            </div>
+            <div className="mobile-filter-body">
+              {sidebarContent}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <MobileBottomNav onFilterToggle={() => setMobileFilterOpen(o => !o)} />
     </>
   );
 }
