@@ -385,7 +385,7 @@ export default function CatalogPage() {
         </div>
       )}
 
-      <FloatingBar>
+      <FloatingBar alwaysVisible>
         <button className="floating-bar-btn" onClick={() => setMobileFilterOpen(o => !o)}>
           <SlidersHorizontal size={18} />
           <span className="desktop-only">Filter</span>

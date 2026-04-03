@@ -4,12 +4,13 @@ import { useState, useEffect, useRef } from 'react';
 
 interface FloatingBarProps {
   children: React.ReactNode;
+  alwaysVisible?: boolean;
 }
 
-export function FloatingBar({ children }: FloatingBarProps) {
-  const [visible, setVisible] = useState(true);
+export function FloatingBar({ children, alwaysVisible = false }: FloatingBarProps) {
+  const [visible, setVisible] = useState(alwaysVisible);
   const footerVisible = useRef(false);
-  const scrolledPast = useRef(false);
+  const scrolledPast = useRef(alwaysVisible);
 
   useEffect(() => {
     const footer = document.querySelector('.catalog-footer');
@@ -19,25 +20,28 @@ export function FloatingBar({ children }: FloatingBarProps) {
       setVisible(scrolledPast.current && !footerVisible.current);
     };
 
-    const scrollHandler = () => {
-      scrolledPast.current = window.scrollY > 200;
-      update();
-    };
-
     const footerObs = new IntersectionObserver(([e]) => {
       footerVisible.current = e.isIntersecting;
       update();
     }, { threshold: 0 });
 
     footerObs.observe(footer);
-    window.addEventListener('scroll', scrollHandler, { passive: true });
-    scrollHandler();
 
-    return () => {
-      footerObs.disconnect();
-      window.removeEventListener('scroll', scrollHandler);
-    };
-  }, []);
+    if (!alwaysVisible) {
+      const scrollHandler = () => {
+        scrolledPast.current = window.scrollY > 200;
+        update();
+      };
+      window.addEventListener('scroll', scrollHandler, { passive: true });
+      scrollHandler();
+      return () => {
+        footerObs.disconnect();
+        window.removeEventListener('scroll', scrollHandler);
+      };
+    }
+
+    return () => { footerObs.disconnect(); };
+  }, [alwaysVisible]);
 
   return (
     <div className={`floating-bar${visible ? ' visible' : ''}`}>
