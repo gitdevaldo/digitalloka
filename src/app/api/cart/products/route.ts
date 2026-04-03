@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const admin = createSupabaseAdminClient();
     const { data, error } = await admin
       .from('products')
-      .select('id, name, slug, short_description, price_amount, price_currency, price_billing_period, status, thumb_color, icon_emoji, category:product_categories(name, slug)')
+      .select('id, name, slug, short_description, price_amount, price_currency, price_billing_period, status, icon_emoji, category:product_categories(name, slug)')
       .in('id', ids)
       .eq('is_visible', true);
 

@@ -19,7 +19,6 @@ interface Product {
   price_billing_period: string;
   category: { name: string } | null;
   status: string;
-  thumb_color: string;
   icon_emoji: string;
 }
 

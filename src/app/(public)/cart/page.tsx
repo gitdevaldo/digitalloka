@@ -16,7 +16,6 @@ interface Product {
   price_currency: string;
   price_billing_period: string;
   category: { name: string } | null;
-  thumb_color: string;
   icon_emoji: string;
 }
 
