@@ -71,11 +71,10 @@ export async function POST(request: NextRequest) {
       p_provider: 'manual',
     });
 
-    if (rpcError) throw new Error(rpcError.message);
+    if (rpcError) throw rpcError;
 
     return NextResponse.json({ data: { order_id: orderId, order_number: orderNumber, total: subtotal, currency } }, { status: 201 });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Checkout failed';
-    return NextResponse.json({ error: message }, { status: 422 });
+  } catch {
+    return NextResponse.json({ error: 'Checkout failed' }, { status: 422 });
   }
 }

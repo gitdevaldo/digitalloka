@@ -13,8 +13,7 @@ export async function POST(request: NextRequest) {
     const payload = JSON.parse(rawBody);
     const result = await processWebhook(payload);
     return NextResponse.json(result);
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Webhook processing failed';
-    return NextResponse.json({ error: message }, { status: 422 });
+  } catch {
+    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 422 });
   }
 }

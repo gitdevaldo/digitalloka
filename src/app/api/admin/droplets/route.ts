@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { listDroplets } from '@/lib/services/digitalocean';
+import { sanitizeDbError } from '@/lib/error-sanitizer';
 
 export async function GET() {
   const userId = await getSessionUserId();
@@ -13,7 +14,7 @@ export async function GET() {
     .from('users')
     .select('id, email, droplet_ids');
 
-  if (usersError) return NextResponse.json({ error: usersError.message }, { status: 500 });
+  if (usersError) return NextResponse.json({ error: sanitizeDbError(usersError.message) }, { status: 500 });
 
   const ownersByDropletId: Record<number, { id: string; email: string }> = {};
   for (const user of (users || [])) {
@@ -70,8 +71,7 @@ export async function GET() {
     });
 
     return NextResponse.json({ droplets: mapped });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to load droplets';
-    return NextResponse.json({ error: message }, { status: 502 });
+  } catch {
+    return NextResponse.json({ error: 'Failed to load droplets' }, { status: 502 });
   }
 }

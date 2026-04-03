@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { sanitizeDbError } from '@/lib/error-sanitizer';
 
 export async function GET() {
   const userId = await getSessionUserId();
@@ -12,7 +13,7 @@ export async function GET() {
     .select('*')
     .order('name', { ascending: true });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
   return NextResponse.json({ data: data || [] });
 }
 
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
       const existing = await admin.from('product_categories').select('*').eq('slug', slug).single();
       if (existing.data) return NextResponse.json({ data: existing.data });
     }
-    return NextResponse.json({ error: error.message }, { status: 422 });
+    return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 422 });
   }
 
   return NextResponse.json({ data }, { status: 201 });

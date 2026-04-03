@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
+import { sanitizeDbError } from '@/lib/error-sanitizer';
 
 export async function GET() {
   const supabase = await createSupabaseServerClient();
@@ -29,7 +30,7 @@ export async function GET() {
     .eq('is_visible', true);
 
   if (error) {
-    return NextResponse.json({ data: [], error: error.message }, { status: 500 });
+    return NextResponse.json({ data: [], error: sanitizeDbError(error.message) }, { status: 500 });
   }
 
   return NextResponse.json({ data: products || [] });

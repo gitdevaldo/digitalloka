@@ -17,8 +17,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     await updateEntitlementStatus(Number(id), body.status, body.reason);
     return NextResponse.json({ success: true });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Update failed';
-    return NextResponse.json({ error: message }, { status: 422 });
+  } catch {
+    return NextResponse.json({ error: 'Update failed' }, { status: 422 });
   }
 }

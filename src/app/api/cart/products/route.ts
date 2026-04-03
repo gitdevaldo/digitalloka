@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { sanitizeDbError } from '@/lib/error-sanitizer';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
       .eq('is_visible', true);
 
     if (error) {
-      return NextResponse.json({ data: [], error: error.message }, { status: 500 });
+      return NextResponse.json({ data: [], error: sanitizeDbError(error.message) }, { status: 500 });
     }
 
     return NextResponse.json({ data: data || [] });

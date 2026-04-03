@@ -1,11 +1,26 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import crypto from 'crypto';
 
+const webhookSecretChecked = (() => {
+  const secret = process.env.PAYMENT_WEBHOOK_SECRET;
+  if (!secret) {
+    console.warn('[payment-verification] PAYMENT_WEBHOOK_SECRET is not set — webhook signature verification will always fail');
+  }
+  return true;
+})();
+
 export function verifySignature(payload: string, signature: string | null): boolean {
-  const secret = process.env.PAYMENT_WEBHOOK_SECRET || '';
-  if (!secret || !signature) return false;
+  void webhookSecretChecked;
+  const secret = process.env.PAYMENT_WEBHOOK_SECRET;
+  if (!secret) {
+    throw new Error('PAYMENT_WEBHOOK_SECRET is not configured — cannot verify webhook signatures');
+  }
+  if (!signature) return false;
   const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+  const expectedBuf = Buffer.from(expected);
+  const signatureBuf = Buffer.from(signature);
+  if (expectedBuf.length !== signatureBuf.length) return false;
+  return crypto.timingSafeEqual(expectedBuf, signatureBuf);
 }
 
 export async function processWebhook(payload: Record<string, unknown>) {

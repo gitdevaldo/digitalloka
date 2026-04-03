@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { sanitizeDbError } from '@/lib/error-sanitizer';
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getSessionUserId();
@@ -19,7 +20,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     if (error.message.includes('product_stock_items')) {
       return NextResponse.json({ data: [], _table_missing: true });
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
   }
   return NextResponse.json({ data: data || [] });
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { sanitizeDbError } from '@/lib/error-sanitizer';
 
 export async function GET(request: NextRequest) {
   const userId = await getSessionUserId();
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
     if (error.message.includes('product_stock_items')) {
       return NextResponse.json({ data: [], _table_missing: true });
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
   }
 
   let results = data || [];
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
     .select('*, product:products(id, name, slug, product_type)')
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 422 });
+  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 422 });
   return NextResponse.json({ item: data }, { status: 201 });
 }
 

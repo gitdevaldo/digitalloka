@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { sanitizeDbError } from '@/lib/error-sanitizer';
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getSessionUserId();
@@ -16,6 +17,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin.from('users').update(updates).eq('id', id).select().single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 422 });
+  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 422 });
   return NextResponse.json({ data });
 }

@@ -25,8 +25,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const action = await performAction(dropletId, actionType);
     return NextResponse.json({ data: action });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Action failed';
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Action failed' }, { status: 500 });
   }
 }

@@ -17,8 +17,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ data: order }, { status: 201 });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Checkout failed';
-    return NextResponse.json({ error: message }, { status: 422 });
+  } catch {
+    return NextResponse.json({ error: 'Checkout failed' }, { status: 422 });
   }
 }

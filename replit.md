@@ -12,6 +12,7 @@ Next.js 15 App Router application with Neo-Brutalist UI design, featuring Digita
 - **Fonts:** Outfit (headings) + Plus Jakarta Sans (body)
 - **Icons:** Lucide React
 - **Port:** 5000
+- **Security:** CSP, HSTS, Permissions-Policy headers via next.config.js; error sanitization via `src/lib/error-sanitizer.ts`; ilike injection protection in audit logs
 
 ## Architecture
 ```

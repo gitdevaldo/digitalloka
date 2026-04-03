@@ -30,10 +30,11 @@ export async function listAuditLogs(filters: Record<string, string>, page = 1, p
 
   let query = admin.from('audit_logs').select('*', { count: 'exact' });
 
-  if (filters.actor) query = query.ilike('actor_user_id', `%${filters.actor}%`);
-  if (filters.action) query = query.ilike('action', `%${filters.action}%`);
+  const escapeIlike = (v: string) => v.replace(/[%_\\]/g, '\\$&');
+  if (filters.actor) query = query.ilike('actor_user_id', `%${escapeIlike(filters.actor)}%`);
+  if (filters.action) query = query.ilike('action', `%${escapeIlike(filters.action)}%`);
   if (filters.target_type) query = query.eq('target_type', filters.target_type);
-  if (filters.target_id) query = query.ilike('target_id', `%${filters.target_id}%`);
+  if (filters.target_id) query = query.ilike('target_id', `%${escapeIlike(filters.target_id)}%`);
   if (filters.date_from) query = query.gte('created_at', filters.date_from);
   if (filters.date_to) query = query.lte('created_at', filters.date_to);
 

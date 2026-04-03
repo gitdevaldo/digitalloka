@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { sanitizeDbError } from '@/lib/error-sanitizer';
 
 export async function POST(request: NextRequest) {
   const userId = await getSessionUserId();
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      invalidRows.push({ line: i + 1, reasons: [error.message] });
+      invalidRows.push({ line: i + 1, reasons: [sanitizeDbError(error.message)] });
     } else {
       inserted++;
     }

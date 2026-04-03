@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { sanitizeDbError } from '@/lib/error-sanitizer';
 
 export async function GET() {
   const userId = await getSessionUserId();
@@ -12,7 +13,7 @@ export async function GET() {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
 
   const types = (data || []).map((row) => ({
     id: row.id,
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
     if (error.message.includes('duplicate') || error.message.includes('unique')) {
       return NextResponse.json({ error: 'Product type already exists' }, { status: 422 });
     }
-    return NextResponse.json({ error: error.message }, { status: 422 });
+    return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 422 });
   }
 
   return NextResponse.json({

@@ -12,8 +12,7 @@ export async function POST(request: NextRequest) {
 
     const result = await startMagicLinkLogin(email, next, mode === 'admin' ? 'admin' : 'user');
     return NextResponse.json(result);
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unable to send magic link';
-    return NextResponse.json({ error: message }, { status: 400 });
+  } catch {
+    return NextResponse.json({ error: 'Unable to send magic link' }, { status: 400 });
   }
 }

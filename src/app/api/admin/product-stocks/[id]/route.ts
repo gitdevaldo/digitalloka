@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { sanitizeDbError } from '@/lib/error-sanitizer';
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getSessionUserId();
@@ -66,7 +67,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     .select('*, product:products(id, name, slug, product_type)')
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 422 });
+  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 422 });
   return NextResponse.json({ item: data });
 }
 
@@ -82,6 +83,6 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     .delete()
     .eq('id', Number(id));
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 422 });
+  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 422 });
   return NextResponse.json({ deleted: true });
 }

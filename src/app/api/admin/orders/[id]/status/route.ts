@@ -13,8 +13,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const order = await updateOrderStatus(Number(id), body.status);
     return NextResponse.json({ data: order });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Update failed';
-    return NextResponse.json({ error: message }, { status: 422 });
+  } catch {
+    return NextResponse.json({ error: 'Update failed' }, { status: 422 });
   }
 }
