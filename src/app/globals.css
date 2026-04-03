@@ -1032,35 +1032,26 @@ input[type="range"] {
 .cs-val { font-size: 0.78rem; font-weight: 800; color: var(--foreground); }
 .cs-val.mono { font-family: monospace; font-size: 0.72rem; color: var(--accent); }
 
-.card-includes {
+.card-trust {
+  display: flex;
+  justify-content: space-around;
+  gap: 8px;
   padding-top: 16px;
   margin-top: 16px;
   border-top: 2px solid var(--border);
 }
-.card-includes-title {
-  font-family: var(--font-h);
-  font-size: 0.82rem;
-  font-weight: 800;
-  color: var(--foreground);
-  margin-bottom: 10px;
-}
-.card-checklist {
+.trust-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-.card-check-item {
-  display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
   color: var(--muted-foreground);
+  text-align: center;
 }
-.card-check-mark {
-  color: var(--quaternary);
-  font-weight: 900;
-  font-size: 0.8rem;
+.trust-icon {
+  font-size: 1.2rem;
 }
 
 .divider { height: 2px; background: var(--border); margin: 56px 40px 0; max-width: 1120px; }

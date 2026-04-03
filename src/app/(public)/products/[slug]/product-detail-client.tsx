@@ -93,6 +93,29 @@ export default function ProductDetailClient({ product }: { product: ProductData 
             </div>
           )}
 
+          <div className="includes-title">{isDroplet ? 'What you get with your account' : 'What you get with your purchase'}</div>
+          <div className="checklist">
+            {(isDroplet ? [
+              'Dedicated public IPv4 address — yours for the subscription lifetime',
+              'Root SSH access + web-based terminal in the dashboard',
+              'Choice of OS: Ubuntu 24.04, Debian 12, or Rocky Linux 9',
+              'One-click Power On / Off / Reboot from your dashboard',
+              'Private network and firewall rules included',
+              'Weekly automated snapshots — restore in one click',
+              '24/7 infrastructure monitoring with email alerts',
+            ] : [
+              'Instant delivery after checkout — access from your dashboard immediately',
+              'Clear ownership and entitlement tracking in your account',
+              'Status and renewal information always visible',
+              'Secure credential handling and storage',
+              'Customer support included for product lifecycle',
+            ]).map((text, i) => (
+              <div className="check-item" key={i}>
+                <span className="check-mark"></span>
+                {text}
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="purchase-card">
@@ -180,29 +203,18 @@ export default function ProductDetailClient({ product }: { product: ProductData 
               <div className="card-spec-row"><span className="cs-key">Renewal</span><span className="cs-val">{isDroplet ? 'Auto-renews, cancel anytime' : 'Auto-renews'}</span></div>
             </div>
 
-            <div className="card-includes">
-              <div className="card-includes-title">{isDroplet ? 'What you get' : 'Includes'}</div>
-              <div className="card-checklist">
-                {(isDroplet ? [
-                  'Dedicated public IPv4',
-                  'Root SSH + web terminal',
-                  'Choice of OS',
-                  'One-click Power controls',
-                  'Private networking',
-                  'Weekly snapshots',
-                  '24/7 monitoring',
-                ] : [
-                  'Instant delivery',
-                  'Ownership tracking',
-                  'Renewal management',
-                  'Secure credentials',
-                  'Customer support',
-                ]).map((text, i) => (
-                  <div className="card-check-item" key={i}>
-                    <span className="card-check-mark">✓</span>
-                    <span>{text}</span>
-                  </div>
-                ))}
+            <div className="card-trust">
+              <div className="trust-item">
+                <span className="trust-icon">🔒</span>
+                <span>Secure checkout</span>
+              </div>
+              <div className="trust-item">
+                <span className="trust-icon">⚡</span>
+                <span>Instant delivery</span>
+              </div>
+              <div className="trust-item">
+                <span className="trust-icon">💬</span>
+                <span>Customer support</span>
               </div>
             </div>
           </div>
