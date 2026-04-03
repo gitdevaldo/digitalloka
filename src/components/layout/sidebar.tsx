@@ -42,9 +42,14 @@ const dashboardNav: NavItemDef[] = [
 
 const adminNav: NavItemDef[] = [
   { label: 'Overview', href: '/admin', icon: <LayoutDashboard size={17} />, group: 'Main' },
-  { label: 'Products', href: '/admin/products', icon: <Package size={17} />, group: 'Main' },
-  { label: 'Product Types', href: '/admin/product-types', icon: <Layers size={14} />, group: 'Main', indent: true },
-  { label: 'Product Stocks', href: '/admin/product-stocks', icon: <Database size={14} />, group: 'Main', indent: true },
+  {
+    label: 'Products', href: '#', icon: <Package size={17} />, group: 'Main',
+    children: [
+      { label: 'All Products', href: '/admin/products' },
+      { label: 'Product Types', href: '/admin/product-types' },
+      { label: 'Product Stocks', href: '/admin/product-stocks' },
+    ]
+  },
   { label: 'Orders', href: '/admin/orders', icon: <ShoppingCart size={17} />, group: 'Main', badge: 'count' },
   { label: 'Users', href: '/admin/users', icon: <Users size={17} />, group: 'Main' },
   { label: 'Entitlements', href: '/admin/entitlements', icon: <CreditCard size={17} />, group: 'Main', badge: 'dot' },
@@ -116,9 +121,9 @@ export function Sidebar({ variant = 'dashboard', collapsed = false, onToggle }: 
             onClick={() => setOpenSubmenu(submenuOpen ? null : item.label)}
             className={cn(
               'flex items-center gap-2.5 w-full text-left',
-              'px-2.5 py-2.5 rounded-[var(--radius-md)] cursor-pointer border-2 border-transparent',
+              variant === 'admin' ? 'px-2.5 py-2.5 rounded-[var(--r-md)] cursor-pointer border-2 border-transparent' : 'px-2.5 py-2.5 rounded-[var(--radius-md)] cursor-pointer border-2 border-transparent',
               'transition-all duration-150 whitespace-nowrap overflow-hidden min-h-[42px]',
-              'text-foreground text-[0.875rem] font-semibold',
+              variant === 'admin' ? 'text-foreground text-[0.83rem] font-semibold' : 'text-foreground text-[0.875rem] font-semibold',
               'hover:bg-muted hover:border-border',
               childActive && 'bg-muted border-border',
             )}
