@@ -195,7 +195,7 @@ body::before {
 }
 
 .catalog-sidebar {
-  width: 256px;
+  width: var(--sidebar-w);
   flex-shrink: 0;
   position: sticky;
   top: 64px;
