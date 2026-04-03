@@ -1248,22 +1248,26 @@ input[type="range"] {
 }
 
 .sticky-buy-bar {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
-  background: var(--card);
-  border-top: 2px solid var(--foreground);
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
-  transform: translateY(100%);
+  position: fixed; bottom: 24px; left: 50%; z-index: 50;
+  transform: translateX(-50%) translateY(calc(100% + 40px));
   transition: transform 0.3s ease;
   pointer-events: none;
+  max-width: 720px; width: calc(100% - 40px);
 }
 .sticky-buy-bar.visible {
-  transform: translateY(0);
+  transform: translateX(-50%) translateY(0);
   pointer-events: auto;
 }
 .sticky-buy-inner {
-  max-width: 1400px; margin: 0 auto;
-  padding: 12px 40px;
+  background: var(--card);
+  border: 2px solid var(--foreground);
+  border-radius: var(--r-md);
+  box-shadow: 6px 6px 0 0 var(--shadow);
+  padding: 12px 24px;
   display: flex; align-items: center; justify-content: space-between;
+}
+.sticky-buy-actions {
+  display: flex; align-items: center; gap: 8px;
 }
 .sticky-buy-info {
   display: flex; flex-direction: column; gap: 2px;

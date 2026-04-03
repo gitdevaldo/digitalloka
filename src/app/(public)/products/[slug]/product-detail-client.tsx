@@ -24,16 +24,23 @@ export default function ProductDetailClient({ product }: { product: ProductData 
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
   const [showStickyBar, setShowStickyBar] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
+  const heroVisible = useRef(true);
+  const footerVisible = useRef(false);
 
   useEffect(() => {
-    const el = heroRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => setShowStickyBar(!entry.isIntersecting),
-      { threshold: 0 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
+    const heroEl = heroRef.current;
+    const footerEl = footerRef.current;
+    if (!heroEl || !footerEl) return;
+
+    const update = () => setShowStickyBar(!heroVisible.current && !footerVisible.current);
+
+    const heroObs = new IntersectionObserver(([e]) => { heroVisible.current = e.isIntersecting; update(); }, { threshold: 0 });
+    const footerObs = new IntersectionObserver(([e]) => { footerVisible.current = e.isIntersecting; update(); }, { threshold: 0 });
+
+    heroObs.observe(heroEl);
+    footerObs.observe(footerEl);
+    return () => { heroObs.disconnect(); footerObs.disconnect(); };
   }, []);
 
   const isDroplet = product.product_type === 'vps_droplet';
@@ -354,13 +361,18 @@ export default function ProductDetailClient({ product }: { product: ProductData 
         </div>
       </section>
 
+      <div ref={footerRef} style={{ height: 1 }} />
+
       <div className={`sticky-buy-bar${showStickyBar ? ' visible' : ''}`}>
         <div className="sticky-buy-inner">
           <div className="sticky-buy-info">
             <span className="sticky-buy-name">{product.name}</span>
             <span className="sticky-buy-price">{formattedAmount} <span style={{ fontSize: '0.75rem', fontWeight: 500, opacity: 0.7 }}>/ {billingPeriod}</span></span>
           </div>
-          <button className="btn btn-accent btn-lg">Buy Now</button>
+          <div className="sticky-buy-actions">
+            <button className="btn btn-ghost">Add to wishlist</button>
+            <button className="btn btn-accent btn-lg">Buy Now</button>
+          </div>
         </div>
       </div>
     </div>
