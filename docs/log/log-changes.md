@@ -1,5 +1,22 @@
 # Change Log
 
+## 2026-04-03 00:25
+- Short description: Added stock file upload import and strict header/identity validation for Product Stocks.
+- What you do:
+  - Added Product Stocks file import control in admin UI for CSV/TXT/XLS/XLSX and mapped uploaded data into stock headers/rows inputs.
+  - Synced stock header input with configured product stock headers when managing a selected product.
+  - Enforced backend rule: imported headers must match configured product stock headers (when configured).
+  - Enforced uniqueness validation by Email/Username against both uploaded rows and existing product stock rows.
+  - Marked invalid rows in import result payload with line + reasons and prevented insertion for invalid rows.
+  - Added/updated feature tests for mismatched headers and duplicate email rows in uploaded payload.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `app/Services/Commerce/ProductStockService.php`
+  - `app/Http/Controllers/Admin/ProductStockController.php`
+  - `app/Http/Controllers/Admin/ProductController.php`
+  - `tests/Feature/AdminProductStockManagementTest.php`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-03 00:10
 - Short description: Fixed Product Stocks import form button spacing overlap.
 - What you do:

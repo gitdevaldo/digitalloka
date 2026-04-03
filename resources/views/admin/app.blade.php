@@ -832,6 +832,8 @@ body::before{
         </label>
       </div>
       <div class="psm-form-actions">
+        <input id="ps-input-file" type="file" accept=".csv,.txt,.xls,.xlsx" style="display:none" onchange="handleProductStocksFileSelected(event)" />
+        <button class="btn btn-sm" onclick="triggerProductStocksFileInput()">Import File</button>
         <button class="btn btn-sm btn-ghost" onclick="closeProductStocksImportForm()">Close</button>
         <button class="btn btn-sm btn-ghost" onclick="clearProductStocksInput()">Clear</button>
         <button class="btn btn-sm btn-accent" onclick="submitProductStocksBatch()">Add / Import Stocks</button>
@@ -1125,6 +1127,8 @@ body::before{
 <!-- TOAST -->
 <x-ui.toast id="toast" variant="admin" />
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 <script>
 /* ============================================================ DATA */
 let DATA = {
@@ -1197,6 +1201,7 @@ function mapProducts(payload){
     shortDescription: p.short_description || '',
     cat: p.category?.name || 'General',
     visible: Boolean(p.is_visible),
+    stockHeaders: Array.isArray(p?.meta?.stock_headers) ? p.meta.stock_headers : [],
     price: p.prices_count ? `${p.prices_count} prices` : '—',
     updated: fmtDate(p.updated_at || p.created_at),
   }));
@@ -1950,8 +1955,142 @@ function renderProductStocks(){
 
 function clearProductStocksInput(){
   const rowsInput = document.getElementById('ps-input-rows');
+  const fileInput = document.getElementById('ps-input-file');
   if(rowsInput){
     rowsInput.value = '';
+  }
+  if(fileInput){
+    fileInput.value = '';
+  }
+}
+
+function triggerProductStocksFileInput(){
+  const selectedProduct = String(selectedStockProductId || '').trim();
+  if(selectedProduct === ''){
+    showToast('⚠️ Select an active product first.','fail');
+    return;
+  }
+
+  const fileInput = document.getElementById('ps-input-file');
+  if(fileInput){
+    fileInput.click();
+  }
+}
+
+async function handleProductStocksFileSelected(event){
+  const file = event?.target?.files?.[0];
+  if(!file){
+    return;
+  }
+
+  try {
+    const matrix = await parseProductStocksFile(file);
+    if(!Array.isArray(matrix) || matrix.length < 2){
+      throw new Error('Imported file has no data rows.');
+    }
+
+    const [headerRow, ...dataRows] = matrix;
+    const headers = Array.from(headerRow || []).map((value) => String(value || '').trim()).filter(Boolean);
+    if(headers.length === 0){
+      throw new Error('Unable to detect headers from file.');
+    }
+
+    const configuredHeaders = getConfiguredStockHeadersForSelectedProduct();
+    if(Array.isArray(configuredHeaders) && configuredHeaders.length > 0){
+      const normalizedConfigured = configuredHeaders.map((item) => String(item || '').trim().toLowerCase());
+      const normalizedFile = headers.map((item) => String(item || '').trim().toLowerCase());
+
+      if(
+        normalizedConfigured.length !== normalizedFile.length ||
+        normalizedConfigured.some((item, index) => item !== normalizedFile[index])
+      ){
+        throw new Error(`Invalid headers. Expected: ${configuredHeaders.join('|')}`);
+      }
+    }
+
+    const serializedRows = dataRows
+      .map((row) => headers.map((_, index) => String(row?.[index] ?? '').trim()).join('|'))
+      .filter((row) => row.split('|').some((cell) => cell !== ''));
+
+    if(serializedRows.length === 0){
+      throw new Error('No valid stock rows found in file.');
+    }
+
+    const headersInput = document.getElementById('ps-input-headers');
+    const rowsInput = document.getElementById('ps-input-rows');
+    if(headersInput){
+      headersInput.value = headers.join('|');
+    }
+    if(rowsInput){
+      rowsInput.value = serializedRows.join('\n');
+    }
+
+    showToast(`✅ Loaded ${serializedRows.length} rows from file.`, 'ok');
+  } catch (error) {
+    showToast(`⚠️ ${error.message}`,'fail');
+  } finally {
+    if(event?.target){
+      event.target.value = '';
+    }
+  }
+}
+
+async function parseProductStocksFile(file){
+  const filename = String(file.name || '').toLowerCase();
+  const isSpreadsheet = filename.endsWith('.xlsx') || filename.endsWith('.xls');
+
+  if(isSpreadsheet){
+    if(typeof XLSX === 'undefined'){
+      throw new Error('Excel parser is unavailable. Please import CSV/TXT or retry.');
+    }
+
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: 'array' });
+    const firstSheetName = workbook.SheetNames?.[0];
+    if(!firstSheetName){
+      throw new Error('Excel file has no worksheet.');
+    }
+
+    const worksheet = workbook.Sheets[firstSheetName];
+    return XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, defval: '' });
+  }
+
+  const text = await file.text();
+  const lines = text.split(/\r\n|\n|\r/).filter((line) => line.trim() !== '');
+  if(lines.length === 0){
+    throw new Error('Imported file is empty.');
+  }
+
+  const delimiter = detectProductStockDelimiter(lines[0]);
+  return lines.map((line) => line.split(delimiter).map((cell) => String(cell || '').trim()));
+}
+
+function detectProductStockDelimiter(firstLine){
+  const line = String(firstLine || '');
+  if(line.includes('|')) return '|';
+  if(line.includes('\t')) return '\t';
+  if(line.includes(',')) return ',';
+  return '|';
+}
+
+function getConfiguredStockHeadersForSelectedProduct(){
+  const selectedProduct = DATA.products.find((product) => String(product.rawId) === String(selectedStockProductId || '').trim());
+  if(!selectedProduct){
+    return [];
+  }
+
+  return Array.isArray(selectedProduct.stockHeaders) ? selectedProduct.stockHeaders : [];
+}
+
+function syncConfiguredStockHeadersToInput(){
+  const headersInput = document.getElementById('ps-input-headers');
+  if(!headersInput){
+    return;
+  }
+
+  const configuredHeaders = getConfiguredStockHeadersForSelectedProduct();
+  if(Array.isArray(configuredHeaders) && configuredHeaders.length > 0){
+    headersInput.value = configuredHeaders.join('|');
   }
 }
 
@@ -1965,6 +2104,7 @@ function setProductStocksImportFormVisible(isVisible){
 }
 
 function openProductStocksImportForm(){
+  syncConfiguredStockHeadersToInput();
   setProductStocksImportFormVisible(true);
 }
 
@@ -2008,8 +2148,20 @@ async function submitProductStocksBatch(){
       }),
     });
 
-    showToast(`✅ Imported ${result.inserted} rows. Skipped duplicates: ${result.skipped_duplicates}.`,'ok');
-    clearProductStocksInput();
+    const invalidCount = Number(result.invalid_count || 0);
+    const skippedDuplicates = Number(result.skipped_duplicates || 0);
+    if(invalidCount > 0){
+      showToast(`⚠️ Imported ${result.inserted}. Invalid: ${invalidCount}. Duplicates: ${skippedDuplicates}.`,'warn');
+      openPayload(JSON.stringify({
+        message: 'Invalid rows were skipped.',
+        invalid_count: invalidCount,
+        invalid_rows: Array.isArray(result.invalid_rows) ? result.invalid_rows : [],
+      }));
+    } else {
+      showToast(`✅ Imported ${result.inserted} rows. Skipped duplicates: ${skippedDuplicates}.`,'ok');
+      clearProductStocksInput();
+    }
+
     await loadProductStocks();
   } catch (error) {
     showToast(`⚠️ ${error.message}`,'fail');
@@ -2283,6 +2435,7 @@ function openProductStocks(productId){
   selectedStockProductId = String(productId || '').trim();
   nav('product-stocks-manage', null);
   setProductStocksImportFormVisible(false);
+  syncConfiguredStockHeadersToInput();
 
   if(selectedStockProductId !== ''){
     window.history.replaceState({ page: 'product-stocks-manage' }, '', `/admin/products/${encodeURIComponent(selectedStockProductId)}/stocks`);

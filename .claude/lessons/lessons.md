@@ -1,6 +1,11 @@
 # Lessons
 
 - Date: 2026-04-03
+- Mistake: Stock import flow relied on free-form pasted rows and full-row hash duplication, missing file upload and identity-level validation requirements.
+- Rule: Stock import must support file upload UX and enforce configured-header matching plus Email/Username uniqueness against both uploaded data and existing stock.
+- Enforcement: For stock import changes, validate header equality first, then identity uniqueness, and return explicit invalid-row details (line + reason).
+
+- Date: 2026-04-03
 - Mistake: Left action buttons too close to textarea border in stock import form, causing visual overlap.
 - Rule: Form action rows must have explicit separation (margin/padding/divider) from field borders, especially after resizable textareas.
 - Enforcement: On form UI changes, check border/button clearance in both desktop and mobile breakpoints before finishing.
