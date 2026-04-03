@@ -1,5 +1,115 @@
 # Change Log
 
+## 2026-04-03 03:55
+- Short description: Rewrote product detail page with server-rendered Blade templates
+- What you do:
+  - Replaced client-side JavaScript rendering with proper server-side Blade template architecture.
+  - Updated CatalogPageController to fetch product data and pass formatted values to views.
+  - Created modular partials for different product types: product-droplet.blade.php (VPS) and product-digital.blade.php (accounts/apikeys).
+  - Droplet template matches exactly the HTML reference in docs/references/digitalloka-product-vps.html.
+  - Digital product template has distinct layout suited for non-VPS products with different specs and visual.
+  - Product type detection uses product_type, category name, and slug to determine template.
+  - All pricing calculations (annual discount, savings) done server-side in controller.
+  - Preserved all brand guidelines: thick borders, hard shadows, Outfit/Plus Jakarta Sans fonts.
+- File path that changes:
+  - `app/Http/Controllers/Web/CatalogPageController.php`
+  - `resources/views/catalog/show.blade.php`
+  - `resources/views/catalog/partials/product-droplet.blade.php` (new)
+  - `resources/views/catalog/partials/product-digital.blade.php` (new)
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 02:40
+- Short description: Updated single-product price formatter for IDR display style.
+- What you do:
+  - Replaced generic no-comma formatter with currency-aware formatter in product detail page script.
+  - Added IDR branch to render thousand grouping with dot separator and no decimal tail (example: `150.000`).
+  - Kept non-IDR fallback formatting without comma separators.
+- File path that changes:
+  - `resources/views/catalog/show.blade.php`
+  - `.claude/lessons/lessons.md`
+  - `.github/lessons.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 02:30
+- Short description: Enforced no-comma price formatting on single product page.
+- What you do:
+  - Added explicit amount formatter helper in product detail page script to strip comma separators and render fixed decimal output.
+  - Updated hero/buy price rendering to use normalized no-comma amount formatting.
+- File path that changes:
+  - `resources/views/catalog/show.blade.php`
+  - `.claude/lessons/lessons.md`
+  - `.github/lessons.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 02:20
+- Short description: Reworked single product page into cleaner premium layout with reduced visual noise.
+- What you do:
+  - Replaced cluttered product detail composition with cleaner hero + buy box + balanced content grid structure.
+  - Simplified status/category/type presentation and removed heavy secondary card noise.
+  - Refined Product Description and Product Details sections for better readability and whitespace rhythm.
+  - Preserved responsive behavior while improving desktop/mobile visual balance.
+- File path that changes:
+  - `resources/views/catalog/show.blade.php`
+  - `.claude/lessons/lessons.md`
+  - `.github/lessons.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 02:05
+- Short description: Unified single-product header with homepage catalog header.
+- What you do:
+  - Switched base catalog layout to use shared `x-layout.topbar` catalog variant.
+  - Added catalog topbar style primitives (topbar/search/action row) to base layout so product pages and wishlist inherit the same header look as homepage.
+  - Made catalog topbar search handler safe on pages without `handleSearch` function.
+- File path that changes:
+  - `resources/views/layouts/app.blade.php`
+  - `resources/views/components/layout/topbar.blade.php`
+  - `.claude/lessons/lessons.md`
+  - `.github/lessons.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 01:50
+- Short description: Replaced duplicated hardcoded logos with shared Blade brand-logo component.
+- What you do:
+  - Added shared `x-ui.brand-logo` component with centralized styling and consistent hover/spacing behavior.
+  - Replaced duplicated logo markup in topbar variants (dashboard/admin/catalog) with shared component usage.
+  - Replaced base layout header logo with shared component usage.
+  - Removed obsolete per-page logo CSS blocks from admin, dashboard, and catalog pages.
+- File path that changes:
+  - `resources/views/components/ui/brand-logo.blade.php`
+  - `resources/views/components/layout/topbar.blade.php`
+  - `resources/views/layouts/app.blade.php`
+  - `resources/views/admin/app.blade.php`
+  - `resources/views/dashboard/app.blade.php`
+  - `resources/views/catalog/index.blade.php`
+  - `.claude/lessons/lessons.md`
+  - `.github/lessons.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 01:30
+- Short description: Refined product detail lower layout and removed slug from hero meta.
+- What you do:
+  - Removed slug from single product hero metadata to keep customer-facing context clean.
+  - Reworked lower content area with stronger description treatment and more intentional right-side info cards.
+  - Upgraded Product Details block visual treatment to better match hero quality and page rhythm.
+- File path that changes:
+  - `resources/views/catalog/show.blade.php`
+  - `.claude/lessons/lessons.md`
+  - `.github/lessons.md`
+  - `docs/log/log-changes.md`
+
+## 2026-04-02 01:15
+- Short description: Redesigned single product page into a premium branded layout.
+- What you do:
+  - Rebuilt product detail page structure from a minimal panel stack into a high-contrast hero + details grid composition.
+  - Added stronger hierarchy for product title, price focus, category/status context, and action area.
+  - Added responsive styling for desktop/mobile parity while keeping DigitalLoka token palette, border/shadow language, and typography.
+  - Improved Product Description and Product Details sections for clearer readability and richer content rendering.
+- File path that changes:
+  - `resources/views/catalog/show.blade.php`
+  - `.claude/lessons/lessons.md`
+  - `.github/lessons.md`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-03 00:40
 - Short description: Removed admin window dialogs and restored page-based Product edit flow.
 - What you do:
