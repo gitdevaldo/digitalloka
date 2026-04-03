@@ -7,6 +7,7 @@ import { Panel } from '@/components/ui/panel';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { CategoryComboBox } from '@/components/ui/category-combobox';
 
 interface Category {
   id: number;
@@ -200,26 +201,14 @@ export default function CreateProductPage() {
             </select>
           </label>
 
-          <label className="flex flex-col gap-1.5">
-            <span className="text-[0.8rem] font-bold">Category</span>
-            <select
-              value={categoryId}
-              onChange={(e) => { setCategoryId(e.target.value); if (e.target.value) setCategoryName(''); }}
-              className={inputClass}
-            >
-              <option value="">Choose category or type new below</option>
-              {categories.map(c => (
-                <option key={c.id} value={String(c.id)}>{c.name}</option>
-              ))}
-            </select>
-            <input
-              value={categoryName}
-              onChange={(e) => { setCategoryName(e.target.value); if (e.target.value) setCategoryId(''); }}
-              className={inputClass}
-              placeholder="Or add new category name (e.g. VPS)"
-              style={{ marginTop: '6px' }}
-            />
-          </label>
+          <CategoryComboBox
+            categories={categories}
+            categoryId={categoryId}
+            categoryName={categoryName}
+            onSelect={(id) => { setCategoryId(id); setCategoryName(''); }}
+            onNewName={(name) => { setCategoryName(name); setCategoryId(''); }}
+            inputClass={inputClass}
+          />
 
           <label className="flex flex-col gap-1.5">
             <span className="text-[0.8rem] font-bold">Price Amount</span>
