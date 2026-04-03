@@ -27,20 +27,40 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const body = await request.json();
   const admin = createSupabaseAdminClient();
 
-  let categoryId: number | null = null;
+  const categoryIds: number[] = [];
 
-  if (body.category_name?.trim()) {
+  if (Array.isArray(body.category_ids)) {
+    for (const cid of body.category_ids) {
+      if (cid) categoryIds.push(Number(cid));
+    }
+  } else if (body.category_id) {
+    categoryIds.push(Number(body.category_id));
+  }
+
+  if (Array.isArray(body.category_names)) {
+    for (const catName of body.category_names) {
+      if (!catName?.trim()) continue;
+      const slug = catName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const { data: existing } = await admin.from('product_categories').select('id').eq('slug', slug).single();
+      if (existing) {
+        categoryIds.push(existing.id);
+      } else {
+        const { data: created } = await admin.from('product_categories').insert({ name: catName.trim(), slug }).select('id').single();
+        if (created) categoryIds.push(created.id);
+      }
+    }
+  } else if (body.category_name?.trim()) {
     const slug = body.category_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const { data: existing } = await admin.from('product_categories').select('id').eq('slug', slug).single();
     if (existing) {
-      categoryId = existing.id;
+      categoryIds.push(existing.id);
     } else {
       const { data: created } = await admin.from('product_categories').insert({ name: body.category_name.trim(), slug }).select('id').single();
-      if (created) categoryId = created.id;
+      if (created) categoryIds.push(created.id);
     }
-  } else if (body.category_id) {
-    categoryId = Number(body.category_id);
   }
+
+  const categoryId = categoryIds.length > 0 ? categoryIds[0] : null;
 
   const updates: Record<string, unknown> = {};
   if (body.name !== undefined) updates.name = body.name;

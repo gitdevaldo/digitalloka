@@ -7,7 +7,7 @@ import { Panel } from '@/components/ui/panel';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
-import { CategoryComboBox } from '@/components/ui/category-combobox';
+import { CategoryComboBox, SelectedItem } from '@/components/ui/category-combobox';
 
 interface Category {
   id: number;
@@ -39,8 +39,7 @@ export default function EditProductPage() {
   const [slug, setSlug] = useState('');
   const [productType, setProductType] = useState('digital');
   const [status, setStatus] = useState('available');
-  const [categoryId, setCategoryId] = useState('');
-  const [categoryName, setCategoryName] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<SelectedItem[]>([]);
   const [priceAmount, setPriceAmount] = useState('');
   const [priceCurrency, setPriceCurrency] = useState('USD');
   const [priceName, setPriceName] = useState('');
@@ -81,7 +80,9 @@ export default function EditProductPage() {
         setSlug(p.slug || '');
         setProductType(p.product_type || 'digital');
         setStatus(p.status || 'available');
-        setCategoryId(p.category?.id ? String(p.category.id) : '');
+        if (p.category?.id) {
+          setSelectedCategories([{ type: 'existing', id: p.category.id, name: p.category.name || `Category ${p.category.id}` }]);
+        }
         setShortDescription(p.short_description || '');
         setDescription(p.description || '');
         setCatalogVisibility(p.catalog_visibility || (p.is_visible ? 'visible' : 'hidden'));
@@ -142,8 +143,8 @@ export default function EditProductPage() {
           slug,
           product_type: productType,
           status,
-          category_id: categoryId || undefined,
-          category_name: categoryName || undefined,
+          category_ids: selectedCategories.filter(s => s.type === 'existing').map(s => s.id),
+          category_names: selectedCategories.filter(s => s.type === 'new').map(s => s.name),
           price_amount: priceAmount || undefined,
           price_currency: priceCurrency,
           price_name: priceName,
@@ -249,10 +250,8 @@ export default function EditProductPage() {
 
           <CategoryComboBox
             categories={categories}
-            categoryId={categoryId}
-            categoryName={categoryName}
-            onSelect={(id) => { setCategoryId(id); setCategoryName(''); }}
-            onNewName={(name) => { setCategoryName(name); setCategoryId(''); }}
+            selected={selectedCategories}
+            onChange={setSelectedCategories}
             inputClass={inputClass}
           />
 
