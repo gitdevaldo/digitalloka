@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId } from '@/lib/services/supabase-auth';
 import { canAccessDroplet } from '@/lib/services/admin-access';
 import { performAction } from '@/lib/services/digitalocean';
-
-const ALLOWED_ACTIONS = ['power_on', 'power_off', 'shutdown', 'reboot', 'power_cycle'];
+import { parseRequestBody } from '@/lib/validation';
+import { dropletActionSchema } from '@/lib/validation/schemas';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getSessionUserId();
@@ -15,12 +15,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const body = await request.json();
-  const actionType = body.type;
+  const parsed = await parseRequestBody(request, dropletActionSchema);
+  if (!parsed.success) return parsed.response;
 
-  if (!ALLOWED_ACTIONS.includes(actionType)) {
-    return NextResponse.json({ error: `Invalid action. Allowed: ${ALLOWED_ACTIONS.join(', ')}` }, { status: 422 });
-  }
+  const { type: actionType } = parsed.data;
 
   try {
     const action = await performAction(dropletId, actionType);

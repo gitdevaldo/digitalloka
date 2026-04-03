@@ -57,6 +57,7 @@ src/
 └── lib/
     ├── supabase/          # Server, browser, middleware clients
     ├── services/          # Business logic (auth, DO, catalog, orders, payments, audit, settings)
+    ├── validation/        # Zod schemas & parseBody helper for API input validation
     └── utils.ts           # cn(), formatCurrency(), formatDate()
 ```
 

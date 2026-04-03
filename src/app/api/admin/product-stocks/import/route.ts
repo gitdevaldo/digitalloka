@@ -2,26 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
+import { parseRequestBody } from '@/lib/validation';
+import { stockImportSchema } from '@/lib/validation/schemas';
 
 export async function POST(request: NextRequest) {
   const userId = await getSessionUserId();
   if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const body = await request.json();
-  const { product_id, headers, rows, set_as_default_headers } = body;
+  const parsed = await parseRequestBody(request, stockImportSchema);
+  if (!parsed.success) return parsed.response;
 
-  if (!product_id || !headers || !rows) {
-    return NextResponse.json({ error: 'product_id, headers, and rows are required' }, { status: 422 });
-  }
+  const { product_id, headers, rows, set_as_default_headers } = parsed.data;
 
   const admin = createSupabaseAdminClient();
-  const normalizedHeaders = (headers as string[]).map((h: string) => h.trim()).filter(Boolean);
+  const normalizedHeaders = headers.map((h: string) => h.trim()).filter(Boolean);
 
   if (normalizedHeaders.length === 0) {
     return NextResponse.json({ error: 'Headers cannot be empty' }, { status: 422 });
   }
 
-  const lines = (rows as string).split(/\r?\n/).filter((l: string) => l.trim());
+  const lines = rows.split(/\r?\n/).filter((l: string) => l.trim());
   let inserted = 0;
   let skippedDuplicates = 0;
   const invalidRows: { line: number; reasons: string[] }[] = [];
@@ -89,17 +89,17 @@ export async function POST(request: NextRequest) {
     const { data: product } = await admin
       .from('products')
       .select('meta')
-      .eq('id', Number(product_id))
+      .eq('id', product_id)
       .single();
 
     const meta = (product?.meta as Record<string, unknown>) || {};
     meta.stock_headers = normalizedHeaders;
-    await admin.from('products').update({ meta }).eq('id', Number(product_id));
+    await admin.from('products').update({ meta }).eq('id', product_id);
   }
 
   return NextResponse.json({
     success: true,
-    product_id: Number(product_id),
+    product_id,
     inserted,
     skipped_duplicates: skippedDuplicates,
     invalid_count: invalidRows.length,

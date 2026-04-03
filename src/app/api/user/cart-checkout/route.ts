@@ -3,6 +3,8 @@ import { getSessionUserId } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { generateOrderNumber } from '@/lib/services/orders';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { parseRequestBody } from '@/lib/validation';
+import { cartCheckoutSchema } from '@/lib/validation/schemas';
 
 const CHECKOUT_LIMIT = { windowMs: 60_000, maxRequests: 10 };
 
@@ -14,12 +16,10 @@ export async function POST(request: NextRequest) {
   if (!allowed) return rateLimitResponse(retryAfterMs);
 
   try {
-    const body = await request.json();
-    const items: { product_id: number; quantity: number }[] = body.items;
+    const parsed = await parseRequestBody(request, cartCheckoutSchema);
+    if (!parsed.success) return parsed.response;
 
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: 'Cart is empty' }, { status: 422 });
-    }
+    const { items } = parsed.data;
 
     const admin = createSupabaseAdminClient();
 
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       if (!product) continue;
       if (!product.price_amount || product.price_amount <= 0) continue;
 
-      const qty = Math.min(Math.max(item.quantity || 1, 1), 50);
+      const qty = item.quantity;
       const lineTotal = product.price_amount * qty;
       subtotal += lineTotal;
       currency = product.price_currency || 'USD';

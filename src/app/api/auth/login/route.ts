@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { startMagicLinkLogin } from '@/lib/services/supabase-auth';
+import { parseRequestBody } from '@/lib/validation';
+import { loginSchema } from '@/lib/validation/schemas';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { email, next, mode } = body;
+    const parsed = await parseRequestBody(request, loginSchema);
+    if (!parsed.success) return parsed.response;
 
-    if (!email || typeof email !== 'string') {
-      return NextResponse.json({ error: 'Email is required' }, { status: 422 });
-    }
+    const { email, next, mode } = parsed.data;
 
     const result = await startMagicLinkLogin(email, next, mode === 'admin' ? 'admin' : 'user');
     return NextResponse.json(result);

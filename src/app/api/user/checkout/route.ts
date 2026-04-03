@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId } from '@/lib/services/supabase-auth';
 import { createCheckoutOrder } from '@/lib/services/orders';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { parseRequestBody } from '@/lib/validation';
+import { checkoutSchema } from '@/lib/validation/schemas';
 
 const CHECKOUT_LIMIT = { windowMs: 60_000, maxRequests: 10 };
 
@@ -13,13 +15,15 @@ export async function POST(request: NextRequest) {
   if (!allowed) return rateLimitResponse(retryAfterMs);
 
   try {
-    const body = await request.json();
-    if (!body.product_id) return NextResponse.json({ error: 'product_id is required' }, { status: 422 });
+    const parsed = await parseRequestBody(request, checkoutSchema);
+    if (!parsed.success) return parsed.response;
+
+    const { product_id, quantity, affiliate_code } = parsed.data;
 
     const order = await createCheckoutOrder(userId, {
-      product_id: Number(body.product_id),
-      quantity: body.quantity ? Number(body.quantity) : undefined,
-      affiliate_code: body.affiliate_code,
+      product_id,
+      quantity,
+      affiliate_code,
     });
 
     return NextResponse.json({ data: order }, { status: 201 });
