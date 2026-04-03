@@ -21,7 +21,9 @@ interface Product {
   reviews_count: number;
   tags: string[];
   badges: string[];
-  prices: { amount: number; currency: string; billing_period: string }[];
+  price_amount: number;
+  price_currency: string;
+  price_billing_period: string;
   category: { name: string; slug: string } | null;
 }
 
@@ -46,8 +48,8 @@ interface NormalizedProduct {
 }
 
 function normalizeProduct(item: Product): NormalizedProduct {
-  const price = Number(item?.prices?.[0]?.amount ?? 0);
-  const currency = item?.prices?.[0]?.currency || 'USD';
+  const price = Number(item?.price_amount ?? 0);
+  const currency = item?.price_currency || 'USD';
   const badges = Array.isArray(item.badges) ? item.badges : [];
   const tags = Array.isArray(item.tags) ? item.tags : [];
   const id = Number(item.id ?? 0);

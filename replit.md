@@ -83,7 +83,9 @@ src/
 - Mobile bottom nav component: `src/components/layout/mobile-bottom-nav.tsx`
 
 ## Database (Supabase PostgreSQL)
-Tables: `users`, `products`, `product_categories`, `product_prices`, `product_types`, `product_stock_items`, `orders`, `order_items`, `transactions`, `payment_events`, `entitlements`, `site_settings`, `audit_logs`, `wishlists`
+Tables: `users`, `products`, `product_categories`, `product_types`, `product_stock_items`, `orders`, `order_items`, `transactions`, `payment_events`, `entitlements`, `site_settings`, `audit_logs`, `wishlists`
+
+Pricing is stored directly on the `products` table (`price_amount`, `price_currency`, `price_billing_period`) — no separate pricing table.
 
 Key design decisions:
 - **Product types** are stored in `product_types` table (type_key, label, description, is_active, fields JSONB). Legacy copy also in `site_settings`

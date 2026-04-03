@@ -11,7 +11,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const { data, error } = await admin
     .from('products')
-    .select('*, category:product_categories(*), prices:product_prices(*)')
+    .select('*, category:product_categories(*)')
     .eq('id', Number(id))
     .single();
 
@@ -76,30 +76,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   if (body.faq_items !== undefined) updates.faq_items = body.faq_items;
   if (body.meta !== undefined) updates.meta = body.meta;
   if (categoryId !== null) updates.category_id = categoryId;
+  if (body.price_amount !== undefined) updates.price_amount = Number(body.price_amount);
+  if (body.price_currency !== undefined) updates.price_currency = body.price_currency;
+  if (body.price_billing_period !== undefined) updates.price_billing_period = body.price_billing_period;
 
   const { data, error } = await admin.from('products').update(updates).eq('id', Number(id)).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 422 });
-
-  if (body.price_amount !== undefined && body.price_amount !== '') {
-    const amount = Number(body.price_amount);
-    const { data: existingPrices } = await admin.from('product_prices').select('id').eq('product_id', Number(id));
-    if (existingPrices && existingPrices.length > 0) {
-      await admin.from('product_prices').update({
-        amount,
-        currency: body.price_currency || 'USD',
-        name: body.price_name || 'Standard',
-        billing_period: body.price_billing_period || 'one-time',
-      }).eq('id', existingPrices[0].id);
-    } else if (amount > 0) {
-      await admin.from('product_prices').insert({
-        product_id: Number(id),
-        amount,
-        currency: body.price_currency || 'USD',
-        name: body.price_name || 'Standard',
-        billing_period: body.price_billing_period || 'one-time',
-      });
-    }
-  }
 
   return NextResponse.json({ data });
 }

@@ -24,7 +24,7 @@ export async function listProducts(filters: ProductFilters) {
 
   let query = admin
     .from('products')
-    .select('*, category:product_categories(*), prices:product_prices(*)', { count: 'exact' })
+    .select('*, category:product_categories(*)', { count: 'exact' })
     .eq('is_visible', true);
 
   if (filters.search) {
@@ -73,7 +73,7 @@ export async function getProductBySlug(slug: string) {
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from('products')
-    .select('*, category:product_categories(*), prices:product_prices(*)')
+    .select('*, category:product_categories(*)')
     .eq('slug', slug)
     .eq('is_visible', true)
     .single();

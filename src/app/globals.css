@@ -696,6 +696,8 @@ input[type="range"] {
     padding: 6px 8px;
     gap: 4px;
     width: auto;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
   .mobile-nav-btn {
     display: flex;
@@ -759,7 +761,7 @@ input[type="range"] {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  animation: fadeIn 0.2s ease;
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .mobile-filter-panel {
   background: var(--card);
@@ -771,7 +773,7 @@ input[type="range"] {
   max-height: 75vh;
   display: flex;
   flex-direction: column;
-  animation: slideUp 0.25s ease;
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .mobile-filter-header {
   display: flex;
@@ -807,8 +809,8 @@ input[type="range"] {
   padding: 16px 18px 24px;
 }
 @keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from { transform: translateY(100%); opacity: 0.5; }
+  to { transform: translateY(0); opacity: 1; }
 }
 @keyframes fadeIn {
   from { opacity: 0; }

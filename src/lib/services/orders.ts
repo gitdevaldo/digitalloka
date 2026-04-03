@@ -90,19 +90,16 @@ export async function createCheckoutOrder(userId: string, payload: { product_id:
 
   const { data: product } = await admin
     .from('products')
-    .select('*, prices:product_prices(*)')
+    .select('*')
     .eq('id', payload.product_id)
     .eq('is_visible', true)
     .single();
 
   if (!product) throw new Error('Product not found');
-
-  const price = product.prices?.find((p: { status: string; is_default: boolean }) => p.status === 'active' && p.is_default)
-    || product.prices?.find((p: { status: string }) => p.status === 'active');
-  if (!price) throw new Error('No active pricing available for product');
+  if (!product.price_amount || product.price_amount <= 0) throw new Error('No pricing available for product');
 
   const quantity = Math.min(Math.max(payload.quantity || 1, 1), 50);
-  const lineTotal = price.amount * quantity;
+  const lineTotal = product.price_amount * quantity;
   const orderNumber = 'ORD-' + Math.random().toString(36).substring(2, 12).toUpperCase();
 
   const { data: order, error: orderError } = await admin.from('orders').insert({
@@ -112,7 +109,7 @@ export async function createCheckoutOrder(userId: string, payload: { product_id:
     payment_status: 'pending',
     subtotal_amount: lineTotal,
     total_amount: lineTotal,
-    currency: price.currency,
+    currency: product.price_currency,
     meta: { affiliate_code: payload.affiliate_code || null },
   }).select().single();
 
@@ -121,10 +118,9 @@ export async function createCheckoutOrder(userId: string, payload: { product_id:
   await admin.from('order_items').insert({
     order_id: order.id,
     product_id: product.id,
-    product_price_id: price.id,
     item_name: product.name,
     quantity,
-    unit_price: price.amount,
+    unit_price: product.price_amount,
     line_total: lineTotal,
     meta: { product_slug: product.slug },
   });
@@ -134,7 +130,7 @@ export async function createCheckoutOrder(userId: string, payload: { product_id:
     provider: 'manual',
     status: 'pending',
     amount: lineTotal,
-    currency: price.currency,
+    currency: product.price_currency,
   });
 
   return await getOrderById(order.id);

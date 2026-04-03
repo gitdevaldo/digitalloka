@@ -16,7 +16,9 @@ export interface ProductData {
   rating: number;
   reviews_count: number;
   category: { name: string; slug: string } | null;
-  prices: { amount: number; currency: string; billing_period: string; name: string }[];
+  price_amount: number;
+  price_currency: string;
+  price_billing_period: string;
   featured: { label: string; value: string; sub?: string }[];
   faq_items: { question: string; answer: string }[];
   tags: string[];
@@ -57,15 +59,13 @@ export default function ProductDetailClient({ product }: { product: ProductData 
   }, []);
 
   const isDroplet = product.product_type === 'vps_droplet';
-  const prices = product.prices || [];
   const featured = product.featured || [];
   const faqItems = product.faq_items || [];
   const categoryName = product.category?.name || product.product_type || 'Product';
-  const mainPrice = prices[0];
-  const currency = mainPrice?.currency || 'IDR';
-  const amount = mainPrice?.amount || 0;
+  const currency = product.price_currency || 'IDR';
+  const amount = product.price_amount || 0;
   const formattedAmount = formatCurrency(amount, currency);
-  const billingPeriod = mainPrice?.billing_period || 'one-time';
+  const billingPeriod = product.price_billing_period || 'one-time';
   const specs = {
     vcpu: featured.find(f => f.label.toLowerCase().includes('cpu'))?.value || '2',
     ram: featured.find(f => f.label.toLowerCase().includes('ram'))?.value || '4',

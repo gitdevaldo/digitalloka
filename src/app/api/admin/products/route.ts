@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from('products')
-    .select('*, category:product_categories(*), prices:product_prices(*)')
+    .select('*, category:product_categories(*)')
     .order('created_at', { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -72,19 +72,12 @@ export async function POST(request: NextRequest) {
     featured: body.featured || [],
     meta: body.meta || {},
     category_id: categoryId,
+    price_amount: body.price_amount ? Number(body.price_amount) : 0,
+    price_currency: body.price_currency || 'USD',
+    price_billing_period: body.price_billing_period || 'one-time',
   }).select().single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 422 });
-
-  if (body.price_amount && Number(body.price_amount) > 0) {
-    await admin.from('product_prices').insert({
-      product_id: data.id,
-      amount: Number(body.price_amount),
-      currency: body.price_currency || 'USD',
-      name: body.price_name || 'Standard',
-      billing_period: body.price_billing_period || 'one-time',
-    });
-  }
 
   return NextResponse.json({ data }, { status: 201 });
 }
