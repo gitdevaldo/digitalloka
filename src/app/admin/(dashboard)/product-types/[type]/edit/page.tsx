@@ -12,6 +12,7 @@ interface FieldDef {
   label: string;
   type: string;
   required: boolean;
+  options?: string[];
 }
 
 const emptyField: FieldDef = { key: '', label: '', type: 'text', required: false };
@@ -219,10 +220,18 @@ export default function EditProductTypePage() {
                   >
                     ✕
                   </button>
+                  {f.type === 'select' && (
+                    <input
+                      value={(f.options || []).join(', ')}
+                      onChange={(e) => updateField(idx, { options: e.target.value.split(',').map(o => o.trim()).filter(Boolean) })}
+                      className="flex-1 border-2 border-border rounded px-2 py-1 text-xs font-medium bg-input"
+                      placeholder="Options (comma-separated)"
+                      style={{ minWidth: '180px' }}
+                    />
+                  )}
                 </div>
               ))}
             </div>
-            <div className="text-[0.72rem] text-muted-foreground mt-2">Tip: For select fields, enter options separated by commas.</div>
           </div>
 
           <div className="flex justify-end gap-2 mt-2 pt-3 border-t border-border">

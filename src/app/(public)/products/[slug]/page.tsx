@@ -37,7 +37,7 @@ export default function ProductDetailPage() {
   if (loading) return <div className="pdp-loading"><div className="callback-status">Loading product...</div></div>;
   if (!product) return <div className="pdp-loading"><div className="callback-status">Product not found</div></div>;
 
-  const isDroplet = product.product_type === 'droplet';
+  const isDroplet = product.product_type === 'vps_droplet';
   const prices = product.prices || [];
   const featured = product.featured || [];
   const faqItems = product.faq_items || [];

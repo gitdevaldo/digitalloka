@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 interface Category {
   id: number;
@@ -16,7 +17,7 @@ interface Category {
 interface ProductType {
   type: string;
   label: string;
-  fields: Array<{ key: string; label: string; type: string; required: boolean }>;
+  fields: Array<{ key: string; label: string; type: string; required: boolean; options?: string[] }>;
 }
 
 interface FeaturedItem {
@@ -206,7 +207,7 @@ export default function CreateProductPage() {
               onChange={(e) => { setCategoryId(e.target.value); if (e.target.value) setCategoryName(''); }}
               className={inputClass}
             >
-              <option value="">— select existing —</option>
+              <option value="">Choose category or type new below</option>
               {categories.map(c => (
                 <option key={c.id} value={String(c.id)}>{c.name}</option>
               ))}
@@ -273,16 +274,14 @@ export default function CreateProductPage() {
             />
           </label>
 
-          <label className="flex flex-col gap-1.5" style={{ gridColumn: '1 / span 2' }}>
+          <div className="flex flex-col gap-1.5" style={{ gridColumn: '1 / span 2' }}>
             <span className="text-[0.8rem] font-bold">Product Details</span>
-            <textarea
+            <RichTextEditor
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className={inputClass}
-              rows={5}
+              onChange={setDescription}
               placeholder="Full product details and specifications..."
             />
-          </label>
+          </div>
 
           <label className="flex flex-col gap-1.5" style={{ gridColumn: '1 / span 2' }}>
             <span className="text-[0.8rem] font-bold">Catalog Visibility</span>
@@ -347,6 +346,17 @@ export default function CreateProductPage() {
                       >
                         <option value="true">Yes</option>
                         <option value="false">No</option>
+                      </select>
+                    ) : f.type === 'select' && f.options && f.options.length > 0 ? (
+                      <select
+                        value={typeFields[f.key] || ''}
+                        onChange={(e) => setTypeFields(prev => ({ ...prev, [f.key]: e.target.value }))}
+                        className={inputClass}
+                      >
+                        <option value="">— select —</option>
+                        {f.options.map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
                       </select>
                     ) : f.type === 'textarea' ? (
                       <textarea

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Modal } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast';
 import { formatDate } from '@/lib/utils';
+import * as XLSX from 'xlsx';
 
 const inputClass = "w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent";
 
@@ -33,7 +34,41 @@ export default function ProductStocksPage() {
   const [editSaving, setEditSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<Record<string, unknown> | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
+
+  function handleFileImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const ext = file.name.split('.').pop()?.toLowerCase();
+
+    if (ext === 'csv' || ext === 'txt') {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const text = ev.target?.result as string;
+        if (text) setRows(prev => prev ? prev + '\n' + text.trim() : text.trim());
+      };
+      reader.readAsText(file);
+    } else if (ext === 'xls' || ext === 'xlsx') {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const data = new Uint8Array(ev.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json<string[]>(firstSheet, { header: 1 });
+        const lines = jsonData
+          .filter((row) => row.length > 0 && row.some(cell => cell !== undefined && cell !== ''))
+          .map((row) => row.join('|'))
+          .join('\n');
+        if (lines) setRows(prev => prev ? prev + '\n' + lines : lines);
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      showToast('Unsupported file type. Use CSV, TXT, XLS, or XLSX.');
+    }
+
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
 
   useEffect(() => { loadProducts(); }, []);
 
@@ -361,6 +396,23 @@ export default function ProductStocksPage() {
                 required
               />
             </label>
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.txt,.xls,.xlsx"
+                onChange={handleFileImport}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Import File
+              </Button>
+              <span className="text-[0.68rem] text-muted-foreground ml-2">CSV, TXT, XLS, XLSX</span>
+            </div>
             <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-border">
               <Button type="submit" variant="accent" disabled={importing}>
                 {importing ? 'Importing...' : 'Add / Import Stocks'}
