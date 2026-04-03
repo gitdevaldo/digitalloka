@@ -77,10 +77,9 @@ export default function CartPage() {
       </div>
 
       {loading ? (
-        <div className="empty-state">
-          <div className="empty-icon">&#9203;</div>
-          <div className="empty-title">Loading your cart</div>
-          <div className="empty-desc">Fetching product details...</div>
+        <div className="inline-loader">
+          <div className="spinner" />
+          <span>Loading cart...</span>
         </div>
       ) : fetchError ? (
         <div className="empty-state">

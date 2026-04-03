@@ -157,10 +157,9 @@ export default function CheckoutPage() {
       </div>
 
       {loading ? (
-        <div className="empty-state">
-          <div className="empty-icon">&#9203;</div>
-          <div className="empty-title">Loading checkout</div>
-          <div className="empty-desc">Preparing your order...</div>
+        <div className="inline-loader">
+          <div className="spinner" />
+          <span>Preparing checkout...</span>
         </div>
       ) : fetchError ? (
         <div className="empty-state">

@@ -85,10 +85,9 @@ export default function WishlistPage() {
       </div>
 
       {loading ? (
-        <div className="empty-state">
-          <div className="empty-icon">&#9203;</div>
-          <div className="empty-title">Loading your wishlist</div>
-          <div className="empty-desc">Fetching your saved items...</div>
+        <div className="inline-loader">
+          <div className="spinner" />
+          <span>Loading wishlist...</span>
         </div>
       ) : fetchError ? (
         <div className="empty-state">
