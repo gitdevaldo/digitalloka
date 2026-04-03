@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
 
 export async function POST(request: NextRequest) {
@@ -11,8 +11,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ data: [] });
     }
 
-    const admin = createSupabaseAdminClient();
-    const { data, error } = await admin
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
       .from('products')
       .select('id, name, slug, short_description, price_amount, price_currency, price_billing_period, status, category:product_categories(name, slug)')
       .in('id', ids)

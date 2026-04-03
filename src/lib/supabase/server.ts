@@ -2,6 +2,16 @@ import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
+/**
+ * Creates a Supabase client that carries the current user's session (via cookies).
+ * Queries made through this client are subject to Row Level Security (RLS) policies,
+ * meaning the database enforces access control automatically.
+ *
+ * USE THIS for all user-facing operations:
+ *   - Reading/writing the authenticated user's own data (orders, entitlements, wishlist)
+ *   - Querying public data (product catalog, categories)
+ *   - Any route under /api/user/*, /api/wishlist/*, /api/cart/*, /api/products/*
+ */
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
 
@@ -27,6 +37,18 @@ export async function createSupabaseServerClient() {
   );
 }
 
+/**
+ * Creates a Supabase client using the service role key, which bypasses all RLS policies.
+ *
+ * USE THIS ONLY for operations that genuinely require elevated privileges:
+ *   - Admin routes (/api/admin/*) that query across multiple users
+ *   - Webhook processing (payment-verification) where there is no user session
+ *   - User sync on auth callback (inserting into the users table for new signups)
+ *   - Audit logging (system-level inserts)
+ *   - Middleware role checks (isAdmin) where RLS would be circular
+ *
+ * NEVER use this for regular user-facing reads/writes — use createSupabaseServerClient() instead.
+ */
 export function createSupabaseAdminClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

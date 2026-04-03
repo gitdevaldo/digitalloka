@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId } from '@/lib/services/supabase-auth';
-import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { generateOrderNumber } from '@/lib/services/orders';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { parseRequestBody } from '@/lib/validation';
@@ -21,10 +21,10 @@ export async function POST(request: NextRequest) {
 
     const { items } = parsed.data;
 
-    const admin = createSupabaseAdminClient();
+    const supabase = await createSupabaseServerClient();
 
     const productIds = items.map(i => i.product_id);
-    const { data: products, error: prodErr } = await admin
+    const { data: products, error: prodErr } = await supabase
       .from('products')
       .select('id, name, slug, price_amount, price_currency')
       .in('id', productIds)
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       if (!product) continue;
       if (!product.price_amount || product.price_amount <= 0) continue;
 
-      const qty = item.quantity;
+      const qty = item.quantity ?? 1;
       const lineTotal = product.price_amount * qty;
       subtotal += lineTotal;
       currency = product.price_currency || 'USD';
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     const orderNumber = generateOrderNumber();
 
-    const { data: orderId, error: rpcError } = await admin.rpc('create_checkout_order_atomic', {
+    const { data: orderId, error: rpcError } = await supabase.rpc('create_checkout_order_atomic', {
       p_user_id: userId,
       p_order_number: orderNumber,
       p_currency: currency,

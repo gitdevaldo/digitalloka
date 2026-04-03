@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getSessionUserId } from '@/lib/services/supabase-auth';
 import { canAccessDroplet } from '@/lib/services/admin-access';
 import { getDroplet } from '@/lib/services/digitalocean';
@@ -9,7 +10,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const { id } = await params;
   const dropletId = Number(id);
-  if (!await canAccessDroplet(userId, dropletId)) {
+  const supabase = await createSupabaseServerClient();
+  if (!await canAccessDroplet(supabase, userId, dropletId)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

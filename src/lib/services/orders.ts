@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { createEntitlementsForOrder } from '@/lib/services/entitlements';
 
@@ -13,13 +14,12 @@ export function generateOrderNumber(): string {
   return 'ORD-' + crypto.randomUUID().replace(/-/g, '').substring(0, 12).toUpperCase();
 }
 
-export async function listUserOrders(userId: string, page = 1, perPage = 20, cursor?: string | null, mode: 'cursor' | 'offset' = 'cursor') {
+export async function listUserOrders(supabase: SupabaseClient, userId: string, page = 1, perPage = 20, cursor?: string | null, mode: 'cursor' | 'offset' = 'cursor') {
   const { applyCursorFilter, applyCursorPagination } = await import('@/lib/cursor-pagination');
-  const admin = createSupabaseAdminClient();
 
   const useCursorMode = mode === 'cursor';
 
-  let query = admin
+  let query = supabase
     .from('orders')
     .select('*, items:order_items(*, product:products(id, name, slug)), transactions(*)', { count: useCursorMode ? undefined : 'exact' })
     .eq('user_id', userId);
@@ -132,10 +132,8 @@ export async function updateOrderStatus(orderId: number, newStatus: string) {
   return await getOrderById(orderId);
 }
 
-export async function createCheckoutOrder(userId: string, payload: { product_id: number; quantity?: number; affiliate_code?: string }) {
-  const admin = createSupabaseAdminClient();
-
-  const { data: product } = await admin
+export async function createCheckoutOrder(supabase: SupabaseClient, userId: string, payload: { product_id: number; quantity?: number; affiliate_code?: string }) {
+  const { data: product } = await supabase
     .from('products')
     .select('*')
     .eq('id', payload.product_id)
@@ -160,7 +158,7 @@ export async function createCheckoutOrder(userId: string, payload: { product_id:
     },
   ];
 
-  const { data: orderId, error: rpcError } = await admin.rpc('create_checkout_order_atomic', {
+  const { data: orderId, error: rpcError } = await supabase.rpc('create_checkout_order_atomic', {
     p_user_id: userId,
     p_order_number: orderNumber,
     p_currency: product.price_currency,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getSessionUserId } from '@/lib/services/supabase-auth';
 import { createCheckoutOrder } from '@/lib/services/orders';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
@@ -20,7 +21,8 @@ export async function POST(request: NextRequest) {
 
     const { product_id, quantity, affiliate_code } = parsed.data;
 
-    const order = await createCheckoutOrder(userId, {
+    const supabase = await createSupabaseServerClient();
+    const order = await createCheckoutOrder(supabase, userId, {
       product_id,
       quantity,
       affiliate_code,

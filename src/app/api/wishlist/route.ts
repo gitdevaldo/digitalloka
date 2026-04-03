@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
 
 export async function GET() {
@@ -10,8 +10,7 @@ export async function GET() {
     return NextResponse.json({ items: [] });
   }
 
-  const admin = createSupabaseAdminClient();
-  const { data, error } = await admin
+  const { data, error } = await supabase
     .from('wishlists')
     .select('product_id')
     .eq('user_id', user.id);
@@ -43,9 +42,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'product_id must be a number' }, { status: 400 });
   }
 
-  const admin = createSupabaseAdminClient();
-
-  const { data: existing, error: fetchError } = await admin
+  const { data: existing, error: fetchError } = await supabase
     .from('wishlists')
     .select('id')
     .eq('user_id', user.id)
@@ -57,13 +54,13 @@ export async function POST(request: NextRequest) {
   }
 
   if (existing) {
-    const { error: deleteError } = await admin.from('wishlists').delete().eq('id', existing.id);
+    const { error: deleteError } = await supabase.from('wishlists').delete().eq('id', existing.id);
     if (deleteError) {
       return NextResponse.json({ error: sanitizeDbError(deleteError.message) }, { status: 500 });
     }
     return NextResponse.json({ action: 'removed' });
   } else {
-    const { error: insertError } = await admin.from('wishlists').insert({ user_id: user.id, product_id });
+    const { error: insertError } = await supabase.from('wishlists').insert({ user_id: user.id, product_id });
     if (insertError) {
       return NextResponse.json({ error: sanitizeDbError(insertError.message) }, { status: 500 });
     }

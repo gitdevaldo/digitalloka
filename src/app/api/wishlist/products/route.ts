@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
 
 export async function GET() {
@@ -10,9 +10,7 @@ export async function GET() {
     return NextResponse.json({ data: [] });
   }
 
-  const admin = createSupabaseAdminClient();
-
-  const { data: wishlistRows } = await admin
+  const { data: wishlistRows } = await supabase
     .from('wishlists')
     .select('product_id')
     .eq('user_id', user.id);
@@ -23,7 +21,7 @@ export async function GET() {
 
   const productIds = wishlistRows.map(r => r.product_id);
 
-  const { data: products, error } = await admin
+  const { data: products, error } = await supabase
     .from('products')
     .select('id, name, slug, short_description, price_amount, price_currency, price_billing_period, status, category:product_categories(name, slug)')
     .in('id', productIds)

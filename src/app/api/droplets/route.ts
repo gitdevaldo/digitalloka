@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getSessionUserId, getUserDropletIds } from '@/lib/services/supabase-auth';
 import { listDroplets } from '@/lib/services/digitalocean';
 
@@ -7,7 +8,8 @@ export async function GET() {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const dropletIds = await getUserDropletIds(userId);
+    const supabase = await createSupabaseServerClient();
+    const dropletIds = await getUserDropletIds(supabase, userId);
     const droplets = await listDroplets(dropletIds);
     return NextResponse.json({ data: droplets });
   } catch (err: unknown) {

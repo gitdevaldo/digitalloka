@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getSessionUserId } from '@/lib/services/supabase-auth';
 import { listUserOrders } from '@/lib/services/orders';
 
@@ -13,7 +14,8 @@ export async function GET(request: NextRequest) {
   const perPage = Math.max(1, Math.min(100, parseInt(sp.get('per_page') || '20', 10) || 20));
 
   try {
-    const result = await listUserOrders(userId, page, perPage, cursor, mode);
+    const supabase = await createSupabaseServerClient();
+    const result = await listUserOrders(supabase, userId, page, perPage, cursor, mode);
     return NextResponse.json(result);
   } catch (err) {
     if (err instanceof Error && err.message === 'Invalid cursor format') {

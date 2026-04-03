@@ -1,4 +1,4 @@
-import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface ProductFilters {
   category?: string;
@@ -15,14 +15,13 @@ export interface ProductFilters {
   per_page?: number;
 }
 
-export async function listProducts(filters: ProductFilters) {
-  const admin = createSupabaseAdminClient();
+export async function listProducts(supabase: SupabaseClient, filters: ProductFilters) {
   const perPage = filters.per_page || 12;
   const page = filters.page || 1;
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
 
-  let query = admin
+  let query = supabase
     .from('products')
     .select('*, category:product_categories(*)', { count: 'exact' })
     .eq('is_visible', true);
@@ -69,9 +68,8 @@ export async function listProducts(filters: ProductFilters) {
   };
 }
 
-export async function getProductBySlug(slug: string) {
-  const admin = createSupabaseAdminClient();
-  const { data, error } = await admin
+export async function getProductBySlug(supabase: SupabaseClient, slug: string) {
+  const { data, error } = await supabase
     .from('products')
     .select('*, category:product_categories(*)')
     .eq('slug', slug)

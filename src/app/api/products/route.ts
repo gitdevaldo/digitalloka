@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { listProducts, type ProductFilters } from '@/lib/services/catalog';
 
 export async function GET(request: NextRequest) {
@@ -18,7 +19,8 @@ export async function GET(request: NextRequest) {
       badges: sp.get('badges') || undefined,
     };
 
-    const result = await listProducts(filters);
+    const supabase = await createSupabaseServerClient();
+    const result = await listProducts(supabase, filters);
     return NextResponse.json(result);
   } catch (err: unknown) {
     return NextResponse.json({ error: 'Failed to load products' }, { status: 500 });
