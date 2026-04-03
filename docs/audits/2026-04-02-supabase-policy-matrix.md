@@ -8,7 +8,7 @@ RBAC source of truth: DB lookup via public.users (role + is_active) through help
 
 - Anonymous: PostgreSQL role `anon` (no user identity).
 - Authenticated user: PostgreSQL role `authenticated`, `auth.uid()` present, non-admin user row in `public.users`.
-- Admin user: PostgreSQL role `authenticated`, user row where `is_active = true` and `role in ('admin','super-admin')`.
+- Admin user: PostgreSQL role `authenticated`, user row where `is_active = true` and `role = 'admin'`.
 
 ## Helper Functions
 

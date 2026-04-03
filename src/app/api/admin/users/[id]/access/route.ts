@@ -10,7 +10,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const body = await request.json();
   const updates: Record<string, unknown> = {};
 
-  const validRoles = ['user', 'admin', 'super-admin'];
+  const validRoles = ['user', 'admin'];
   if (body.role && validRoles.includes(body.role)) updates.role = body.role;
   if (body.is_active !== undefined) updates.is_active = Boolean(body.is_active);
 

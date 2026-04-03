@@ -46,7 +46,7 @@ export async function updateSession(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
     const { data } = await adminClient.from('users').select('role, is_active').eq('id', user.id).single();
-    const hasAdminRole = data?.is_active && ['admin', 'super-admin'].includes(data?.role);
+    const hasAdminRole = data?.is_active && data?.role === 'admin';
 
     if (!hasAdminRole) {
       const url = request.nextUrl.clone();

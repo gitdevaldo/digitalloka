@@ -32,7 +32,7 @@ as $$
     from public.users u
     where u.id = auth.uid()
       and u.is_active = true
-      and u.role in ('admin', 'super-admin')
+      and u.role = 'admin'
   );
 $$;
 

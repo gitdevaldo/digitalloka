@@ -42,7 +42,7 @@ export async function isAdmin(userId: string): Promise<boolean> {
   const admin = createSupabaseAdminClient();
   const { data } = await admin.from('users').select('role, is_active').eq('id', userId).single();
   if (!data || !data.is_active) return false;
-  return ['admin', 'super-admin'].includes(data.role);
+  return data.role === 'admin';
 }
 
 export async function getUserDropletIds(userId: string): Promise<number[]> {
