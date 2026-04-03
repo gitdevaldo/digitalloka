@@ -1,5 +1,29 @@
 # Change Log
 
+## 2026-04-03 06:00
+- Short description: Laravel parity audit — T001-T004, T008 fixes for Next.js conversion
+- What you do:
+  - T001: Added Wishlist (ghost btn, heart icon, count) and Cart (accent btn, bag icon, count) to catalog topbar layout, matching Laravel exactly
+  - T002: Rewrote user login (sky blue #0EA5E9 accent) and admin login (rose #F43F5E) pages with 28px radius cards, 10px shadow, badge pills, CSS classes in globals.css
+  - T003: Rewrote auth callback to POST tokens to /api/auth/session then redirect; added POST handler to session API route for setSession
+  - T004: Rebuilt product detail page with full Laravel-matching layout (breadcrumb, badges, hero title with .hl highlight, spec grid, uptime bar, checklist, purchase card with server stack visual, billing toggle, price area, CTA buttons, guarantee strip, card specs, features grid, setup timeline, reviews section, FAQ accordion); added all CSS classes to globals.css
+  - T008: Wired max_price, rating_min, tags, badges query params in API route and catalog service; fixed badges filter to use overlaps on badges field instead of status
+  - Restructured admin routes: moved dashboard pages to admin/(dashboard)/ route group so admin login bypasses sidebar/DashboardShell
+  - Fixed session POST endpoint (was GET-only, callback POST would 405)
+- File path that changes:
+  - `src/app/(public)/layout.tsx`
+  - `src/app/login/page.tsx`
+  - `src/app/admin/login/page.tsx`
+  - `src/app/auth/callback/page.tsx`
+  - `src/app/(public)/products/[slug]/page.tsx`
+  - `src/app/api/products/route.ts`
+  - `src/lib/services/catalog.ts`
+  - `src/app/api/auth/session/route.ts`
+  - `src/app/admin/(dashboard)/layout.tsx`
+  - `src/app/globals.css`
+  - `replit.md`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-03 05:30
 - Short description: Fixed product category input and removed trailing .00 in admin product price table
 - What you do:

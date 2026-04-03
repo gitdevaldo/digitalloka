@@ -1,0 +1,44 @@
+import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
+
+export async function getSessionUserId(): Promise<string | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
+
+export async function startMagicLinkLogin(email: string, nextPath?: string, mode: 'user' | 'admin' = 'user') {
+  const supabase = await createSupabaseServerClient();
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+    ? process.env.NEXT_PUBLIC_APP_URL
+    : process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : 'http://localhost:5000';
+  const params = new URLSearchParams({ mode });
+  if (nextPath?.startsWith('/')) params.set('next', nextPath);
+  const redirectTo = `${baseUrl}/auth/callback?${params.toString()}`;
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: redirectTo, shouldCreateUser: false },
+  });
+
+  if (error) throw new Error(error.message);
+  return { success: true };
+}
+
+export async function isAdmin(userId: string): Promise<boolean> {
+  if (!userId) return false;
+  const admin = createSupabaseAdminClient();
+  const { data } = await admin.from('users').select('role, is_active').eq('id', userId).single();
+  if (!data || !data.is_active) return false;
+  return ['admin', 'super-admin'].includes(data.role);
+}
+
+export async function getUserDropletIds(userId: string): Promise<number[]> {
+  if (!userId) return [];
+  const admin = createSupabaseAdminClient();
+  const { data } = await admin.from('users').select('droplet_ids').eq('id', userId).single();
+  if (!data?.droplet_ids) return [];
+  const ids = Array.isArray(data.droplet_ids) ? data.droplet_ids : [];
+  return ids.map(Number).filter(Boolean);
+}
