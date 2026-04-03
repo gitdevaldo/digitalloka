@@ -16,8 +16,8 @@
   --input: #FFFFFF;
   --card: #FFFFFF;
   --shadow: #1E293B;
-  --font-h: 'Outfit', sans-serif;
-  --font-b: 'Plus Jakarta Sans', sans-serif;
+  --font-h: var(--font-outfit, 'Outfit'), sans-serif;
+  --font-b: var(--font-plus-jakarta, 'Plus Jakarta Sans'), sans-serif;
   --r-sm: 8px;
   --r-md: 14px;
   --r-lg: 18px;
