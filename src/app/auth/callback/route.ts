@@ -88,8 +88,17 @@ function hashFragmentHtml(mode: string, next: string) {
   });
 }
 
+function getOrigin(request: NextRequest): string {
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
+  const proto = request.headers.get('x-forwarded-proto') || 'https';
+  if (host) return `${proto}://${host}`;
+  if (process.env.REPLIT_DEV_DOMAIN) return `https://${process.env.REPLIT_DEV_DOMAIN}`;
+  return 'http://localhost:5000';
+}
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
+  const origin = getOrigin(request);
   const code = requestUrl.searchParams.get('code');
   const mode = requestUrl.searchParams.get('mode') || 'user';
   const next = requestUrl.searchParams.get('next') || '';
@@ -105,10 +114,10 @@ export async function GET(request: NextRequest) {
       if (user) {
         await syncUserToTable(user.id, user.email ?? '');
       }
-      return NextResponse.redirect(new URL(redirectTarget, requestUrl.origin));
+      return NextResponse.redirect(new URL(redirectTarget, origin));
     }
 
-    return NextResponse.redirect(new URL('/login?error=auth_failed', requestUrl.origin));
+    return NextResponse.redirect(new URL('/login?error=auth_failed', origin));
   }
 
   return hashFragmentHtml(mode, next);
