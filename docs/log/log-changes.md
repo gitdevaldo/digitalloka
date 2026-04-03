@@ -1,5 +1,17 @@
 # Change Log
 
+## 2026-04-02 23:59
+- Short description: Fixed homepage topbar counter mix-up between wishlist and cart.
+- What you do:
+  - Added dedicated wishlist counter element in catalog topbar button markup.
+  - Added stable topbar button ids for wishlist and cart controls to prevent accidental cross-target updates.
+  - Updated homepage wishlist toggle logic to update only wishlist count and stop mutating cart label/count.
+  - Kept cart counter behavior isolated and unchanged by wishlist interactions.
+- File path that changes:
+  - `resources/views/components/layout/topbar.blade.php`
+  - `resources/views/catalog/index.blade.php`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-02 23:55
 - Short description: Completed file-by-file responsive hardening across admin, dashboard, and catalog view surfaces.
 - What you do:

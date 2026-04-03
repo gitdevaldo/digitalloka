@@ -730,6 +730,7 @@
       .topbar-right { gap: 8px; }
       .topbar-right .btn { padding: 8px 12px; font-size: 0.78rem; }
       .topbar-right .tb-cart-count { font-weight: 800; }
+      .topbar-right .tb-wishlist-count { font-weight: 800; }
       .toolbar > div:last-child { width: 100%; }
       .sort-select { width: 100%; }
     }
@@ -745,6 +746,7 @@
       .topbar-right .btn { min-width: 0; padding: 7px 10px; }
       .topbar-right .btn .tb-label { display: none; }
       .topbar-right .btn .tb-cart-count { display: inline; }
+      .topbar-right .btn .tb-wishlist-count { display: inline; }
       .topbar-right .btn svg { margin-right: 0; }
       .topbar-right .btn-ghost { display: none; }
       .card-footer { align-items: flex-start; }
@@ -1253,8 +1255,11 @@
       btn.classList.add('active');
       btn.textContent = '❤️';
     }
-    // Update cart btn label
-    document.querySelector('.btn-accent').innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Cart (${state.wishlist.length})`;
+
+    const wishlistCount = document.getElementById('tb-wishlist-count');
+    if (wishlistCount) {
+      wishlistCount.textContent = `(${state.wishlist.length})`;
+    }
   }
 
   function resetAllFilters() {

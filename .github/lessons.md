@@ -1,6 +1,18 @@
 # Lessons
 
 - Date: 2026-04-02
+- Mistake: Mixed wishlist interaction with cart topbar UI state on homepage.
+- Rule: Wishlist actions must only update wishlist state/counter; cart labels/counters must be managed by cart state only.
+- Enforcement: For header counters, use dedicated ids/state bindings per feature and avoid broad selectors that can target the wrong button.
+
+- Date: 2026-04-02
+- Mistake: Lessons were too generic and did not preserve concrete user UI preferences for tables.
+- Rule: Use shared table component layout consistently; do not add custom wrappers that cause per-page spacing differences.
+- Rule: Keep Product-related table style proportional (not over-rounded, not over-padded) and visually identical across pages.
+- Rule: On stock management page, render stock list first and open form only when `Add Stock` is clicked.
+- Enforcement: Validate Product, Product Types, and Product Stocks against the same table shell + wrapper spacing pattern before closing task.
+
+- Date: 2026-04-02
 - Mistake: Continued running tools after the user explicitly said "stop" and requested a direct issue summary.
 - Rule: When user says stop, halt tool execution immediately and answer only what was asked.
 - Enforcement: Check the most recent user message for stop/pause constraints before any tool call.
