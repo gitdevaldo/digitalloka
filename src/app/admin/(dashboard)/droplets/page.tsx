@@ -8,11 +8,26 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import { formatDate } from '@/lib/utils';
+
+interface Droplet {
+  id: number;
+  name: string;
+  region: string | null;
+  size: string | null;
+  status: string;
+  ip_address: string | null;
+  owner_user_id: string | null;
+  owner_email: string | null;
+  entitlement_id: number | null;
+  updated_at: string | null;
+}
 
 export default function AdminDropletsPage() {
-  const [droplets, setDroplets] = useState<Record<string, unknown>[]>([]);
+  const [droplets, setDroplets] = useState<Droplet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [regionFilter, setRegionFilter] = useState('all');
+  const [search, setSearch] = useState('');
   const { showToast } = useToast();
 
   useEffect(() => { loadDroplets(); }, []);
@@ -22,10 +37,31 @@ export default function AdminDropletsPage() {
     try {
       const res = await fetch('/api/admin/droplets');
       const data = await res.json();
-      setDroplets(data.data || []);
+      if (data.error) {
+        showToast(data.error);
+        setDroplets([]);
+      } else {
+        setDroplets(Array.isArray(data.droplets) ? data.droplets : []);
+      }
     } catch { showToast('Failed to load droplets'); }
     finally { setLoading(false); }
   }
+
+  const filtered = droplets.filter(d => {
+    if (statusFilter !== 'all' && d.status !== statusFilter) return false;
+    if (regionFilter !== 'all' && d.region !== regionFilter) return false;
+    if (search) {
+      const s = search.toLowerCase();
+      return (
+        String(d.id).includes(s) ||
+        (d.owner_email || '').toLowerCase().includes(s) ||
+        (d.name || '').toLowerCase().includes(s)
+      );
+    }
+    return true;
+  });
+
+  const regions = [...new Set(droplets.map(d => d.region).filter(Boolean))] as string[];
 
   return (
     <div style={{ animation: 'fadeUp 0.28s var(--ease)' }}>
@@ -41,43 +77,56 @@ export default function AdminDropletsPage() {
       />
 
       <div className="flex items-center gap-2 flex-wrap mb-4">
-        <select className="border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 font-body text-[0.75rem] font-semibold bg-input text-foreground cursor-pointer focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)]">
-          <option>All Statuses</option><option>Running</option><option>Stopped</option><option>Starting</option>
+        <select
+          className="border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 font-body text-[0.75rem] font-semibold bg-input text-foreground cursor-pointer focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)]"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="all">All Statuses</option>
+          <option value="active">Running</option>
+          <option value="off">Stopped</option>
+          <option value="new">Starting</option>
         </select>
-        <select className="border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 font-body text-[0.75rem] font-semibold bg-input text-foreground cursor-pointer focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)]">
-          <option>All Regions</option><option>SGP1</option><option>NYC1</option><option>FRA1</option>
+        <select
+          className="border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 font-body text-[0.75rem] font-semibold bg-input text-foreground cursor-pointer focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)]"
+          value={regionFilter}
+          onChange={(e) => setRegionFilter(e.target.value)}
+        >
+          <option value="all">All Regions</option>
+          {regions.map(r => <option key={r} value={r}>{r.toUpperCase()}</option>)}
         </select>
-        <input className="border-2 border-border rounded-[var(--r-sm)] px-3 py-1.5 font-body text-[0.75rem] font-medium bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)]" placeholder="Search droplet ID or owner…" />
+        <input
+          className="border-2 border-border rounded-[var(--r-sm)] px-3 py-1.5 font-body text-[0.75rem] font-medium bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)]"
+          placeholder="Search droplet ID or owner…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
       {loading ? (
         <Panel>
           <div className="h-24 bg-muted rounded-lg animate-pulse" />
         </Panel>
-      ) : droplets.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <EmptyState icon="🖥️" title="No droplets" description="Managed droplets will appear here when provisioned." />
       ) : (
         <Panel>
           <TableShell variant="admin">
             <thead><tr><th>Droplet ID</th><th>Owner</th><th>Entitlement</th><th>Region</th><th>Plan</th><th>Status</th><th>IP</th><th>Last Action</th><th>Actions</th></tr></thead>
             <tbody>
-              {droplets.map((d) => {
-                const user = d.user as Record<string, unknown> | undefined;
-                const ent = d.entitlement as Record<string, unknown> | undefined;
-                return (
-                  <tr key={d.id as number}>
-                    <td className="font-mono text-[0.72rem]">{d.droplet_id as string || String(d.id).slice(0, 8)}</td>
-                    <td className="text-[0.78rem]">{user?.email as string || '—'}</td>
-                    <td className="font-mono text-[0.72rem] text-muted-foreground">{ent ? String(ent.id).slice(0, 8) : '—'}</td>
-                    <td className="text-[0.78rem] font-bold uppercase">{d.region as string || '—'}</td>
-                    <td className="text-[0.78rem]">{d.size_slug as string || d.plan as string || '—'}</td>
-                    <td><StatusBadge variant={d.status === 'active' || d.status === 'running' ? 'running' : d.status === 'stopped' ? 'stopped' : 'starting'} label={d.status as string} /></td>
-                    <td className="font-mono text-[0.72rem]">{d.ip_address as string || '—'}</td>
-                    <td className="text-[0.72rem] text-muted-foreground">{d.last_action_at ? formatDate(d.last_action_at as string) : '—'}</td>
-                    <td><Button size="sm">Actions</Button></td>
-                  </tr>
-                );
-              })}
+              {filtered.map((d) => (
+                <tr key={d.id}>
+                  <td className="font-mono text-[0.72rem]">{d.id}</td>
+                  <td className="text-[0.78rem]">{d.owner_email || '—'}</td>
+                  <td className="font-mono text-[0.72rem] text-muted-foreground">{d.entitlement_id ? String(d.entitlement_id).slice(0, 8) : '—'}</td>
+                  <td className="text-[0.78rem] font-bold uppercase">{d.region || '—'}</td>
+                  <td className="text-[0.78rem]">{d.size || '—'}</td>
+                  <td><StatusBadge variant={d.status === 'active' ? 'running' : d.status === 'off' ? 'stopped' : 'starting'} label={d.status} /></td>
+                  <td className="font-mono text-[0.72rem]">{d.ip_address || '—'}</td>
+                  <td className="text-[0.72rem] text-muted-foreground">{d.updated_at ? new Date(d.updated_at).toLocaleDateString() : '—'}</td>
+                  <td><Button size="sm">Actions</Button></td>
+                </tr>
+              ))}
             </tbody>
           </TableShell>
         </Panel>

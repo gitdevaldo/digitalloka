@@ -9,9 +9,19 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/toast';
 
+interface ProductType {
+  type: string;
+  label: string;
+  description: string;
+  is_active: boolean;
+  fields: unknown[];
+}
+
 export default function ProductTypesPage() {
-  const [types, setTypes] = useState<Record<string, unknown>[]>([]);
+  const [types, setTypes] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
   const { showToast } = useToast();
 
   useEffect(() => { loadTypes(); }, []);
@@ -21,10 +31,20 @@ export default function ProductTypesPage() {
     try {
       const res = await fetch('/api/admin/product-types');
       const data = await res.json();
-      setTypes(data.data || []);
+      setTypes(Array.isArray(data.data) ? data.data : []);
     } catch { showToast('Failed to load product types'); }
     finally { setLoading(false); }
   }
+
+  const filtered = types.filter(t => {
+    if (filter === 'vps_only' && t.type !== 'vps_droplet') return false;
+    if (filter === 'custom_only' && ['digital', 'template', 'course', 'vps_droplet'].includes(t.type)) return false;
+    if (search) {
+      const s = search.toLowerCase();
+      return t.type.toLowerCase().includes(s) || t.label.toLowerCase().includes(s);
+    }
+    return true;
+  });
 
   return (
     <div style={{ animation: 'fadeUp 0.28s var(--ease)' }}>
@@ -40,36 +60,44 @@ export default function ProductTypesPage() {
       />
 
       <div className="flex items-center gap-2 flex-wrap mb-4">
-        <select className="border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 font-body text-[0.75rem] font-semibold bg-input text-foreground cursor-pointer focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)]">
-          <option>All Types</option><option>VPS Only</option><option>Custom Types</option>
+        <select
+          className="border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 font-body text-[0.75rem] font-semibold bg-input text-foreground cursor-pointer focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)]"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+        >
+          <option value="all">All Types</option>
+          <option value="vps_only">VPS Only</option>
+          <option value="custom_only">Custom Types</option>
         </select>
-        <input className="border-2 border-border rounded-[var(--r-sm)] px-3 py-1.5 font-body text-[0.75rem] font-medium bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)]" placeholder="Search type key or label..." />
+        <input
+          className="border-2 border-border rounded-[var(--r-sm)] px-3 py-1.5 font-body text-[0.75rem] font-medium bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)]"
+          placeholder="Search type key or label..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
       {loading ? (
         <Panel>
           <div className="h-24 bg-muted rounded-lg animate-pulse" />
         </Panel>
-      ) : types.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <EmptyState icon="📦" title="No product types" description="Create a product type to define schemas for your products." />
       ) : (
         <Panel>
           <TableShell variant="admin">
             <thead><tr><th>Type Key</th><th>Label</th><th>Status</th><th>Description</th><th>Fields</th><th>Actions</th></tr></thead>
             <tbody>
-              {types.map((t) => {
-                const fields = (t.fields as unknown[]) || [];
-                return (
-                  <tr key={t.id as number}>
-                    <td className="font-mono text-[0.78rem] font-bold">{t.type_key as string}</td>
-                    <td className="font-bold">{t.label as string}</td>
-                    <td><StatusBadge variant={t.is_active ? 'active' : 'stopped'} label={t.is_active ? 'Active' : 'Inactive'} /></td>
-                    <td className="text-[0.78rem] text-muted-foreground max-w-[200px] truncate">{(t.description as string) || '—'}</td>
-                    <td className="text-[0.78rem]">{fields.length} field(s)</td>
-                    <td><Button size="sm">Edit</Button></td>
-                  </tr>
-                );
-              })}
+              {filtered.map((t) => (
+                <tr key={t.type}>
+                  <td className="font-mono text-[0.78rem] font-bold">{t.type}</td>
+                  <td className="font-bold">{t.label}</td>
+                  <td><StatusBadge variant={t.is_active ? 'active' : 'stopped'} label={t.is_active ? 'Active' : 'Inactive'} /></td>
+                  <td className="text-[0.78rem] text-muted-foreground max-w-[200px] truncate">{t.description || '—'}</td>
+                  <td className="text-[0.78rem]">{(t.fields || []).length} field(s)</td>
+                  <td><Button size="sm">Edit</Button></td>
+                </tr>
+              ))}
             </tbody>
           </TableShell>
         </Panel>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getSessionUserId();
   if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
@@ -15,7 +15,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     .order('created_at', { ascending: false })
     .limit(100);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    if (error.message.includes('product_stock_items')) {
+      return NextResponse.json({ data: [], _table_missing: true });
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   return NextResponse.json({ data: data || [] });
 }
 
@@ -42,13 +47,28 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const credentialData: Record<string, string> = {};
     headers.forEach((h: string, i: number) => { credentialData[h] = parts[i]; });
 
-    await admin.from('product_stock_items').insert({
+    const sorted = Object.keys(credentialData).sort().reduce((acc: Record<string, string>, key) => {
+      acc[key] = credentialData[key];
+      return acc;
+    }, {});
+    const credentialHash = await hashCredentials(sorted);
+
+    const { error } = await admin.from('product_stock_items').insert({
       product_id: Number(id),
       credential_data: credentialData,
+      credential_hash: credentialHash,
       status: 'unsold',
     });
-    inserted++;
+
+    if (!error) inserted++;
   }
 
   return NextResponse.json({ inserted, total_lines: lines.length });
+}
+
+async function hashCredentials(data: Record<string, unknown>): Promise<string> {
+  const encoder = new TextEncoder();
+  const buffer = encoder.encode(JSON.stringify(data));
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 }

@@ -77,11 +77,20 @@ src/
 - Brand logo: Purple bg box with white "Digital" + amber "Loka"
 - Catalog layout: Fixed topbar + left sidebar (256px) with filter chips + main content with hero strip
 
+## Database (Supabase PostgreSQL)
+Tables: `users`, `products`, `product_categories`, `product_prices`, `product_stock_items`, `orders`, `order_items`, `order_item_deliveries`, `transactions`, `payment_events`, `entitlements`, `site_settings`, `audit_logs`, `user_product_actions`, `wishlist_items`, `jobs`, `job_batches`, `failed_jobs`, `migrations`
+
+Key design decisions:
+- **Product types** are stored in `site_settings` (group=`product_type`, key=`product_type.{type_key}`) — no dedicated table
+- **Droplets** are NOT stored in DB; they come from DigitalOcean API. Users have `droplet_ids` JSON column
+- **Product stocks** use `product_stock_items` table with `credential_data` JSON and `credential_hash` for dedup
+
 ## Required Environment Variables
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
 - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
 - `DIGITALOCEAN_TOKEN` - DigitalOcean API token
+- `DATABASE_URL` - Direct PostgreSQL connection string (for migrations)
 
 ## Key Features
 1. **Catalog/Marketplace** - Public product browsing with search, sort, filtering
