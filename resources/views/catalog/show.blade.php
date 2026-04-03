@@ -132,11 +132,15 @@
   display: flex; align-items: flex-start; gap: 10px;
   font-size: 0.85rem; font-weight: 600; color: var(--foreground); line-height: 1.4;
 }
-.check-icon {
-  width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
-  border: 2px solid var(--foreground); box-shadow: 2px 2px 0 var(--shadow);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.6rem; font-weight: 900;
+.check-mark {
+  width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; margin-top: 2px;
+  background: var(--quaternary); border: 2px solid var(--foreground);
+  box-shadow: 2px 2px 0 var(--shadow); position: relative;
+}
+.check-mark::after {
+  content: ''; position: absolute; left: 5px; top: 2px;
+  width: 4px; height: 8px; border: solid var(--foreground);
+  border-width: 0 2px 2px 0; transform: rotate(45deg);
 }
 
 /* ── PURCHASE CARD ──────────────────────────────────────── */

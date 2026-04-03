@@ -43,18 +43,23 @@
     <div class="includes-title">What you get with your purchase</div>
     <div class="checklist">
       <div class="check-item">
+        <span class="check-mark"></span>
         Instant delivery after checkout — access from your dashboard immediately
       </div>
       <div class="check-item">
+        <span class="check-mark"></span>
         Clear ownership and entitlement tracking in your account
       </div>
       <div class="check-item">
+        <span class="check-mark"></span>
         Status and renewal information always visible
       </div>
       <div class="check-item">
+        <span class="check-mark"></span>
         Secure credential handling and storage
       </div>
       <div class="check-item">
+        <span class="check-mark"></span>
         Customer support included for product lifecycle
       </div>
     </div>
