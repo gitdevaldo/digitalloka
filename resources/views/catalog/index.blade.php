@@ -746,9 +746,9 @@
       .topbar-right .btn { min-width: 0; padding: 7px 10px; }
       .topbar-right .btn .tb-label { display: none; }
       .topbar-right .btn .tb-cart-count { display: inline; }
-      .topbar-right .btn .tb-wishlist-count { display: inline; }
+      .topbar-right .btn .tb-wishlist-count { display: none; }
       .topbar-right .btn svg { margin-right: 0; }
-      .topbar-right .btn-ghost { display: none; }
+      .topbar-right .btn-ghost { display: inline-flex; }
       .card-footer { align-items: flex-start; }
       .buy-btn { width: 100%; justify-content: center; }
       .footer { padding: 18px 14px; }

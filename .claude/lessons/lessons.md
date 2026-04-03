@@ -1,5 +1,10 @@
 # Lessons
 
+- Date: 2026-04-03
+- Mistake: Hid wishlist action in mobile topbar while trying to reduce crowding.
+- Rule: Never hide primary actions on mobile (wishlist/cart); only reduce labels/count text if needed.
+- Enforcement: At small breakpoints, keep action buttons visible as icons and verify parity with desktop actions.
+
 - Date: 2026-04-02
 - Mistake: Mixed wishlist interaction with cart topbar UI state on homepage.
 - Rule: Wishlist actions must only update wishlist state/counter; cart labels/counters must be managed by cart state only.

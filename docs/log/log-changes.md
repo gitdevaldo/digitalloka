@@ -1,5 +1,15 @@
 # Change Log
 
+## 2026-04-03 00:05
+- Short description: Restored wishlist icon visibility on mobile topbar.
+- What you do:
+  - Removed mobile rule that hid wishlist button on narrow screens.
+  - Kept compact mobile behavior by hiding wishlist count text while preserving the wishlist icon button.
+  - Left cart behavior unchanged.
+- File path that changes:
+  - `resources/views/catalog/index.blade.php`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-02 23:59
 - Short description: Fixed homepage topbar counter mix-up between wishlist and cart.
 - What you do:
