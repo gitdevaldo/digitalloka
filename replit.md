@@ -123,7 +123,8 @@ Run against Supabase to apply performance indexes:
 3. **Dashboard** - Live data stats (products/droplets/orders/entitlements), droplet management (power on/off/reboot), product entitlements with revoke, order history, digital downloads via API action, license keys, account edit modal, support ticket modal
 4. **Admin Panel** - Product CRUD with dedicated create/edit pages (full-page forms), product types with schema builder (dedicated pages), product stocks with per-item Edit/Delete actions, user management (role/block modals), order fulfillment (status transition modal), entitlement lifecycle (inline Activate/Pending/Revoke/+30d buttons), droplet admin (power action modal), site settings (4 config panels with API load/save and data-setting-key attributes), audit logs with CSV export and payload viewer, overview with live API-fetched stats. ID formatting: PRD-001 (products), ENT-001 (entitlements), ORD-0001 (orders), EVT-0001 (audit). Account edit modal, support ticket modal
 5. **Commerce** - Atomic checkout flow (via PostgreSQL RPC functions), payment webhooks with idempotency + atomic processing, collision-resistant order numbers (crypto.randomUUID), shared entitlement provisioning logic
-6. **Route Protection** - Middleware guards `/dashboard/*` and `/admin/*` routes; admin role check via Supabase
+6. **Route Protection** - Middleware guards `/dashboard/*`, `/admin/*`, and all API routes (`/api/admin/*`, `/api/user/*`, `/api/auth/*`, `/api/payments/*`); admin role check via Supabase at middleware level for both page and API routes
+7. **Rate Limiting** - In-memory sliding window rate limiter (`src/lib/rate-limit.ts`) applied at middleware level: auth login (5/min/IP), webhooks (30/min/IP), checkout (10/min/IP). Returns 429 with Retry-After header
 
 ## Legacy Archives
 - `.archive/legacy-laravel/` - Previous Laravel implementation (source of truth for UI parity)

@@ -29,10 +29,15 @@ export async function updateSession(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const isDashboard = request.nextUrl.pathname.startsWith('/dashboard');
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin') && !request.nextUrl.pathname.startsWith('/admin/login');
+  const isAdminPage = request.nextUrl.pathname.startsWith('/admin') && !request.nextUrl.pathname.startsWith('/admin/login');
+  const isAdminApi = request.nextUrl.pathname.startsWith('/api/admin');
+  const isAdminRoute = isAdminPage || isAdminApi;
 
   if (!user && (isDashboard || isAdminRoute)) {
-    const redirectTo = isAdminRoute ? '/admin/login' : '/login';
+    if (isAdminApi) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const redirectTo = isAdminPage ? '/admin/login' : '/login';
     const url = request.nextUrl.clone();
     url.pathname = redirectTo;
     url.searchParams.set('next', request.nextUrl.pathname);
@@ -49,6 +54,9 @@ export async function updateSession(request: NextRequest) {
     const hasAdminRole = data?.is_active && data?.role === 'admin';
 
     if (!hasAdminRole) {
+      if (isAdminApi) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
       const url = request.nextUrl.clone();
       url.pathname = '/dashboard';
       return NextResponse.redirect(url);

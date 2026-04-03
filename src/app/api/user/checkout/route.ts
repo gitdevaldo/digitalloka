@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId } from '@/lib/services/supabase-auth';
 import { createCheckoutOrder } from '@/lib/services/orders';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
+
+const CHECKOUT_LIMIT = { windowMs: 60_000, maxRequests: 10 };
 
 export async function POST(request: NextRequest) {
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { allowed, retryAfterMs } = checkRateLimit(`checkout:user:${userId}`, CHECKOUT_LIMIT);
+  if (!allowed) return rateLimitResponse(retryAfterMs);
 
   try {
     const body = await request.json();
