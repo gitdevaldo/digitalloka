@@ -1,6 +1,11 @@
 # Lessons
 
 - Date: 2026-04-03
+- Mistake: Reintroduced `window.prompt/confirm` in admin interactions after the user explicitly required page/modal-based UX.
+- Rule: Never use browser dialogs in admin UI flows; always use in-page forms or custom modal components.
+- Enforcement: Before completion, grep for `window.prompt` and `window.confirm` in touched admin views and remove all occurrences.
+
+- Date: 2026-04-03
 - Mistake: Stock import flow relied on free-form pasted rows and full-row hash duplication, missing file upload and identity-level validation requirements.
 - Rule: Stock import must support file upload UX and enforce configured-header matching plus Email/Username uniqueness against both uploaded data and existing stock.
 - Enforcement: For stock import changes, validate header equality first, then identity uniqueness, and return explicit invalid-row details (line + reason).

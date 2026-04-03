@@ -473,6 +473,10 @@ body::before{
   overflow-x:auto;white-space:pre-wrap;
 }
 
+.action-modal-body{display:grid;gap:10px;}
+.action-modal-body label{display:flex;flex-direction:column;gap:6px;font-size:0.78rem;font-weight:700;}
+.action-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px;flex-wrap:wrap;}
+
 /* ============================================================ TOAST */
 #toast{
   position:fixed;bottom:24px;right:24px;z-index:9999;
@@ -776,7 +780,7 @@ body::before{
 
       <div style="grid-column:1 / span 2;display:flex;justify-content:flex-end;gap:10px;margin-top:8px">
         <button type="button" class="btn btn-ghost" onclick="nav('products', null)">Cancel</button>
-        <button id="cp-submit" type="submit" class="btn btn-accent">Create Product</button>
+          <button id="cp-submit" type="submit" class="btn btn-accent">Create Product</button>
       </div>
     </form>
   </x-ui.panel>
@@ -1124,6 +1128,20 @@ body::before{
 <!-- MODAL -->
 <x-ui.modal id="modal" title="Event Payload" body-id="modal-body" backdrop-click="closeModal(event)" />
 
+<div class="modal-bg" id="action-modal" onclick="closeActionModal(event)">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="action-modal-title">Action</span>
+      <button class="btn btn-sm btn-ghost" onclick="resolveActionModal(false)">✕ Close</button>
+    </div>
+    <div id="action-modal-body" class="action-modal-body"></div>
+    <div class="action-modal-actions">
+      <button id="action-modal-cancel" class="btn btn-sm btn-ghost" onclick="resolveActionModal(false)">Cancel</button>
+      <button id="action-modal-confirm" class="btn btn-sm btn-accent" onclick="resolveActionModal(true)">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <x-ui.toast id="toast" variant="admin" />
 
@@ -1148,6 +1166,9 @@ let productTypeEditorMode = 'create';
 let hasLoadedHeavyData = false;
 let isLoadingHeavyData = false;
 let selectedStockProductId = null;
+let productFormMode = 'create';
+let editingProductId = null;
+let actionModalResolver = null;
 
 const API = {
   bootstrap: '/api/admin/bootstrap?per_page=100',
@@ -1774,7 +1795,12 @@ async function deleteProductType(type){
     return;
   }
 
-  const confirmed = window.confirm(`Delete product type "${safeType}"?`);
+  const confirmed = await openActionModal({
+    title: 'Delete Product Type',
+    bodyHtml: `<div style="font-size:0.82rem;color:var(--muted-foreground)">Delete product type <strong>${escapeHtmlAttr(safeType)}</strong>?</div>`,
+    confirmLabel: 'Delete',
+    confirmClass: 'btn-danger',
+  });
   if(!confirmed){
     return;
   }
@@ -2177,12 +2203,23 @@ async function editProductStockItem(stockId, credentialData, currentStatus){
   }
 
   const currentValues = headers.map((header) => String(sourceData[header] || '')).join('|');
-  const editedValues = (window.prompt(`Edit values for headers: ${headers.join('|')}`, currentValues) || '').trim();
-  if(!editedValues){
+  const confirmed = await openActionModal({
+    title: 'Edit Stock Item',
+    bodyHtml: `<label><span>Values for: ${escapeHtmlAttr(headers.join('|'))}</span><textarea id="action-stock-values" class="setting-input" rows="4">${escapeHtmlAttr(currentValues)}</textarea></label><label><span>Status</span><select id="action-stock-status" class="setting-select"><option value="unsold" ${String(currentStatus || 'unsold') === 'unsold' ? 'selected' : ''}>unsold</option><option value="sold" ${String(currentStatus || '') === 'sold' ? 'selected' : ''}>sold</option></select></label>`,
+    confirmLabel: 'Save',
+    confirmClass: 'btn-accent',
+  });
+  if(!confirmed){
     return;
   }
 
-  const status = (window.prompt('Status (unsold/sold):', currentStatus || 'unsold') || '').trim().toLowerCase();
+  const editedValues = String(document.getElementById('action-stock-values')?.value || '').trim();
+  if(!editedValues){
+    showToast('⚠️ Values are required.','fail');
+    return;
+  }
+
+  const status = String(document.getElementById('action-stock-status')?.value || 'unsold').trim().toLowerCase();
   if(!['unsold', 'sold'].includes(status)){
     showToast('⚠️ Invalid status.','fail');
     return;
@@ -2215,7 +2252,12 @@ async function editProductStockItem(stockId, credentialData, currentStatus){
 }
 
 async function deleteProductStockItem(stockId){
-  const confirmed = window.confirm('Delete this stock item?');
+  const confirmed = await openActionModal({
+    title: 'Delete Stock Item',
+    bodyHtml: '<div style="font-size:0.82rem;color:var(--muted-foreground)">Delete this stock item?</div>',
+    confirmLabel: 'Delete',
+    confirmClass: 'btn-danger',
+  });
   if(!confirmed){
     return;
   }
@@ -2532,40 +2574,7 @@ async function editProduct(productId){
     return;
   }
 
-  const name = (window.prompt('Product name:', product.name) || '').trim();
-  if(!name){
-    showToast('⚠️ Product name is required.','fail');
-    return;
-  }
-
-  const slug = (window.prompt('Product slug:', product.slug) || '').trim();
-  if(!slug){
-    showToast('⚠️ Product slug is required.','fail');
-    return;
-  }
-
-  const type = (window.prompt('Product type (digital/template/course/vps_droplet):', product.type) || product.type).trim();
-  const status = (window.prompt('Status (available/out-of-stock/coming-soon):', product.status) || product.status).trim();
-  const shortDescription = (window.prompt('Short description (optional):', product.shortDescription || '') || '').trim();
-
-  try {
-    await requestJson(`/api/admin/products/${productId}`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        name,
-        slug,
-        product_type: type,
-        status,
-        short_description: shortDescription || null,
-        is_visible: product.visible,
-      }),
-    });
-
-    await loadBackendData();
-    showToast('✅ Product updated.','ok');
-  } catch (error) {
-    showToast(`⚠️ ${error.message}`,'fail');
-  }
+  openProductFormForEdit(product);
 }
 
 async function toggleProductVisibility(productId){
@@ -2615,10 +2624,17 @@ async function viewOrder(orderId){
 }
 
 async function updateOrderStatus(orderId, currentStatus){
-  const status = (window.prompt('Order status (pending/paid/fulfilled/cancelled):', currentStatus || 'pending') || '').trim().toLowerCase();
-  if(!status){
+  const confirmed = await openActionModal({
+    title: 'Update Order Status',
+    bodyHtml: `<label><span>Status</span><select id="action-order-status" class="setting-select"><option value="pending" ${String(currentStatus || 'pending') === 'pending' ? 'selected' : ''}>pending</option><option value="paid" ${String(currentStatus || '') === 'paid' ? 'selected' : ''}>paid</option><option value="fulfilled" ${String(currentStatus || '') === 'fulfilled' ? 'selected' : ''}>fulfilled</option><option value="cancelled" ${String(currentStatus || '') === 'cancelled' ? 'selected' : ''}>cancelled</option></select></label>`,
+    confirmLabel: 'Update',
+    confirmClass: 'btn-accent',
+  });
+  if(!confirmed){
     return;
   }
+
+  const status = String(document.getElementById('action-order-status')?.value || '').trim().toLowerCase();
 
   try {
     await requestJson(`/api/admin/orders/${orderId}/status`, {
@@ -2659,7 +2675,17 @@ async function toggleUserAccess(userId, isBlocked){
 }
 
 async function updateEntitlementStatus(entitlementId, status){
-  const reason = (window.prompt('Reason (optional):') || '').trim();
+  const confirmed = await openActionModal({
+    title: 'Update Entitlement Status',
+    bodyHtml: `<label><span>Reason (optional)</span><input id="action-entitlement-reason" class="setting-input" placeholder="Optional reason" /></label>`,
+    confirmLabel: 'Apply',
+    confirmClass: 'btn-accent',
+  });
+  if(!confirmed){
+    return;
+  }
+
+  const reason = String(document.getElementById('action-entitlement-reason')?.value || '').trim();
 
   try {
     await requestJson(`/api/admin/entitlements/${entitlementId}/status`, {
@@ -2829,6 +2855,13 @@ function createProduct(){
     form.reset();
   }
 
+  productFormMode = 'create';
+  editingProductId = null;
+  const submitButton = document.getElementById('cp-submit');
+  if(submitButton){
+    submitButton.textContent = 'Create Product';
+  }
+
   const nameField = document.getElementById('cp-name');
   const slugField = document.getElementById('cp-slug');
   const visibleField = document.getElementById('cp-visible');
@@ -2846,6 +2879,54 @@ function createProduct(){
   }
 
   renderCreateProductTypeFields(document.getElementById('cp-type')?.value || 'digital');
+}
+
+function openProductFormForEdit(product){
+  productFormMode = 'edit';
+  editingProductId = String(product.rawId);
+
+  const form = document.getElementById('create-product-form');
+  if(form){
+    form.reset();
+  }
+
+  const nameField = document.getElementById('cp-name');
+  const slugField = document.getElementById('cp-slug');
+  const typeField = document.getElementById('cp-type');
+  const statusField = document.getElementById('cp-status');
+  const descField = document.getElementById('cp-short-description');
+  const visibleField = document.getElementById('cp-visible');
+  const submitButton = document.getElementById('cp-submit');
+
+  if(nameField) nameField.value = product.name || '';
+  if(slugField) slugField.value = product.slug || '';
+  if(typeField) typeField.value = product.type || 'digital';
+  if(statusField) statusField.value = product.status || 'available';
+  if(descField) descField.value = product.shortDescription || '';
+  if(visibleField) visibleField.value = product.visible ? 'visible' : 'hidden';
+
+  renderCreateProductTypeFields(product.type || 'digital');
+
+  const meta = product.meta && typeof product.meta === 'object' ? product.meta : {};
+  Array.from(document.querySelectorAll('#cp-type-fields [data-meta-key]')).forEach((field) => {
+    const key = field.dataset.metaKey;
+    if(!key){
+      return;
+    }
+
+    const value = meta[key];
+    if(field.dataset.metaType === 'boolean'){
+      field.checked = Boolean(value);
+    } else if(value !== undefined && value !== null) {
+      field.value = String(value);
+    }
+  });
+
+  if(submitButton){
+    submitButton.textContent = 'Update Product';
+  }
+
+  nav('product-create', null);
 }
 
 async function submitCreateProduct(event){
@@ -2881,8 +2962,12 @@ async function submitCreateProduct(event){
   }
 
   try {
-    await requestJson('/api/admin/products', {
-      method: 'POST',
+    const isEditMode = productFormMode === 'edit' && editingProductId;
+    const endpoint = isEditMode ? `/api/admin/products/${editingProductId}` : '/api/admin/products';
+    const method = isEditMode ? 'PUT' : 'POST';
+
+    await requestJson(endpoint, {
+      method,
       body: JSON.stringify({
         name,
         slug,
@@ -2896,7 +2981,12 @@ async function submitCreateProduct(event){
 
     nav('products', null);
     await loadBackendData();
-    showToast('✅ Product created.','ok');
+    showToast(isEditMode ? '✅ Product updated.' : '✅ Product created.','ok');
+    productFormMode = 'create';
+    editingProductId = null;
+    if(submitButton){
+      submitButton.textContent = 'Create Product';
+    }
   } catch (error) {
     showToast(`⚠️ ${error.message}`,'fail');
   } finally {
@@ -2923,6 +3013,44 @@ function openPayload(json){
 function closeModal(e){
   if(e.target===document.getElementById('modal'))
     document.getElementById('modal').classList.remove('open');
+}
+
+function openActionModal({ title, bodyHtml, confirmLabel = 'Confirm', confirmClass = 'btn-accent', cancelLabel = 'Cancel' }){
+  return new Promise((resolve) => {
+    actionModalResolver = resolve;
+    const modal = document.getElementById('action-modal');
+    const titleEl = document.getElementById('action-modal-title');
+    const bodyEl = document.getElementById('action-modal-body');
+    const confirmBtn = document.getElementById('action-modal-confirm');
+    const cancelBtn = document.getElementById('action-modal-cancel');
+
+    if(titleEl) titleEl.textContent = title;
+    if(bodyEl) bodyEl.innerHTML = bodyHtml;
+    if(confirmBtn){
+      confirmBtn.textContent = confirmLabel;
+      confirmBtn.className = `btn btn-sm ${confirmClass}`;
+    }
+    if(cancelBtn){
+      cancelBtn.textContent = cancelLabel;
+    }
+
+    modal?.classList.add('open');
+  });
+}
+
+function resolveActionModal(confirmed){
+  const resolver = actionModalResolver;
+  actionModalResolver = null;
+  document.getElementById('action-modal')?.classList.remove('open');
+  if(typeof resolver === 'function'){
+    resolver(Boolean(confirmed));
+  }
+}
+
+function closeActionModal(event){
+  if(event.target === document.getElementById('action-modal')){
+    resolveActionModal(false);
+  }
 }
 
 /* ============================================================ TOAST */

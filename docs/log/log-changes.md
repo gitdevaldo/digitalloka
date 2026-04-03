@@ -1,5 +1,16 @@
 # Change Log
 
+## 2026-04-03 00:40
+- Short description: Removed admin window dialogs and restored page-based Product edit flow.
+- What you do:
+  - Replaced Product edit prompt workflow with in-page form editing using the existing create/edit product page.
+  - Added reusable action modal UI and replaced all `window.prompt` / `window.confirm` usage in admin page interactions.
+  - Updated stock item edit/delete, product type delete, order status update, and entitlement reason input to use non-browser modal UI.
+  - Kept API behavior unchanged while removing browser dialogs from admin UX.
+- File path that changes:
+  - `resources/views/admin/app.blade.php`
+  - `docs/log/log-changes.md`
+
 ## 2026-04-03 00:25
 - Short description: Added stock file upload import and strict header/identity validation for Product Stocks.
 - What you do:
