@@ -26,6 +26,8 @@ export async function POST(request: NextRequest) {
   let skippedDuplicates = 0;
   const invalidRows: { line: number; reasons: string[] }[] = [];
 
+  const parsedRows: { index: number; credentialData: Record<string, string>; credentialHash: string }[] = [];
+
   for (let i = 0; i < lines.length; i++) {
     const parts = lines[i].split('|').map((p: string) => p.trim());
     if (parts.length !== normalizedHeaders.length) {
@@ -41,32 +43,45 @@ export async function POST(request: NextRequest) {
       return acc;
     }, {});
     const credentialHash = await hashCredentials(sorted);
+    parsedRows.push({ index: i, credentialData, credentialHash });
+  }
 
-    const { data: existing } = await admin
+  if (parsedRows.length > 0) {
+    const allHashes = parsedRows.map(r => r.credentialHash);
+    const { data: existingItems } = await admin
       .from('product_stock_items')
-      .select('id')
+      .select('credential_hash')
       .eq('product_id', Number(product_id))
-      .eq('credential_hash', credentialHash)
-      .limit(1);
+      .in('credential_hash', allHashes);
 
-    if (existing && existing.length > 0) {
-      skippedDuplicates++;
-      invalidRows.push({ line: i + 1, reasons: ['Duplicate credential already exists in stock.'] });
-      continue;
+    const existingHashes = new Set((existingItems || []).map((e: { credential_hash: string }) => e.credential_hash));
+    const seenHashes = new Set<string>();
+
+    const toInsert: { product_id: number; credential_data: Record<string, string>; credential_hash: string; status: string; meta: object }[] = [];
+
+    for (const row of parsedRows) {
+      if (existingHashes.has(row.credentialHash) || seenHashes.has(row.credentialHash)) {
+        skippedDuplicates++;
+        invalidRows.push({ line: row.index + 1, reasons: ['Duplicate credential already exists in stock.'] });
+      } else {
+        seenHashes.add(row.credentialHash);
+        toInsert.push({
+          product_id: Number(product_id),
+          credential_data: row.credentialData,
+          credential_hash: row.credentialHash,
+          status: 'unsold',
+          meta: { imported_by: userId, source: 'product-stock-submenu' },
+        });
+      }
     }
 
-    const { error } = await admin.from('product_stock_items').insert({
-      product_id: Number(product_id),
-      credential_data: credentialData,
-      credential_hash: credentialHash,
-      status: 'unsold',
-      meta: { imported_by: userId, source: 'product-stock-submenu' },
-    });
-
-    if (error) {
-      invalidRows.push({ line: i + 1, reasons: [sanitizeDbError(error.message)] });
-    } else {
-      inserted++;
+    if (toInsert.length > 0) {
+      const { error } = await admin.from('product_stock_items').insert(toInsert);
+      if (error) {
+        invalidRows.push({ line: 0, reasons: [sanitizeDbError(error.message)] });
+      } else {
+        inserted = toInsert.length;
+      }
     }
   }
 

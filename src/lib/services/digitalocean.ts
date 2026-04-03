@@ -54,12 +54,27 @@ export async function listDroplets(dropletIds: number[]): Promise<unknown[]> {
   const cached = getCached<unknown[]>(cacheKey);
   if (cached) return cached;
 
-  const droplets: unknown[] = [];
-  for (const id of dropletIds) {
-    try {
-      const d = await getDroplet(id);
-      if (d) droplets.push(d);
-    } catch {}
+  let droplets: unknown[] = [];
+  try {
+    const idSet = new Set(dropletIds);
+    const found = new Map<number, unknown>();
+    let page = 1;
+    let hasMore = true;
+
+    while (hasMore && found.size < idSet.size) {
+      const data = await doRequest('GET', `/droplets?per_page=200&page=${page}`);
+      const pageDroplets = (data.droplets as { id: number }[]) || [];
+      for (const d of pageDroplets) {
+        if (idSet.has(d.id)) found.set(d.id, d);
+      }
+      const meta = data.meta as { total?: number } | undefined;
+      hasMore = pageDroplets.length === 200 && (meta?.total ? found.size < Math.min(idSet.size, meta.total) : true);
+      page++;
+    }
+
+    droplets = Array.from(found.values());
+  } catch {
+    droplets = [];
   }
 
   const ttl = Number(process.env.DIGITALOCEAN_DROPLETS_CACHE_SECONDS || 20);
