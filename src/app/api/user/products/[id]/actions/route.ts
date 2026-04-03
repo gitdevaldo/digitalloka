@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId } from '@/lib/services/supabase-auth';
 
-const ALLOWED_ACTIONS = ['view_details', 'download_assets', 'renew'];
+const ALLOWED_ACTIONS = ['view_details', 'download_assets', 'renew', 'revoke'];
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getSessionUserId();

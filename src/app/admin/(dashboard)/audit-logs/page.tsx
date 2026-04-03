@@ -7,19 +7,44 @@ import { AdminTable } from '@/components/ui/admin-table';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
+import { useToast } from '@/components/ui/toast';
 import { formatDate } from '@/lib/utils';
 
 export default function AdminAuditLogsPage() {
   const [logs, setLogs] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPayload, setSelectedPayload] = useState<Record<string, unknown> | null>(null);
+  const { showToast } = useToast();
 
-  useEffect(() => {
-    fetch('/api/admin/audit-logs')
-      .then((r) => r.json())
-      .then((data) => { setLogs(data.data || []); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
+  useEffect(() => { loadLogs(); }, []);
+
+  async function loadLogs() {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/audit-logs');
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || 'Failed to load audit logs'); return; }
+      setLogs(data.data || []);
+    } catch { showToast('Failed to load audit logs'); }
+    finally { setLoading(false); }
+  }
+
+  function exportCSV() {
+    if (logs.length === 0) { showToast('No logs to export'); return; }
+    const headers = ['id', 'actor_user_id', 'action', 'target_type', 'target_id', 'created_at'];
+    const csvRows = [headers.join(',')];
+    logs.forEach(log => {
+      csvRows.push(headers.map(h => `"${String(log[h] || '')}"`).join(','));
+    });
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('CSV exported');
+  }
 
   const resultColor = (r: string) => r === 'fail' ? 'var(--secondary)' : r === 'warn' ? 'var(--tertiary)' : 'var(--quaternary)';
 
@@ -51,7 +76,12 @@ export default function AdminAuditLogsPage() {
       <PageHeader
         title="Audit Logs"
         subtitle="/admin/audit-logs — full event history"
-        actions={<Button size="sm" variant="ghost">Export CSV</Button>}
+        actions={
+          <div className="flex gap-2">
+            <Button size="sm" onClick={loadLogs}>Refresh</Button>
+            <Button size="sm" variant="ghost" onClick={exportCSV}>Export CSV</Button>
+          </div>
+        }
       />
 
       <div className="flex items-center gap-2 flex-wrap mb-4">

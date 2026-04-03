@@ -95,8 +95,8 @@ Key design decisions:
 ## Key Features
 1. **Catalog/Marketplace** - Public product browsing with search, sort, filtering
 2. **Magic Link Auth** - Passwordless login for users and admin (PKCE flow)
-3. **Dashboard** - Droplet management (power on/off/reboot), product entitlements, order history, digital downloads, license keys
-4. **Admin Panel** - Product CRUD, product types/stocks management, user management, order fulfillment, entitlement lifecycle, droplet admin, site settings (4 config panels), audit logs with payload viewer
+3. **Dashboard** - Live data stats (products/droplets/orders/entitlements), droplet management (power on/off/reboot), product entitlements with revoke, order history, digital downloads via API action, license keys, account edit modal, support ticket modal
+4. **Admin Panel** - Product CRUD, product types/stocks management, user management (role/block modals), order fulfillment (status transition modal), entitlement lifecycle (status change modal), droplet admin (power action modal), site settings (4 config panels), audit logs with CSV export and payload viewer, account edit modal, support ticket modal
 5. **Commerce** - Checkout flow, payment webhooks with idempotency, entitlement provisioning
 6. **Route Protection** - Middleware guards `/dashboard/*` and `/admin/*` routes; admin role check via Supabase
 
