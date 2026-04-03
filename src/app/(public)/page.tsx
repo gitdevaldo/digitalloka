@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
 import { useWishlist } from '@/context/wishlist-context';
 import { LoginDialog } from '@/components/ui/login-dialog';
-import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
+import { FloatingBar } from '@/components/layout/floating-bar';
+import { SlidersHorizontal, ShoppingBag, Heart } from 'lucide-react';
 
 const THUMBS = ['thumb-purple', 'thumb-pink', 'thumb-amber', 'thumb-green', 'thumb-blue', 'thumb-red', 'thumb-teal', 'thumb-orange'];
 const ICONS = ['🎨', '🚀', '📘', '⚡', '✅', '🤖', '🧩', '📊', '📱', '📕', '✍️', '📈'];
@@ -83,7 +84,8 @@ export default function CatalogPage() {
   const [maxPrice, setMaxPrice] = useState(200);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
-  const { isInWishlist, toggleWishlist } = useWishlist();
+  const wishlistCtx = useWishlist();
+  const { isInWishlist, toggleWishlist } = wishlistCtx;
 
   const handleWishlist = async (e: React.MouseEvent, productId: number) => {
     e.preventDefault();
@@ -383,7 +385,25 @@ export default function CatalogPage() {
         </div>
       )}
 
-      <MobileBottomNav onFilterToggle={() => setMobileFilterOpen(o => !o)} />
+      <FloatingBar>
+        <button className="floating-bar-btn" onClick={() => setMobileFilterOpen(o => !o)}>
+          <SlidersHorizontal size={18} />
+          <span className="desktop-only">Filter</span>
+        </button>
+        <div className="floating-bar-divider" />
+        <button className="floating-bar-btn">
+          <ShoppingBag size={18} />
+          <span>Cart</span>
+        </button>
+        <div className="floating-bar-divider" />
+        <button className="floating-bar-btn">
+          <Heart size={18} />
+          <span>Wishlist</span>
+          {(wishlistCtx.count ?? 0) > 0 && (
+            <span className="floating-bar-badge">{wishlistCtx.count}</span>
+          )}
+        </button>
+      </FloatingBar>
     </>
   );
 }

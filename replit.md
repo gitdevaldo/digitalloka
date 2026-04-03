@@ -78,9 +78,10 @@ src/
 - Catalog layout: Fixed topbar + left sidebar (240px / --sidebar-w) with filter chips + main content with hero strip
 - Shared Topbar component: All areas (catalog, dashboard, admin) use same `Topbar` component with variant prop
 - Wishlist: Context-based (`WishlistProvider`), stored in Supabase `wishlists` table, login dialog for unauthenticated users
-- Sticky buy bar on product detail page: shows product name + price + Buy Now + wishlist when scrolled past hero, hides near footer
-- Mobile (≤768px): Header shows only Login/Dashboard button; sidebar hidden; bottom nav bar with Filter/Cart/Wishlist; filter opens slide-up panel overlay
-- Mobile bottom nav component: `src/components/layout/mobile-bottom-nav.tsx`
+- Shared `FloatingBar` component (`src/components/layout/floating-bar.tsx`): fixed bottom bar that slides up after scrolling 200px and hides near footer (IntersectionObserver on `.catalog-footer`). Different content per page:
+  - Homepage: Filter / Cart / Wishlist buttons
+  - Product detail: Product name + price | Wishlist | Buy Now
+- Mobile (≤768px): Header shows only Login/Dashboard button; sidebar hidden; filter opens slide-up panel overlay
 
 ## Database (Supabase PostgreSQL)
 Tables: `users`, `products`, `product_categories`, `product_types`, `product_stock_items`, `orders`, `order_items`, `transactions`, `payment_events`, `entitlements`, `site_settings`, `audit_logs`, `wishlists`

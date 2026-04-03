@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { formatCurrency } from '@/lib/utils';
 import { useWishlist } from '@/context/wishlist-context';
 import { LoginDialog } from '@/components/ui/login-dialog';
+import { FloatingBar } from '@/components/layout/floating-bar';
+import { Heart, ShoppingCart } from 'lucide-react';
 
 export interface ProductData {
   id: number;
@@ -27,7 +29,6 @@ export interface ProductData {
 export default function ProductDetailClient({ product }: { product: ProductData }) {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
-  const [showStickyBar, setShowStickyBar] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const { isInWishlist, toggleWishlist } = useWishlist();
   const wishlisted = isInWishlist(product.id);
@@ -38,25 +39,6 @@ export default function ProductDetailClient({ product }: { product: ProductData 
       setShowLoginDialog(true);
     }
   };
-  const heroRef = useRef<HTMLElement>(null);
-  const footerRef = useRef<HTMLDivElement>(null);
-  const heroVisible = useRef(true);
-  const footerVisible = useRef(false);
-
-  useEffect(() => {
-    const heroEl = heroRef.current;
-    const footerEl = footerRef.current;
-    if (!heroEl || !footerEl) return;
-
-    const update = () => setShowStickyBar(!heroVisible.current && !footerVisible.current);
-
-    const heroObs = new IntersectionObserver(([e]) => { heroVisible.current = e.isIntersecting; update(); }, { threshold: 0 });
-    const footerObs = new IntersectionObserver(([e]) => { footerVisible.current = e.isIntersecting; update(); }, { threshold: 0 });
-
-    heroObs.observe(heroEl);
-    footerObs.observe(footerEl);
-    return () => { heroObs.disconnect(); footerObs.disconnect(); };
-  }, []);
 
   const isDroplet = product.product_type === 'vps_droplet';
   const featured = product.featured || [];
@@ -82,7 +64,7 @@ export default function ProductDetailClient({ product }: { product: ProductData 
   return (
     <div className="page">
 
-      <section className="pdp-hero" ref={heroRef}>
+      <section className="pdp-hero">
         <div className="hero-left">
           <div className="breadcrumb">
             <a href="/">Home</a><span className="sep">/</span>
@@ -376,22 +358,21 @@ export default function ProductDetailClient({ product }: { product: ProductData 
         </div>
       </section>
 
-      <div ref={footerRef} style={{ height: 1 }} />
-
-      <div className={`sticky-buy-bar${showStickyBar ? ' visible' : ''}`}>
-        <div className="sticky-buy-inner">
-          <div className="sticky-buy-info">
-            <span className="sticky-buy-name">{product.name}</span>
-            <span className="sticky-buy-price">{formattedAmount} <span style={{ fontSize: '0.75rem', fontWeight: 500, opacity: 0.7 }}>/ {billingPeriod}</span></span>
-          </div>
-          <div className="sticky-buy-actions">
-            <button className="btn btn-ghost" onClick={handleWishlist}>
-              {wishlisted ? '❤️ In Wishlist' : 'Add to wishlist'}
-            </button>
-            <button className="btn btn-accent btn-lg">Buy Now</button>
-          </div>
+      <FloatingBar>
+        <div className="floating-bar-info">
+          <span className="floating-bar-name">{product.name}</span>
+          <span className="floating-bar-price">{formattedAmount} <span style={{ fontSize: '0.7rem', fontWeight: 500, opacity: 0.7 }}>/ {billingPeriod}</span></span>
         </div>
-      </div>
+        <div className="floating-bar-divider" />
+        <button className="floating-bar-btn" onClick={handleWishlist}>
+          <Heart size={16} fill={wishlisted ? 'var(--secondary)' : 'none'} color={wishlisted ? 'var(--secondary)' : 'currentColor'} />
+          <span>{wishlisted ? 'Saved' : 'Wishlist'}</span>
+        </button>
+        <button className="floating-bar-btn accent">
+          <ShoppingCart size={16} />
+          <span>Buy Now</span>
+        </button>
+      </FloatingBar>
       <LoginDialog open={showLoginDialog} onClose={() => setShowLoginDialog(false)} />
     </div>
   );
