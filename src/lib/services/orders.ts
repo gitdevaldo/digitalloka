@@ -13,37 +13,78 @@ export function generateOrderNumber(): string {
   return 'ORD-' + crypto.randomUUID().replace(/-/g, '').substring(0, 12).toUpperCase();
 }
 
-export async function listUserOrders(userId: string, page = 1, perPage = 20) {
+export async function listUserOrders(userId: string, page = 1, perPage = 20, cursor?: string | null, mode: 'cursor' | 'offset' = 'cursor') {
+  const { applyCursorFilter, applyCursorPagination } = await import('@/lib/cursor-pagination');
   const admin = createSupabaseAdminClient();
-  const from = (page - 1) * perPage;
-  const to = from + perPage - 1;
 
-  const { data, count, error } = await admin
-    .from('orders')
-    .select('*, items:order_items(*, product:products(id, name, slug)), transactions(*)', { count: 'exact' })
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .range(from, to);
-
-  if (error) throw new Error(error.message);
-  return { data: data || [], total: count || 0, page, per_page: perPage };
-}
-
-export async function listOrders(filters: Record<string, string>, page = 1, perPage = 30) {
-  const admin = createSupabaseAdminClient();
-  const from = (page - 1) * perPage;
-  const to = from + perPage - 1;
+  const useCursorMode = mode === 'cursor';
 
   let query = admin
     .from('orders')
-    .select('*, user:users(id, email, role), items:order_items(*, product:products(id, name, slug))', { count: 'exact' });
+    .select('*, items:order_items(*, product:products(id, name, slug)), transactions(*)', { count: useCursorMode ? undefined : 'exact' })
+    .eq('user_id', userId);
+
+  if (cursor) {
+    query = applyCursorFilter(query, cursor);
+  }
+
+  if (useCursorMode) {
+    const { data, error } = await query
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(perPage + 1);
+    if (error) throw new Error(error.message);
+
+    const result = applyCursorPagination(data || [], perPage);
+    return { ...result, page, per_page: perPage, total: null };
+  }
+
+  const from = (page - 1) * perPage;
+  const to = from + perPage - 1;
+  const { data, count, error } = await query
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .range(from, to);
+  if (error) throw new Error(error.message);
+  return { data: data || [], total: count || 0, page, per_page: perPage, next_cursor: null, has_more: false };
+}
+
+export async function listOrders(filters: Record<string, string>, page = 1, perPage = 30, cursor?: string | null, mode: 'cursor' | 'offset' = 'cursor') {
+  const { applyCursorFilter, applyCursorPagination } = await import('@/lib/cursor-pagination');
+  const admin = createSupabaseAdminClient();
+
+  const useCursorMode = mode === 'cursor';
+
+  let query = admin
+    .from('orders')
+    .select('*, user:users(id, email, role), items:order_items(*, product:products(id, name, slug))', { count: useCursorMode ? undefined : 'exact' });
 
   if (filters.status) query = query.eq('status', filters.status);
   if (filters.user_id) query = query.eq('user_id', filters.user_id);
 
-  const { data, count, error } = await query.order('created_at', { ascending: false }).range(from, to);
+  if (cursor) {
+    query = applyCursorFilter(query, cursor);
+  }
+
+  if (useCursorMode) {
+    const { data, error } = await query
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(perPage + 1);
+    if (error) throw new Error(error.message);
+
+    const result = applyCursorPagination(data || [], perPage);
+    return { ...result, page, per_page: perPage, total: null };
+  }
+
+  const from = (page - 1) * perPage;
+  const to = from + perPage - 1;
+  const { data, count, error } = await query
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .range(from, to);
   if (error) throw new Error(error.message);
-  return { data: data || [], total: count || 0, page, per_page: perPage };
+  return { data: data || [], total: count || 0, page, per_page: perPage, next_cursor: null, has_more: false };
 }
 
 export async function getOrderById(orderId: number) {

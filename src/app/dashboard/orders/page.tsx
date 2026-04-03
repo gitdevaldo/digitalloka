@@ -1,23 +1,46 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
 import { TableShell } from '@/components/ui/table-shell';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 export default function UserOrdersPage() {
   const [orders, setOrders] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadOrders = useCallback(() => {
+    setLoading(true);
+    setNextCursor(null);
     fetch('/api/user/orders')
       .then((r) => r.json())
-      .then((data) => { setOrders(data.data || []); setLoading(false); })
+      .then((data) => {
+        setOrders(data.data || []);
+        setNextCursor(data.next_cursor || null);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, []);
+
+  async function loadMore() {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`/api/user/orders?cursor=${encodeURIComponent(nextCursor)}`);
+      const data = await res.json();
+      setOrders(prev => [...prev, ...(data.data || [])]);
+      setNextCursor(data.next_cursor || null);
+    } catch { /* ignore */ }
+    finally { setLoadingMore(false); }
+  }
+
+  useEffect(() => { loadOrders(); }, [loadOrders]);
 
   return (
     <div style={{ animation: 'fadeUp 0.3s var(--ease-bounce)' }}>
@@ -50,6 +73,13 @@ export default function UserOrdersPage() {
               ))}
             </tbody>
           </TableShell>
+          {nextCursor && (
+            <div className="flex justify-center py-4">
+              <Button size="sm" onClick={loadMore} disabled={loadingMore}>
+                {loadingMore ? 'Loading…' : 'Load More'}
+              </Button>
+            </div>
+          )}
         </Panel>
       )}
     </div>

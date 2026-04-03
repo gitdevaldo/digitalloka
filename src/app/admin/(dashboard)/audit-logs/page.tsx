@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
 import { AdminTable } from '@/components/ui/admin-table';
@@ -18,21 +18,38 @@ function formatAuditId(id: number | string): string {
 export default function AdminAuditLogsPage() {
   const [logs, setLogs] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [selectedPayload, setSelectedPayload] = useState<Record<string, unknown> | null>(null);
   const { showToast } = useToast();
 
-  useEffect(() => { loadLogs(); }, []);
-
-  async function loadLogs() {
+  const loadLogs = useCallback(async () => {
     setLoading(true);
+    setNextCursor(null);
     try {
       const res = await fetch('/api/admin/audit-logs');
       const data = await res.json();
       if (!res.ok) { showToast(data.error || 'Failed to load audit logs'); return; }
       setLogs(data.data || []);
+      setNextCursor(data.next_cursor || null);
     } catch { showToast('Failed to load audit logs'); }
     finally { setLoading(false); }
+  }, [showToast]);
+
+  async function loadMore() {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`/api/admin/audit-logs?cursor=${encodeURIComponent(nextCursor)}`);
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || 'Failed to load more logs'); return; }
+      setLogs(prev => [...prev, ...(data.data || [])]);
+      setNextCursor(data.next_cursor || null);
+    } catch { showToast('Failed to load more logs'); }
+    finally { setLoadingMore(false); }
   }
+
+  useEffect(() => { loadLogs(); }, [loadLogs]);
 
   function exportCSV() {
     if (logs.length === 0) { showToast('No logs to export'); return; }
@@ -109,6 +126,13 @@ export default function AdminAuditLogsPage() {
         <Panel noPad>
           <div style={{ padding: 16 }}>
             <AdminTable columns={columns} rows={logs} />
+            {nextCursor && (
+              <div className="flex justify-center pt-4 pb-2">
+                <Button size="sm" onClick={loadMore} disabled={loadingMore}>
+                  {loadingMore ? 'Loading…' : 'Load More'}
+                </Button>
+              </div>
+            )}
           </div>
         </Panel>
       )}

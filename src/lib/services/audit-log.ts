@@ -23,12 +23,18 @@ export async function logAudit(params: {
   });
 }
 
-export async function listAuditLogs(filters: Record<string, string>, page = 1, perPage = 50) {
+export async function listAuditLogs(
+  filters: Record<string, string>,
+  page = 1,
+  perPage = 50,
+  cursor?: string | null,
+  mode: 'cursor' | 'offset' = 'cursor',
+) {
+  const { applyCursorFilter, applyCursorPagination } = await import('@/lib/cursor-pagination');
   const admin = createSupabaseAdminClient();
-  const from = (page - 1) * perPage;
-  const to = from + perPage - 1;
 
-  let query = admin.from('audit_logs').select('*', { count: 'exact' });
+  const useCursorMode = mode === 'cursor';
+  let query = admin.from('audit_logs').select('*', { count: useCursorMode ? undefined : 'exact' });
 
   const escapeIlike = (v: string) => v.replace(/[%_\\]/g, '\\$&');
   if (filters.actor) query = query.ilike('actor_user_id', `%${escapeIlike(filters.actor)}%`);
@@ -38,10 +44,36 @@ export async function listAuditLogs(filters: Record<string, string>, page = 1, p
   if (filters.date_from) query = query.gte('created_at', filters.date_from);
   if (filters.date_to) query = query.lte('created_at', filters.date_to);
 
-  const { data, count, error } = await query.order('created_at', { ascending: false }).range(from, to);
+  if (cursor) {
+    query = applyCursorFilter(query, cursor);
+  }
+
+  if (useCursorMode) {
+    const { data, error } = await query
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(perPage + 1);
+    if (error) throw new Error(error.message);
+
+    const mapped = mapAuditRows(data || []);
+    const result = applyCursorPagination(mapped, perPage);
+    return { ...result, page, per_page: perPage, total: null };
+  }
+
+  const from = (page - 1) * perPage;
+  const to = from + perPage - 1;
+  const { data, count, error } = await query
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .range(from, to);
   if (error) throw new Error(error.message);
 
-  const mapped = (data || []).map((row: Record<string, unknown>) => {
+  const mapped = mapAuditRows(data || []);
+  return { data: mapped, total: count || 0, page, per_page: perPage, next_cursor: null, has_more: false };
+}
+
+function mapAuditRows(rows: Record<string, unknown>[]) {
+  return rows.map((row) => {
     const changes = (row.changes as Record<string, unknown>) || {};
     const actionStr = String(row.action || '').toLowerCase();
     let result = 'ok';
@@ -54,6 +86,4 @@ export async function listAuditLogs(filters: Record<string, string>, page = 1, p
       result,
     };
   });
-
-  return { data: mapped, total: count || 0, page, per_page: perPage };
 }

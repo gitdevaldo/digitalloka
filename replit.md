@@ -126,6 +126,13 @@ Run against Supabase to apply performance indexes:
 6. **Route Protection** - Middleware guards `/dashboard/*`, `/admin/*`, and all API routes (`/api/admin/*`, `/api/user/*`, `/api/auth/*`, `/api/payments/*`); admin role check via Supabase at middleware level for both page and API routes
 7. **Rate Limiting** - In-memory sliding window rate limiter (`src/lib/rate-limit.ts`) applied at middleware level: auth login (5/min/IP), webhooks (30/min/IP), checkout (10/min/IP). Returns 429 with Retry-After header
 
+## Cursor-Based Pagination
+Large tables (audit logs, orders, transactions) support cursor-based pagination using `created_at` + `id` as the composite cursor. The cursor utility is in `src/lib/cursor-pagination.ts` with `encodeCursor`, `decodeCursor`, and `applyCursorPagination` helpers.
+
+API endpoints accept `cursor` (base64url-encoded), `per_page`, and `mode=cursor|offset` query params. Default mode is `cursor`. Responses include `next_cursor` and `has_more` fields. Offset-based pagination still works by passing `mode=offset` with `page` param.
+
+Admin and user dashboard pages use cursor-based "Load More" pattern for audit logs and orders.
+
 ## Legacy Archives
 - `.archive/legacy-laravel/` - Previous Laravel implementation (source of truth for UI parity)
 - `.archive/legacy/` - Original Next.js implementation

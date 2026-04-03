@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
 import { AdminTable } from '@/components/ui/admin-table';
@@ -19,22 +19,39 @@ function formatOrderId(row: Record<string, unknown>): string {
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [selected, setSelected] = useState<Record<string, unknown> | null>(null);
   const [saving, setSaving] = useState(false);
   const { showToast } = useToast();
 
-  useEffect(() => { loadOrders(); }, []);
-
-  async function loadOrders() {
+  const loadOrders = useCallback(async () => {
     setLoading(true);
+    setNextCursor(null);
     try {
       const res = await fetch('/api/admin/orders');
       const data = await res.json();
       if (!res.ok) { showToast(data.error || 'Failed to load orders'); return; }
       setOrders(data.data || []);
+      setNextCursor(data.next_cursor || null);
     } catch { showToast('Failed to load orders'); }
     finally { setLoading(false); }
+  }, [showToast]);
+
+  async function loadMore() {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`/api/admin/orders?cursor=${encodeURIComponent(nextCursor)}`);
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || 'Failed to load more orders'); return; }
+      setOrders(prev => [...prev, ...(data.data || [])]);
+      setNextCursor(data.next_cursor || null);
+    } catch { showToast('Failed to load more orders'); }
+    finally { setLoadingMore(false); }
   }
+
+  useEffect(() => { loadOrders(); }, [loadOrders]);
 
   async function updateStatus(value: string) {
     if (!selected) return;
@@ -95,6 +112,13 @@ export default function AdminOrdersPage() {
         <Panel noPad>
           <div style={{ padding: 16 }}>
             <AdminTable columns={columns} rows={orders} />
+            {nextCursor && (
+              <div className="flex justify-center pt-4 pb-2">
+                <Button size="sm" onClick={loadMore} disabled={loadingMore}>
+                  {loadingMore ? 'Loading…' : 'Load More'}
+                </Button>
+              </div>
+            )}
           </div>
         </Panel>
       )}
