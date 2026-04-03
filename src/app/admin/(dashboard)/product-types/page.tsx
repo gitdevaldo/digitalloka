@@ -36,6 +36,16 @@ export default function ProductTypesPage() {
     finally { setLoading(false); }
   }
 
+  async function deleteType(typeKey: string) {
+    if (!confirm(`Delete product type "${typeKey}"?`)) return;
+    try {
+      const res = await fetch(`/api/admin/product-types/${encodeURIComponent(typeKey)}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      showToast('Product type deleted');
+      loadTypes();
+    } catch { showToast('Failed to delete'); }
+  }
+
   const filtered = types.filter(t => {
     if (filter === 'vps_only' && t.type !== 'vps_droplet') return false;
     if (filter === 'custom_only' && ['digital', 'template', 'course', 'vps_droplet'].includes(t.type)) return false;
@@ -70,7 +80,7 @@ export default function ProductTypesPage() {
           <option value="custom_only">Custom Types</option>
         </select>
         <input
-          className="border-2 border-border rounded-[var(--r-sm)] px-3 py-1.5 font-body text-[0.75rem] font-medium bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)]"
+          className="border-2 border-border rounded-[var(--r-sm)] px-3 py-1.5 font-body text-[0.75rem] font-medium bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)] min-w-[170px]"
           placeholder="Search type key or label..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -86,25 +96,50 @@ export default function ProductTypesPage() {
       ) : (
         <Panel>
           <TableShell variant="admin">
-            <thead><tr><th>Type Key</th><th>Label</th><th>Status</th><th>Description</th><th>Fields</th><th>Actions</th></tr></thead>
-            <tbody>
-              {filtered.map((t) => (
-                <tr key={t.type}>
-                  <td className="font-mono text-[0.78rem] font-bold">{t.type}</td>
-                  <td className="font-bold">{t.label}</td>
-                  <td><StatusBadge variant={t.is_active ? 'active' : 'stopped'} label={t.is_active ? 'Active' : 'Inactive'} /></td>
-                  <td className="text-[0.78rem] text-muted-foreground max-w-[200px] truncate">{t.description || '—'}</td>
-                  <td className="text-[0.78rem]">{(t.fields || []).length} field(s)</td>
-                  <td><Button size="sm">Edit</Button></td>
+              <thead>
+                <tr>
+                  <th>Type Key</th>
+                  <th>Label</th>
+                  <th>Status</th>
+                  <th>Description</th>
+                  <th>Fields</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </TableShell>
+              </thead>
+              <tbody>
+                {filtered.map((t) => (
+                  <tr key={t.type}>
+                    <td style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: 'var(--muted-foreground)' }}>{t.type}</td>
+                    <td style={{ fontWeight: 800 }}>{t.label}</td>
+                    <td><StatusBadge variant={t.is_active ? 'active' : 'stopped'} label={t.is_active ? 'Active' : 'Inactive'} /></td>
+                    <td style={{ color: 'var(--muted-foreground)', fontSize: '0.74rem' }}>{t.description || '—'}</td>
+                    <td>
+                      <span className="inline-flex items-center px-2 py-0.5 bg-muted border border-border rounded-full text-[0.65rem] font-bold text-muted-foreground">
+                        {(t.fields || []).length} fields
+                      </span>
+                    </td>
+                    <td>
+                      <div className="flex gap-1 flex-wrap">
+                        <Button size="sm">Edit</Button>
+                        <Button size="sm" variant="danger" onClick={() => deleteType(t.type)}>Delete</Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </TableShell>
         </Panel>
       )}
 
       <Panel title="DigitalOcean Regional Availability Reference">
-        <a href="https://docs.digitalocean.com/platform/regional-availability/" target="_blank" rel="noopener" className="inline-flex items-center gap-1.5 font-body font-bold border-2 border-foreground rounded-full cursor-pointer px-3 py-1 text-xs shadow-[2px_2px_0_var(--shadow)] bg-card text-foreground no-underline hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--shadow)] transition-all duration-150">Open DigitalOcean Regional Availability</a>
+        <a
+          href="https://docs.digitalocean.com/platform/regional-availability/"
+          target="_blank"
+          rel="noopener"
+          className="inline-flex items-center gap-1.5 font-body font-bold border-2 border-foreground rounded-full cursor-pointer px-3 py-1 text-xs shadow-[2px_2px_0_var(--shadow)] bg-card text-foreground no-underline hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--shadow)] transition-all duration-150"
+        >
+          Open DigitalOcean Regional Availability
+        </a>
       </Panel>
     </div>
   );
