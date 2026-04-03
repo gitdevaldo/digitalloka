@@ -4,7 +4,7 @@
 Next.js 15 App Router application with Neo-Brutalist UI design, featuring DigitalOcean droplet management, a digital product marketplace, commerce/checkout system, and admin panel.
 
 ## Tech Stack
-- **Framework:** Next.js 15 (App Router)
+- **Framework:** Next.js 14 (App Router)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS 3.4 with Neo-Brutalist design tokens
 - **Database/Auth:** Supabase (magic link auth via `@supabase/ssr`)
@@ -75,7 +75,10 @@ src/
 - Admin cards: `rounded-[var(--r-xl)]` (20px), `rounded-[14px]` for panels
 - Colors: Purple (accent #8B5CF6), Pink (secondary #F472B6), Amber (tertiary #FBBF24), Green (quaternary #34D399)
 - Brand logo: Purple bg box with white "Digital" + amber "Loka"
-- Catalog layout: Fixed topbar + left sidebar (256px) with filter chips + main content with hero strip
+- Catalog layout: Fixed topbar + left sidebar (240px / --sidebar-w) with filter chips + main content with hero strip
+- Shared Topbar component: All areas (catalog, dashboard, admin) use same `Topbar` component with variant prop
+- Wishlist: Context-based (`WishlistProvider`), stored in Supabase `wishlists` table, login dialog for unauthenticated users
+- Sticky buy bar on product detail page: shows product name + price + Buy Now + wishlist when scrolled past hero, hides near footer
 
 ## Database (Supabase PostgreSQL)
 Tables: `users`, `products`, `product_categories`, `product_prices`, `product_stock_items`, `orders`, `order_items`, `order_item_deliveries`, `transactions`, `payment_events`, `entitlements`, `site_settings`, `audit_logs`, `user_product_actions`, `wishlist_items`, `jobs`, `job_batches`, `failed_jobs`, `migrations`

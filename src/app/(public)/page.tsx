@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
+import { useWishlist } from '@/context/wishlist-context';
+import { LoginDialog } from '@/components/ui/login-dialog';
 
 const THUMBS = ['thumb-purple', 'thumb-pink', 'thumb-amber', 'thumb-green', 'thumb-blue', 'thumb-red', 'thumb-teal', 'thumb-orange'];
 const ICONS = ['🎨', '🚀', '📘', '⚡', '✅', '🤖', '🧩', '📊', '📱', '📕', '✍️', '📈'];
@@ -76,6 +78,17 @@ export default function CatalogPage() {
   const [category, setCategory] = useState('all');
   const [sort, setSort] = useState('featured');
   const [maxPrice, setMaxPrice] = useState(200);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const { isInWishlist, toggleWishlist } = useWishlist();
+
+  const handleWishlist = async (e: React.MouseEvent, productId: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const result = await toggleWishlist(productId);
+    if (result === 'login_required') {
+      setShowLoginDialog(true);
+    }
+  };
   const [minRating, setMinRating] = useState(0);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
@@ -330,11 +343,11 @@ export default function CatalogPage() {
                   </div>
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                     <button
-                      className="wishlist-btn"
-                      onClick={e => { e.preventDefault(); e.stopPropagation(); }}
-                      title="Add to wishlist"
+                      className={`wishlist-btn${isInWishlist(p.id) ? ' wishlisted' : ''}`}
+                      onClick={e => handleWishlist(e, p.id)}
+                      title={isInWishlist(p.id) ? 'Remove from wishlist' : 'Add to wishlist'}
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill={isInWishlist(p.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                     </button>
                     <button className="buy-btn" onClick={e => e.preventDefault()}>Buy Now</button>
                   </div>
@@ -344,6 +357,7 @@ export default function CatalogPage() {
           </div>
         )}
       </main>
+      <LoginDialog open={showLoginDialog} onClose={() => setShowLoginDialog(false)} />
     </>
   );
 }

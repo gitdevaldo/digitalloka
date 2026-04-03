@@ -616,6 +616,7 @@ input[type="range"] {
 }
 .wishlist-btn:hover { color: var(--secondary); background: rgba(244,114,182,0.1); border-color: var(--secondary); transform: scale(1.08); }
 .wishlist-btn:active { transform: scale(0.95); }
+.wishlist-btn.wishlisted { color: var(--secondary); background: rgba(244,114,182,0.1); border-color: var(--secondary); }
 
 .thumb-purple { background: linear-gradient(135deg, #EDE9FE, #DDD6FE); }
 .thumb-pink   { background: linear-gradient(135deg, #FCE7F3, #FBCFE8); }
@@ -1273,6 +1274,49 @@ input[type="range"] {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+.login-dialog-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+.login-dialog {
+  background: var(--card);
+  border: 2px solid var(--foreground);
+  border-radius: var(--r-lg);
+  box-shadow: 8px 8px 0 var(--shadow);
+  padding: 32px;
+  max-width: 400px;
+  width: calc(100% - 32px);
+  text-align: center;
+  position: relative;
+  animation: scaleIn 0.2s ease;
+}
+.login-dialog-close {
+  position: absolute; top: 12px; right: 12px;
+  background: none; border: none; cursor: pointer;
+  color: var(--muted-foreground);
+  padding: 4px;
+  transition: color 0.15s;
+}
+.login-dialog-close:hover { color: var(--foreground); }
+.login-dialog-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.login-dialog-title {
+  font-family: var(--font-h);
+  font-size: 1.25rem; font-weight: 800;
+  margin-bottom: 8px;
+}
+.login-dialog-text {
+  font-size: 0.85rem; font-weight: 500;
+  color: var(--muted-foreground);
+  margin-bottom: 24px; line-height: 1.5;
+}
+.login-dialog-actions {
+  display: flex; flex-direction: column; gap: 8px;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
 .sticky-buy-bar {
   position: fixed; bottom: 24px; left: 50%; z-index: 50;

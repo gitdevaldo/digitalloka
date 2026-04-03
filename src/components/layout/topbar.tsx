@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { BrandLogo } from './brand-logo';
 import { AvatarChip } from '@/components/ui/avatar-chip';
 import { Bell, Search, LogIn, LayoutDashboard } from 'lucide-react';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { useWishlist } from '@/context/wishlist-context';
 
 interface TopbarProps {
   variant?: 'dashboard' | 'admin' | 'catalog';
@@ -16,15 +15,7 @@ interface TopbarProps {
 
 export function Topbar({ variant = 'dashboard', searchPlaceholder, onSearch, children }: TopbarProps) {
   const isCatalog = variant === 'catalog';
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    if (!isCatalog) return;
-    const supabase = createSupabaseBrowserClient();
-    supabase.auth.getSession().then(({ data }) => {
-      setIsLoggedIn(!!data.session);
-    });
-  }, [isCatalog]);
+  const wishlist = useWishlist();
 
   const defaultPlaceholder = variant === 'admin'
     ? 'Search users, orders, products...'
@@ -41,7 +32,7 @@ export function Topbar({ variant = 'dashboard', searchPlaceholder, onSearch, chi
           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
         </svg>
         <span className="tb-label">Wishlist</span>
-        <span className="tb-wishlist-count">(0)</span>
+        <span className="tb-wishlist-count">({wishlist?.count ?? 0})</span>
       </a>
       <a href="#" className="btn btn-accent" id="cartButton">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -50,7 +41,7 @@ export function Topbar({ variant = 'dashboard', searchPlaceholder, onSearch, chi
         <span className="tb-label">Cart</span>
         <span className="tb-cart-count">(0)</span>
       </a>
-      {isLoggedIn ? (
+      {wishlist?.isLoggedIn ? (
         <Link href="/dashboard" className="btn btn-ghost">
           <LayoutDashboard size={16} />
           <span className="tb-label">Dashboard</span>
@@ -73,29 +64,31 @@ export function Topbar({ variant = 'dashboard', searchPlaceholder, onSearch, chi
   );
 
   return (
-    <header className="topbar">
-      <div className="topbar-logo">
-        <BrandLogo />
-        {variant === 'admin' && (
-          <span className="topbar-admin-badge">Admin</span>
-        )}
-      </div>
-
-      <div className="topbar-center">
-        <div className="topbar-search">
-          <Search size={14} className="text-muted-foreground" />
-          <input
-            type="text"
-            placeholder={placeholder}
-            id={isCatalog ? 'globalSearch' : undefined}
-            onInput={onSearch ? (e) => onSearch(e.currentTarget.value) : undefined}
-          />
+    <>
+      <header className="topbar">
+        <div className="topbar-logo">
+          <BrandLogo />
+          {variant === 'admin' && (
+            <span className="topbar-admin-badge">Admin</span>
+          )}
         </div>
-      </div>
 
-      <div className="topbar-right">
-        {children || defaultRightContent}
-      </div>
-    </header>
+        <div className="topbar-center">
+          <div className="topbar-search">
+            <Search size={14} className="text-muted-foreground" />
+            <input
+              type="text"
+              placeholder={placeholder}
+              id={isCatalog ? 'globalSearch' : undefined}
+              onInput={onSearch ? (e) => onSearch(e.currentTarget.value) : undefined}
+            />
+          </div>
+        </div>
+
+        <div className="topbar-right">
+          {children || defaultRightContent}
+        </div>
+      </header>
+    </>
   );
 }

@@ -2,8 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { formatCurrency } from '@/lib/utils';
+import { useWishlist } from '@/context/wishlist-context';
+import { LoginDialog } from '@/components/ui/login-dialog';
 
 export interface ProductData {
+  id: number;
   name: string;
   slug: string;
   product_type: string;
@@ -23,6 +26,16 @@ export default function ProductDetailClient({ product }: { product: ProductData 
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
   const [showStickyBar, setShowStickyBar] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const wishlisted = isInWishlist(product.id);
+
+  const handleWishlist = async () => {
+    const result = await toggleWishlist(product.id);
+    if (result === 'login_required') {
+      setShowLoginDialog(true);
+    }
+  };
   const heroRef = useRef<HTMLElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
   const heroVisible = useRef(true);
@@ -203,7 +216,9 @@ export default function ProductDetailClient({ product }: { product: ProductData 
               ) : (
                 <>
                   <button className="btn btn-accent btn-lg btn-full">Buy Now</button>
-                  <button className="btn btn-ghost btn-full">Add to wishlist</button>
+                  <button className="btn btn-ghost btn-full" onClick={handleWishlist}>
+                    {wishlisted ? '❤️ In Wishlist' : 'Add to wishlist'}
+                  </button>
                   <a className="btn btn-ghost btn-full" href="/" style={{ fontSize: '0.78rem' }}>Back to catalog</a>
                 </>
               )}
@@ -370,11 +385,14 @@ export default function ProductDetailClient({ product }: { product: ProductData 
             <span className="sticky-buy-price">{formattedAmount} <span style={{ fontSize: '0.75rem', fontWeight: 500, opacity: 0.7 }}>/ {billingPeriod}</span></span>
           </div>
           <div className="sticky-buy-actions">
-            <button className="btn btn-ghost">Add to wishlist</button>
+            <button className="btn btn-ghost" onClick={handleWishlist}>
+              {wishlisted ? '❤️ In Wishlist' : 'Add to wishlist'}
+            </button>
             <button className="btn btn-accent btn-lg">Buy Now</button>
           </div>
         </div>
       </div>
+      <LoginDialog open={showLoginDialog} onClose={() => setShowLoginDialog(false)} />
     </div>
   );
 }
