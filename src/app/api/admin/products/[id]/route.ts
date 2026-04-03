@@ -68,7 +68,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   if (body.product_type !== undefined) updates.product_type = body.product_type;
   if (body.status !== undefined) updates.status = body.status;
   if (body.catalog_visibility !== undefined) {
-    updates.catalog_visibility = body.catalog_visibility;
     updates.is_visible = body.catalog_visibility !== 'hidden';
   }
   if (body.short_description !== undefined) updates.short_description = body.short_description;

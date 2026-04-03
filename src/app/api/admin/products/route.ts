@@ -65,7 +65,6 @@ export async function POST(request: NextRequest) {
     short_description: body.short_description,
     description: body.description,
     status: body.status || 'available',
-    catalog_visibility: body.catalog_visibility || 'visible',
     is_visible: body.catalog_visibility !== 'hidden',
     tags: body.tags || [],
     badges: body.badges || [],
