@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { formatCurrency } from '@/lib/utils';
 
 const THUMBS = ['thumb-purple', 'thumb-pink', 'thumb-amber', 'thumb-green', 'thumb-blue', 'thumb-red', 'thumb-teal', 'thumb-orange'];
 const ICONS = ['🎨', '🚀', '📘', '⚡', '✅', '🤖', '🧩', '📊', '📱', '📕', '✍️', '📈'];
@@ -29,6 +30,7 @@ interface NormalizedProduct {
   categoryName: string;
   desc: string;
   price: number;
+  currency: string;
   originalPrice: number | null;
   rating: number;
   reviews: number;
@@ -42,6 +44,7 @@ interface NormalizedProduct {
 
 function normalizeProduct(item: Product): NormalizedProduct {
   const price = Number(item?.prices?.[0]?.amount ?? 0);
+  const currency = item?.prices?.[0]?.currency || 'USD';
   const badges = Array.isArray(item.badges) ? item.badges : [];
   const tags = Array.isArray(item.tags) ? item.tags : [];
   const id = Number(item.id ?? 0);
@@ -54,6 +57,7 @@ function normalizeProduct(item: Product): NormalizedProduct {
     categoryName: String(item?.category?.name ?? 'Uncategorized'),
     desc: String(item.short_description || 'No description available.'),
     price,
+    currency,
     originalPrice: badges.includes('sale') ? Number((price * 1.35).toFixed(0)) : null,
     rating: Number(item.rating ?? 0),
     reviews: Number(item.reviews_count ?? 0),
@@ -318,13 +322,22 @@ export default function CatalogPage() {
                 </div>
                 <div className="card-footer">
                   <div className="price-block">
-                    <div className="price-main">${p.price}</div>
-                    {p.originalPrice && <div className="price-original">${p.originalPrice}</div>}
+                    <div className="price-main">{formatCurrency(p.price, p.currency)}</div>
+                    {p.originalPrice && <div className="price-original">{formatCurrency(p.originalPrice, p.currency)}</div>}
                   </div>
                   <div className="card-rating">
                     <span className="star">★</span> {p.rating} <span style={{ color: 'var(--muted-foreground)', fontWeight: 500 }}>({p.reviews})</span>
                   </div>
-                  <button className="buy-btn" onClick={e => e.preventDefault()}>Buy Now</button>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <button
+                      className="wishlist-btn"
+                      onClick={e => { e.preventDefault(); e.stopPropagation(); }}
+                      title="Add to wishlist"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    </button>
+                    <button className="buy-btn" onClick={e => e.preventDefault()}>Buy Now</button>
+                  </div>
                 </div>
               </Link>
             ))}

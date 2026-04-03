@@ -575,6 +575,20 @@ input[type="range"] {
 .buy-btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--shadow); }
 .buy-btn:active { transform: translate(1px, 1px); box-shadow: 0 0 0 var(--shadow); }
 
+.wishlist-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px;
+  background: var(--card);
+  border: 2px solid var(--foreground);
+  border-radius: 9999px;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  transition: all 0.14s var(--ease);
+  flex-shrink: 0;
+}
+.wishlist-btn:hover { color: var(--secondary); background: rgba(244,114,182,0.1); border-color: var(--secondary); transform: scale(1.08); }
+.wishlist-btn:active { transform: scale(0.95); }
+
 .thumb-purple { background: linear-gradient(135deg, #EDE9FE, #DDD6FE); }
 .thumb-pink   { background: linear-gradient(135deg, #FCE7F3, #FBCFE8); }
 .thumb-amber  { background: linear-gradient(135deg, #FEF3C7, #FDE68A); }
@@ -810,7 +824,8 @@ input[type="range"] {
 .pdp-hero {
   padding: 48px 40px 0;
   max-width: 1200px; margin: 0 auto;
-  display: grid; grid-template-columns: 1fr 400px; gap: 48px; align-items: start;
+  display: grid; grid-template-columns: 1fr 400px; gap: 48px;
+  align-items: start;
 }
 
 .breadcrumb {
@@ -907,7 +922,8 @@ input[type="range"] {
   border-radius: var(--r-xl);
   box-shadow: 6px 6px 0 var(--shadow);
   overflow: hidden;
-  position: sticky; top: 80px;
+  position: sticky; top: 24px;
+  align-self: start;
   animation: popIn 0.38s var(--ease) 0.08s both;
 }
 .hero-left { animation: fadeUp 0.38s var(--ease) both; }
@@ -1093,11 +1109,14 @@ input[type="range"] {
   background: var(--card); border: 2px solid var(--foreground);
   border-radius: var(--r-md); padding: 22px;
   box-shadow: 4px 4px 0 var(--shadow);
+  overflow: hidden; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word;
 }
 .details-content {
   font-size: 0.9rem; font-weight: 500; color: var(--foreground); line-height: 1.8;
+  overflow: hidden; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word;
+  max-width: 100%;
 }
-.details-content p { margin: 0 0 12px 0; }
+.details-content p { margin: 0 0 12px 0; overflow-wrap: break-word; }
 .details-content p:last-child { margin-bottom: 0; }
 
 .faq-section { padding: 56px 40px 72px; max-width: 1200px; margin: 0 auto; }
