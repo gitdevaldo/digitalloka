@@ -62,7 +62,7 @@ export default function CartPage() {
   const currency = cartProducts[0]?.price_currency || 'USD';
 
   return (
-    <div className="inner-wrap inner-wide">
+    <div className="inner-wrap">
       <div className="page-header">
         <Link href="/" className="back-link">
           <ArrowLeft size={16} />

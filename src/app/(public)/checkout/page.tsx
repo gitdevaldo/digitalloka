@@ -114,7 +114,7 @@ export default function CheckoutPage() {
 
   if (orderComplete) {
     return (
-      <div className="inner-wrap inner-wide">
+      <div className="inner-wrap">
         <div className="success-page">
           <div className="success-icon-circle">&#10003;</div>
           <div className="success-title">Order Placed!</div>
@@ -146,7 +146,7 @@ export default function CheckoutPage() {
   const getCatSlug = (p: Product) => p.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'template';
 
   return (
-    <div className="inner-wrap inner-wide">
+    <div className="inner-wrap">
       <div className="page-header">
         <Link href="/cart" className="back-link">
           <ArrowLeft size={16} />

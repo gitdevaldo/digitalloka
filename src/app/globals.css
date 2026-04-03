@@ -1546,15 +1546,11 @@ input[type="range"] {
 
 /* ── Inner Pages (Wishlist, Cart, Checkout) ── */
 .inner-wrap {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 40px 24px;
+  max-width: none;
+  margin: 0;
+  padding: 40px 60px;
   position: relative;
   z-index: 1;
-}
-.inner-wrap.inner-wide {
-  max-width: none;
-  padding: 40px 60px;
 }
 .page-header {
   margin-bottom: 32px;
