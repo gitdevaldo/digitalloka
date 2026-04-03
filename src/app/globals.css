@@ -824,7 +824,7 @@ input[type="range"] {
 
 .pdp-hero {
   padding: 48px 40px 0;
-  max-width: 1200px; margin: 0 auto;
+  max-width: 1400px; margin: 0 auto;
   display: grid; grid-template-columns: 1fr 400px; gap: 48px;
   align-items: start;
 }
@@ -1056,7 +1056,7 @@ input[type="range"] {
 
 .divider { height: 2px; background: var(--border); margin: 56px 40px 0; max-width: 1120px; }
 
-.features-section, .setup-section, .reviews-section { padding: 56px 40px 0; max-width: 1200px; margin: 0 auto; }
+.features-section, .setup-section, .reviews-section { padding: 56px 40px 0; max-width: 1400px; margin: 0 auto; }
 .section-hd { margin-bottom: 24px; }
 .section-title { font-family: var(--font-h); font-size: 1.5rem; font-weight: 900; }
 .section-sub { font-size: 0.83rem; font-weight: 500; color: var(--muted-foreground); margin-top: 4px; }
@@ -1188,7 +1188,7 @@ input[type="range"] {
 .details-content hr { border: none; border-top: 2px solid var(--border); margin: 20px 0; }
 .details-content img { max-width: 100%; height: auto; border-radius: var(--r-sm); margin: 12px 0; }
 
-.faq-section { padding: 56px 40px 72px; max-width: 1200px; margin: 0 auto; }
+.faq-section { padding: 56px 40px 72px; max-width: 1400px; margin: 0 auto; }
 .faq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .faq-item {
   background: var(--card); border: 2px solid var(--foreground);
