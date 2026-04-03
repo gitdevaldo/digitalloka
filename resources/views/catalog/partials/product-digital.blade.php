@@ -29,24 +29,24 @@
     <!-- Spec strip -->
     <div class="spec-grid">
       <div class="spec-cell">
-        <div class="spec-label">Category</div>
-        <div class="spec-value">{{ $category }}</div>
-        <div class="spec-sub">Catalog group</div>
+        <div class="spec-label">Delivery</div>
+        <div class="spec-value">Instant</div>
+        <div class="spec-sub">After checkout</div>
       </div>
       <div class="spec-cell">
-        <div class="spec-label">Type</div>
-        <div class="spec-value">{{ $productType }}</div>
-        <div class="spec-sub">Digital delivery</div>
+        <div class="spec-label">Access</div>
+        <div class="spec-value">Dashboard</div>
+        <div class="spec-sub">Web portal</div>
       </div>
       <div class="spec-cell">
-        <div class="spec-label">Status</div>
-        <div class="spec-value">{{ $status }}</div>
-        <div class="spec-sub">Availability</div>
+        <div class="spec-label">Billing</div>
+        <div class="spec-value">{{ ucfirst($billingPeriod) }}</div>
+        <div class="spec-sub">Recurring</div>
       </div>
       <div class="spec-cell" style="border-right:none">
-        <div class="spec-label">Support</div>
-        <div class="spec-value">Included</div>
-        <div class="spec-sub">Account lifecycle</div>
+        <div class="spec-label">Security</div>
+        <div class="spec-value">Encrypted</div>
+        <div class="spec-sub">Credential storage</div>
       </div>
     </div>
 
@@ -79,20 +79,17 @@
   <!-- RIGHT: PURCHASE CARD -->
   <div class="purchase-card">
 
-    <!-- Digital product visual -->
+    <!-- Digital product visual - geometric pattern -->
     <div class="digital-visual">
-      <div class="product-icon">
-        @if(str_contains(strtolower($productType), 'account'))
-          👤
-        @elseif(str_contains(strtolower($productType), 'api'))
-          🔑
-        @elseif(str_contains(strtolower($productType), 'license'))
-          📄
-        @elseif(str_contains(strtolower($productType), 'subscription'))
-          🔄
-        @else
-          📦
-        @endif
+      <div class="digital-pattern">
+        <div class="pattern-row">
+          <div class="pattern-block" style="background:var(--accent)"></div>
+          <div class="pattern-block" style="background:var(--tertiary)"></div>
+        </div>
+        <div class="pattern-row">
+          <div class="pattern-block" style="background:var(--quaternary)"></div>
+          <div class="pattern-block" style="background:var(--secondary)"></div>
+        </div>
       </div>
       <div class="product-type-label">{{ $productType }}</div>
     </div>
@@ -121,37 +118,23 @@
         <div class="card-spec-row">
           <span class="cs-key">
             <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Delivery
+            Setup time
           </span>
           <span class="cs-val">Instant</span>
         </div>
         <div class="card-spec-row">
           <span class="cs-key">
-            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Access
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Contract
           </span>
-          <span class="cs-val">Dashboard</span>
-        </div>
-        <div class="card-spec-row">
-          <span class="cs-key">
-            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            Security
-          </span>
-          <span class="cs-val">Encrypted</span>
-        </div>
-        <div class="card-spec-row">
-          <span class="cs-key">
-            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            Support
-          </span>
-          <span class="cs-val">Included</span>
+          <span class="cs-val">No lock-in</span>
         </div>
         <div class="card-spec-row">
           <span class="cs-key">
             <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-            Billing
+            Renewal
           </span>
-          <span class="cs-val">{{ ucfirst($billingPeriod) }}</span>
+          <span class="cs-val">Auto-renews</span>
         </div>
       </div>
     </div>
@@ -196,9 +179,9 @@
     <div class="section-title">Product details</div>
     <div class="section-sub">Full description and specifications</div>
   </div>
-  <div class="feature-card" style="max-width:none">
-    <div class="feat-desc" style="font-size:0.9rem;line-height:1.8">
-      {!! nl2br(e($product['description'])) !!}
+  <div class="details-card">
+    <div class="details-content">
+      {!! $product['description'] !!}
     </div>
   </div>
 </section>
