@@ -21,7 +21,7 @@ interface Category {
 interface ProductType {
   type: string;
   label: string;
-  fields: Array<{ key: string; label: string; type: string; required: boolean; options?: string[] }>;
+  fields: Array<{ key: string; label: string; type: string; required: boolean; options?: string[]; scope?: 'product' | 'stock' }>;
 }
 
 interface FeaturedItem {
@@ -399,11 +399,11 @@ export default function EditProductPage() {
             <Button type="button" size="sm" onClick={addFeatured} disabled={featured.length >= 4}>Add Featured Item</Button>
           </div>
 
-          {currentTypeSchema && currentTypeSchema.fields.length > 0 && (
+          {currentTypeSchema && currentTypeSchema.fields.filter(f => (f.scope || 'product') !== 'stock').length > 0 && (
             <div style={{ gridColumn: '1 / span 2', borderTop: '1px solid var(--border)', paddingTop: '10px' }}>
               <div className="font-heading text-[0.95rem] font-extrabold mb-3">Type-Specific Fields</div>
               <div className="grid gap-3" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                {currentTypeSchema.fields.map((f) => (
+                {currentTypeSchema.fields.filter(f => (f.scope || 'product') !== 'stock').map((f) => (
                   <label key={f.key} className="flex flex-col gap-1.5">
                     <span className="text-[0.78rem] font-bold">
                       {f.label}

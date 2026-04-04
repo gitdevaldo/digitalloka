@@ -14,9 +14,10 @@ interface FieldDef {
   required: boolean;
   options?: string[];
   help_text?: string;
+  scope?: 'product' | 'stock';
 }
 
-const emptyField: FieldDef = { key: '', label: '', type: 'text', required: false, help_text: '' };
+const emptyField: FieldDef = { key: '', label: '', type: 'text', required: false, help_text: '', scope: 'product' };
 
 const inputClass = "w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent";
 
@@ -170,7 +171,7 @@ export default function CreateProductTypePage() {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div className="grid grid-cols-3 gap-3 mb-3">
                     <div>
                       <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Type</label>
                       <select
@@ -183,6 +184,17 @@ export default function CreateProductTypePage() {
                         <option value="select">select</option>
                         <option value="boolean">boolean</option>
                         <option value="textarea">textarea</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Scope</label>
+                      <select
+                        value={f.scope || 'product'}
+                        onChange={(e) => updateField(idx, { scope: e.target.value as 'product' | 'stock' })}
+                        className="w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent"
+                      >
+                        <option value="product">product — shown on product edit</option>
+                        <option value="stock">stock — shown on stock add/edit only</option>
                       </select>
                     </div>
                     <div className="flex items-end pb-2">
