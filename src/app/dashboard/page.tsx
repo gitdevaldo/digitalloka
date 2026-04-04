@@ -3,15 +3,17 @@
 import { useEffect, useState } from 'react';
 import { ButtonLink } from '@/components/ui/button';
 import { Panel } from '@/components/ui/panel';
-import { TableShell } from '@/components/ui/table-shell';
+import { AdminTable, type Column } from '@/components/ui/admin-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { PageHeader } from '@/components/layout/page-header';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
+type Row = Record<string, unknown>;
+
 export default function DashboardOverviewPage() {
-  const [products, setProducts] = useState<Record<string, unknown>[]>([]);
-  const [orders, setOrders] = useState<Record<string, unknown>[]>([]);
-  const [droplets, setDroplets] = useState<Record<string, unknown>[]>([]);
+  const [products, setProducts] = useState<Row[]>([]);
+  const [orders, setOrders] = useState<Row[]>([]);
+  const [droplets, setDroplets] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,6 +33,106 @@ export default function DashboardOverviewPage() {
     { icon: '🖥️', label: 'VPS Droplets', value: String(droplets.length), sub: `${runningDroplets} running · ${stoppedDroplets} stopped`, bg: 'rgba(139,92,246,0.12)', bars: droplets.length > 0 },
     { icon: '✅', label: 'Active Entitlements', value: String(products.filter(p => (p.status as string) === 'active').length), sub: expiringProducts.length ? `${expiringProducts.length} expiring soon` : 'all good', bg: 'rgba(52,211,153,0.15)' },
     { icon: '🛒', label: 'Recent Orders', value: String(orders.length), sub: `${orders.filter(o => (o.status as string) === 'pending').length} pending`, bg: 'rgba(251,191,36,0.15)' },
+  ];
+
+  const dropletColumns: Column<Row>[] = [
+    {
+      key: 'name',
+      label: 'Droplet',
+      render: (row) => <span style={{ fontWeight: 700 }}>{row.name as string}</span>,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row) => (
+        <StatusBadge
+          variant={(row.status as string) === 'active' ? 'running' : 'stopped'}
+          label={(row.status as string) === 'active' ? 'Running' : (row.status as string)}
+        />
+      ),
+    },
+    {
+      key: 'ip',
+      label: 'IP',
+      render: (row) => {
+        const ip = (row.networks as Record<string, unknown>)?.v4
+          ? ((row.networks as Record<string, {ip_address: string; type: string}[]>).v4?.find(n => n.type === 'public')?.ip_address || '—')
+          : '—';
+        return <span style={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>{ip}</span>;
+      },
+    },
+  ];
+
+  const orderColumns: Column<Row>[] = [
+    {
+      key: 'order_number',
+      label: 'Order',
+      render: (row) => <span style={{ fontWeight: 700, fontSize: '0.82rem' }}>{row.order_number as string}</span>,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row) => (
+        <StatusBadge
+          variant={row.status as string || row.payment_status as string || 'pending'}
+          label={row.status as string || row.payment_status as string || 'pending'}
+        />
+      ),
+    },
+    {
+      key: 'total_amount',
+      label: 'Amount',
+      render: (row) => (
+        <span style={{ fontFamily: 'var(--font-h)', fontWeight: 800, fontSize: '0.95rem' }}>
+          {formatCurrency(row.total_amount as number, row.currency as string)}
+        </span>
+      ),
+    },
+  ];
+
+  const expiringColumns: Column<Row>[] = [
+    {
+      key: 'name',
+      label: 'Product',
+      render: (row) => {
+        const product = row.product as Row | undefined;
+        return <span style={{ fontWeight: 700 }}>{(product?.name as string) || 'Unknown'}</span>;
+      },
+    },
+    {
+      key: 'product_type',
+      label: 'Type',
+      render: (row) => {
+        const product = row.product as Row | undefined;
+        return (
+          <span
+            className="inline-flex items-center bg-muted rounded-full text-[0.65rem] font-bold text-muted-foreground"
+            style={{ padding: '2px 8px', border: '1.5px solid var(--border)' }}
+          >
+            {(product?.product_type as string) || '—'}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row) => <StatusBadge variant={row.status as string} label={row.status as string} />,
+    },
+    {
+      key: 'expires_at',
+      label: 'Expires',
+      render: (row) => (
+        <span style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--secondary)' }}>
+          {row.expires_at ? formatDate(row.expires_at as string) : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      label: '',
+      render: () => <ButtonLink href="/products" size="sm" variant="accent">Renew</ButtonLink>,
+    },
   ];
 
   return (
@@ -65,69 +167,32 @@ export default function DashboardOverviewPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-        <Panel title="VPS Health Summary" actions={<ButtonLink href="/dashboard/droplets" size="sm">View all</ButtonLink>}>
+        <Panel title="VPS Health Summary" actions={<ButtonLink href="/dashboard/droplets" size="sm">View all</ButtonLink>} noPad>
           {droplets.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground text-[0.82rem]">No droplets assigned</div>
           ) : (
-            <TableShell variant="dashboard">
-              <thead><tr><th>Droplet</th><th>Status</th><th>IP</th></tr></thead>
-              <tbody>
-                {droplets.slice(0, 5).map(d => {
-                  const ip = (d.networks as Record<string, unknown>)?.v4
-                    ? ((d.networks as Record<string, {ip_address: string; type: string}[]>).v4?.find(n => n.type === 'public')?.ip_address || '—')
-                    : '—';
-                  return (
-                    <tr key={d.id as number}>
-                      <td><strong>{d.name as string}</strong></td>
-                      <td><StatusBadge variant={(d.status as string) === 'active' ? 'running' : 'stopped'} label={(d.status as string) === 'active' ? 'Running' : (d.status as string)} /></td>
-                      <td className="font-mono text-[0.78rem]">{ip}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </TableShell>
+            <div style={{ padding: 16 }}>
+              <AdminTable columns={dropletColumns} rows={droplets.slice(0, 5)} />
+            </div>
           )}
         </Panel>
 
-        <Panel title="Recent Orders" actions={<ButtonLink href="/dashboard/orders" size="sm">View all</ButtonLink>}>
+        <Panel title="Recent Orders" actions={<ButtonLink href="/dashboard/orders" size="sm">View all</ButtonLink>} noPad>
           {orders.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground text-[0.82rem]">No orders yet</div>
           ) : (
-            <TableShell variant="dashboard">
-              <thead><tr><th>Order</th><th>Status</th><th>Amount</th></tr></thead>
-              <tbody>
-                {orders.slice(0, 5).map(order => (
-                  <tr key={order.id as number}>
-                    <td><div className="font-bold text-[0.82rem]">{order.order_number as string}</div></td>
-                    <td><StatusBadge variant={order.status as string || order.payment_status as string || 'pending'} label={order.status as string || order.payment_status as string || 'pending'} /></td>
-                    <td className="font-heading font-extrabold text-[0.95rem]">{formatCurrency(order.total_amount as number, order.currency as string)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </TableShell>
+            <div style={{ padding: 16 }}>
+              <AdminTable columns={orderColumns} rows={orders.slice(0, 5)} />
+            </div>
           )}
         </Panel>
       </div>
 
       {expiringProducts.length > 0 && (
-        <Panel title="⚠️ Expiring / Pending Entitlements">
-          <TableShell variant="dashboard">
-            <thead><tr><th>Product</th><th>Type</th><th>Status</th><th>Expires</th><th></th></tr></thead>
-            <tbody>
-              {expiringProducts.map(item => {
-                const product = item.product as Record<string, unknown> | undefined;
-                return (
-                  <tr key={item.id as number}>
-                    <td><strong>{(product?.name as string) || 'Unknown'}</strong></td>
-                    <td><span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border rounded-full text-[0.68rem] font-bold text-muted-foreground">{(product?.product_type as string) || '—'}</span></td>
-                    <td><StatusBadge variant={item.status as string} label={item.status as string} /></td>
-                    <td className="font-bold text-[0.82rem] text-secondary">{item.expires_at ? formatDate(item.expires_at as string) : '—'}</td>
-                    <td><ButtonLink href="/products" size="sm" variant="accent">Renew</ButtonLink></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </TableShell>
+        <Panel title="⚠️ Expiring / Pending Entitlements" noPad>
+          <div style={{ padding: 16 }}>
+            <AdminTable columns={expiringColumns} rows={expiringProducts} />
+          </div>
         </Panel>
       )}
     </div>

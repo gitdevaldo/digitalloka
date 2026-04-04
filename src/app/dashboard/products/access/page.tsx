@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
-import { TableShell } from '@/components/ui/table-shell';
+import { AdminTable } from '@/components/ui/admin-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button, ButtonLink } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -48,6 +48,60 @@ export default function ProductAccessPage() {
     return `DL-${s.slice(0, 4)}-XXXX-${s.slice(-4)}`;
   };
 
+  const columns = [
+    {
+      key: 'name',
+      label: 'Product',
+      render: (row: Record<string, unknown>) => {
+        const product = row.product as Record<string, unknown> | undefined;
+        return <span style={{ fontWeight: 700 }}>{(product?.name as string) || 'Unknown'}</span>;
+      },
+    },
+    {
+      key: 'license_key',
+      label: 'License Key',
+      render: (row: Record<string, unknown>) => (
+        <span style={{ fontFamily: 'monospace', fontSize: '0.72rem' }}>{maskKey(row.id as number)}</span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Entitlement',
+      render: (row: Record<string, unknown>) => (
+        <StatusBadge variant={row.status as string} label={row.status as string} />
+      ),
+    },
+    {
+      key: 'expires_at',
+      label: 'Expires',
+      render: (row: Record<string, unknown>) => {
+        const isExpiring = (row.status as string) === 'expiring';
+        return (
+          <span style={{ fontSize: '0.78rem', fontWeight: isExpiring ? 700 : 500, color: isExpiring ? 'var(--secondary)' : 'var(--muted-foreground)' }}>
+            {row.expires_at ? new Date(row.expires_at as string).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'actions',
+      label: '',
+      render: (row: Record<string, unknown>) => {
+        const isActive = (row.status as string) === 'active';
+        const isPending = (row.status as string) === 'pending';
+        return isActive ? (
+          <Button size="sm" onClick={() => handleRevoke(row.id as number)} disabled={revoking === (row.id as number)}>
+            {revoking === (row.id as number) ? '…' : 'Revoke'}
+          </Button>
+        ) : isPending ? (
+          <Button size="sm" disabled className="opacity-40 cursor-not-allowed">—</Button>
+        ) : (
+          <ButtonLink href="/products" size="sm" variant="warning">Renew</ButtonLink>
+        );
+      },
+    },
+  ];
+
   return (
     <div style={{ animation: 'fadeUp 0.3s var(--ease-bounce)' }}>
       <PageHeader title="Product Access" subtitle="Manage licenses and entitlements for your products." />
@@ -57,39 +111,10 @@ export default function ProductAccessPage() {
       ) : products.length === 0 ? (
         <EmptyState icon="🔑" title="No product access" description="Entitlements will appear here when you purchase products." />
       ) : (
-        <Panel>
-          <TableShell variant="dashboard">
-            <thead><tr><th>Product</th><th>License Key</th><th>Entitlement</th><th>Expires</th><th></th></tr></thead>
-            <tbody>
-              {products.map(item => {
-                const product = item.product as Record<string, unknown> | undefined;
-                const isActive = (item.status as string) === 'active';
-                const isPending = (item.status as string) === 'pending';
-                const isExpiring = (item.status as string) === 'expiring';
-                return (
-                  <tr key={item.id as number}>
-                    <td><strong>{(product?.name as string) || 'Unknown'}</strong></td>
-                    <td className="font-mono text-[0.72rem]">{maskKey(item.id as number)}</td>
-                    <td><StatusBadge variant={item.status as string} label={item.status as string} /></td>
-                    <td className={`text-[0.8rem] ${isExpiring ? 'font-bold text-secondary' : 'text-muted-foreground'}`}>
-                      {item.expires_at ? new Date(item.expires_at as string).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}
-                    </td>
-                    <td>
-                      {isActive ? (
-                        <Button size="sm" onClick={() => handleRevoke(item.id as number)} disabled={revoking === (item.id as number)}>
-                          {revoking === (item.id as number) ? '…' : 'Revoke'}
-                        </Button>
-                      ) : isPending ? (
-                        <Button size="sm" disabled className="opacity-40 cursor-not-allowed">—</Button>
-                      ) : (
-                        <ButtonLink href="/products" size="sm" variant="warning">Renew</ButtonLink>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </TableShell>
+        <Panel noPad>
+          <div style={{ padding: 16 }}>
+            <AdminTable columns={columns} rows={products} />
+          </div>
         </Panel>
       )}
     </div>
