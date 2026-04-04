@@ -3,6 +3,8 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { fulfillOrder } from '@/lib/services/fulfillment';
 import { sendOrderConfirmationEmail } from '@/lib/services/email';
 import crypto from 'crypto';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiError } from '@/lib/api-response';
 
 function verifyWebhookSignature(rawBody: string, signatureHeader: string | null): boolean {
   const webhookSecret = process.env.MAYAR_WEBHOOK_TOKEN;
@@ -24,7 +26,7 @@ function verifyWebhookSignature(rawBody: string, signatureHeader: string | null)
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandler(async (request: NextRequest) => {
   try {
     const rawBody = await request.text();
 
@@ -35,7 +37,7 @@ export async function POST(request: NextRequest) {
     const isSandbox = process.env.MAYAR_SANDBOX === 'true';
     if (!isSandbox && !verifyWebhookSignature(rawBody, signature)) {
       console.error('[mayar-webhook] Invalid signature');
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      return apiError('Invalid signature', 401);
     }
 
     const payload = JSON.parse(rawBody);
@@ -58,7 +60,7 @@ export async function POST(request: NextRequest) {
     const orderNumber = extraData.order_number || '';
 
     if (!orderId || !mayarTransactionId) {
-      return NextResponse.json({ error: 'Missing order_id or transaction id' }, { status: 400 });
+      return apiError('Missing order_id or transaction id', 400);
     }
 
     const admin = createSupabaseAdminClient();
@@ -90,11 +92,11 @@ export async function POST(request: NextRequest) {
 
     const { data: order } = await admin.from('orders').select('*').eq('id', orderId).single();
     if (!order) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+      return apiError('Order not found', 404);
     }
 
     if (order.order_number !== orderNumber) {
-      return NextResponse.json({ error: 'Order mismatch' }, { status: 400 });
+      return apiError('Order mismatch', 400);
     }
 
     if (status === 'paid' || status === 'settled') {
@@ -154,6 +156,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ processed: true, order_id: orderId, status });
   } catch (err) {
     console.error('[mayar-webhook] Error:', err);
-    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 422 });
+    return apiError('Webhook processing failed', 422);
   }
-}
+});

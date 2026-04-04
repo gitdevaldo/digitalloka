@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiSuccess, apiError, apiJson } from '@/lib/api-response';
+import { logAudit } from '@/lib/services/audit-log';
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const GET = withErrorHandler(async (_request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { id } = await params;
   const admin = createSupabaseAdminClient();
@@ -15,9 +18,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     .eq('id', Number(id))
     .single();
 
-  if (error || !data) return NextResponse.json({ error: 'Stock not found' }, { status: 404 });
-  return NextResponse.json({ data });
-}
+  if (error || !data) return apiError('Stock not found', 404);
+  return apiSuccess(data);
+});
 
 async function hashCredentials(data: Record<string, unknown>): Promise<string> {
   const sorted = Object.keys(data).sort().reduce((acc: Record<string, unknown>, key) => {
@@ -30,9 +33,9 @@ async function hashCredentials(data: Record<string, unknown>): Promise<string> {
   return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const PUT = withErrorHandler(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { id } = await params;
   const body = await request.json();
@@ -51,13 +54,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       .limit(1);
 
     if (dup && dup.length > 0) {
-      return NextResponse.json({ error: 'Duplicate stock credentials for this product' }, { status: 422 });
+      return apiError('Duplicate stock credentials for this product', 422);
     }
   }
   if (body.status) updates.status = body.status;
 
   if (Object.keys(updates).length === 0) {
-    return NextResponse.json({ error: 'No valid fields to update' }, { status: 422 });
+    return apiError('No valid fields to update', 422);
   }
 
   const { data, error } = await admin
@@ -67,13 +70,23 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     .select('*, product:products(id, name, slug, product_type)')
     .single();
 
-  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 422 });
-  return NextResponse.json({ item: data });
-}
+  if (error) return apiError(sanitizeDbError(error.message), 422);
 
-export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  await logAudit({
+    action: 'product_stock.update',
+    target_type: 'product_stock',
+    target_id: id,
+    actor_user_id: userId,
+    actor_role: 'admin',
+    changes: updates,
+  }).catch(() => {});
+
+  return apiJson({ item: data });
+});
+
+export const DELETE = withErrorHandler(async (_request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { id } = await params;
   const admin = createSupabaseAdminClient();
@@ -83,6 +96,15 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     .delete()
     .eq('id', Number(id));
 
-  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 422 });
+  if (error) return apiError(sanitizeDbError(error.message), 422);
+
+  await logAudit({
+    action: 'product_stock.delete',
+    target_type: 'product_stock',
+    target_id: id,
+    actor_user_id: userId,
+    actor_role: 'admin',
+  }).catch(() => {});
+
   return NextResponse.json({ deleted: true });
-}
+});

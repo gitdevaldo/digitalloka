@@ -3,10 +3,12 @@ import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { listDroplets } from '@/lib/services/digitalocean';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiError } from '@/lib/api-response';
 
-export async function GET() {
+export const GET = withErrorHandler(async () => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const admin = createSupabaseAdminClient();
 
@@ -14,7 +16,7 @@ export async function GET() {
     .from('users')
     .select('id, email, droplet_ids');
 
-  if (usersError) return NextResponse.json({ error: sanitizeDbError(usersError.message) }, { status: 500 });
+  if (usersError) return apiError(sanitizeDbError(usersError.message), 500);
 
   const ownersByDropletId: Record<number, { id: string; email: string }> = {};
   for (const user of (users || [])) {
@@ -69,6 +71,6 @@ export async function GET() {
 
     return NextResponse.json({ droplets: mapped });
   } catch {
-    return NextResponse.json({ error: 'Failed to load droplets' }, { status: 502 });
+    return apiError('Failed to load droplets', 502);
   }
-}
+});

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
+import { withErrorHandler } from '@/lib/api-handler';
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandler(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const ids: number[] = body.ids;
@@ -26,4 +27,4 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ data: [] }, { status: 400 });
   }
-}
+});

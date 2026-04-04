@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiError } from '@/lib/api-response';
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const url = new URL(request.url);
   const productId = url.searchParams.get('product_id');
-  if (!productId) return NextResponse.json({ error: 'product_id is required' }, { status: 422 });
+  if (!productId) return apiError('product_id is required', 422);
 
   const admin = createSupabaseAdminClient();
 
@@ -18,7 +20,7 @@ export async function GET(request: NextRequest) {
     .eq('id', Number(productId))
     .single();
 
-  if (!product) return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+  if (!product) return apiError('Product not found', 404);
 
   const { data: items } = await admin
     .from('product_stock_items')
@@ -48,4 +50,4 @@ export async function GET(request: NextRequest) {
     rows,
     rows_text: rows.join('\n'),
   });
-}
+});

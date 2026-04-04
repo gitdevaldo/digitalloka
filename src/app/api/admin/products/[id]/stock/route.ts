@@ -1,11 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiSuccess, apiError, apiJson } from '@/lib/api-response';
+import { logAudit } from '@/lib/services/audit-log';
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const GET = withErrorHandler(async (_request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { id } = await params;
   const admin = createSupabaseAdminClient();
@@ -18,22 +21,22 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   if (error) {
     if (error.message.includes('product_stock_items')) {
-      return NextResponse.json({ data: [], _table_missing: true });
+      return apiJson({ data: [], _table_missing: true });
     }
-    return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
+    return apiError(sanitizeDbError(error.message), 500);
   }
-  return NextResponse.json({ data: data || [] });
-}
+  return apiSuccess(data || []);
+});
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const POST = withErrorHandler(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { id } = await params;
   const body = await request.json();
 
   if (!body.headers || !body.rows) {
-    return NextResponse.json({ error: 'headers and rows are required' }, { status: 422 });
+    return apiError('headers and rows are required', 422);
   }
 
   const admin = createSupabaseAdminClient();
@@ -64,8 +67,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!error) inserted++;
   }
 
-  return NextResponse.json({ inserted, total_lines: lines.length });
-}
+  await logAudit({
+    action: 'product_stock.bulk_add',
+    target_type: 'product',
+    target_id: id,
+    actor_user_id: userId,
+    actor_role: 'admin',
+    changes: { inserted, total_lines: lines.length },
+  }).catch(() => {});
+
+  return apiJson({ inserted, total_lines: lines.length });
+});
 
 async function hashCredentials(data: Record<string, unknown>): Promise<string> {
   const encoder = new TextEncoder();

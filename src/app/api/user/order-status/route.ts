@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiError } from '@/lib/api-response';
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandler(async (request: NextRequest) => {
   const orderNumber = request.nextUrl.searchParams.get('order');
   if (!orderNumber) {
-    return NextResponse.json({ error: 'Missing order number' }, { status: 400 });
+    return apiError('Missing order number', 400);
   }
 
   const supabase = await createSupabaseServerClient();
@@ -30,4 +32,4 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ data: order });
-}
+});

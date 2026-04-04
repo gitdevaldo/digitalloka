@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { listProducts, type ProductFilters } from '@/lib/services/catalog';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiError } from '@/lib/api-response';
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandler(async (request: NextRequest) => {
   try {
     const sp = request.nextUrl.searchParams;
     const filters: ProductFilters = {
@@ -22,7 +24,7 @@ export async function GET(request: NextRequest) {
     const supabase = await createSupabaseServerClient();
     const result = await listProducts(supabase, filters);
     return NextResponse.json(result);
-  } catch (err: unknown) {
-    return NextResponse.json({ error: 'Failed to load products' }, { status: 500 });
+  } catch {
+    return apiError('Failed to load products', 500);
   }
-}
+});

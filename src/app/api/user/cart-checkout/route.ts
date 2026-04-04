@@ -7,6 +7,8 @@ import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { parseRequestBody } from '@/lib/validation';
 import { cartCheckoutSchema } from '@/lib/validation/schemas';
 import { createInvoice } from '@/lib/services/mayar';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiError } from '@/lib/api-response';
 
 const CHECKOUT_LIMIT = { windowMs: 60_000, maxRequests: 10 };
 
@@ -16,9 +18,9 @@ function getAppBaseUrl(): string {
   return 'http://localhost:5000';
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!userId) return apiError('Unauthorized', 401);
 
   const { allowed, retryAfterMs } = await checkRateLimit(`checkout:user:${userId}`, CHECKOUT_LIMIT);
   if (!allowed) return rateLimitResponse(retryAfterMs);
@@ -39,7 +41,7 @@ export async function POST(request: NextRequest) {
       .eq('is_visible', true);
 
     if (prodErr || !products || products.length === 0) {
-      return NextResponse.json({ error: 'Products not found' }, { status: 422 });
+      return apiError('Products not found', 422);
     }
 
     const productMap = new Map(products.map((p) => [p.id, p]));
@@ -81,7 +83,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (orderItems.length === 0) {
-      return NextResponse.json({ error: 'No valid items in cart' }, { status: 422 });
+      return apiError('No valid items in cart', 422);
     }
 
     const orderNumber = generateOrderNumber();
@@ -125,7 +127,7 @@ export async function POST(request: NextRequest) {
         status: 'cancelled',
         meta: { cancel_reason: 'payment_gateway_error' },
       }).eq('id', orderId);
-      return NextResponse.json({ error: 'Payment gateway error. Please try again.' }, { status: 502 });
+      return apiError('Payment gateway error. Please try again.', 502);
     }
 
     const admin = createSupabaseAdminClient();
@@ -148,6 +150,6 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
   } catch (err) {
     console.error('[cart-checkout] Error:', err);
-    return NextResponse.json({ error: 'Checkout failed' }, { status: 422 });
+    return apiError('Checkout failed', 422);
   }
-}
+});

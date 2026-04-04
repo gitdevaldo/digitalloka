@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiError } from '@/lib/api-response';
+import { logAudit } from '@/lib/services/audit-log';
 
-export async function GET() {
+export const GET = withErrorHandler(async () => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
@@ -13,7 +16,7 @@ export async function GET() {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
+  if (error) return apiError(sanitizeDbError(error.message), 500);
 
   const types = (data || []).map((row) => ({
     id: row.id,
@@ -25,15 +28,15 @@ export async function GET() {
   }));
 
   return NextResponse.json({ data: types });
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const body = await request.json();
   if (!body.type || !body.label) {
-    return NextResponse.json({ error: 'type and label are required' }, { status: 422 });
+    return apiError('type and label are required', 422);
   }
 
   const admin = createSupabaseAdminClient();
@@ -52,10 +55,19 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     if (error.message.includes('duplicate') || error.message.includes('unique')) {
-      return NextResponse.json({ error: 'Product type already exists' }, { status: 422 });
+      return apiError('Product type already exists', 422);
     }
-    return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 422 });
+    return apiError(sanitizeDbError(error.message), 422);
   }
+
+  await logAudit({
+    action: 'product_type.create',
+    target_type: 'product_type',
+    target_id: String(data.id),
+    actor_user_id: userId,
+    actor_role: 'admin',
+    changes: { type: body.type, label: body.label },
+  }).catch(() => {});
 
   return NextResponse.json({
     data: {
@@ -67,4 +79,4 @@ export async function POST(request: NextRequest) {
       fields: data.fields || [],
     },
   }, { status: 201 });
-}
+});

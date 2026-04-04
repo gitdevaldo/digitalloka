@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiSuccess, apiError } from '@/lib/api-response';
+import { logAudit } from '@/lib/services/audit-log';
 
-export async function GET() {
+export const GET = withErrorHandler(async () => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
@@ -13,17 +16,17 @@ export async function GET() {
     .select('*')
     .order('name', { ascending: true });
 
-  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
-  return NextResponse.json({ data: data || [] });
-}
+  if (error) return apiError(sanitizeDbError(error.message), 500);
+  return apiSuccess(data || []);
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const body = await request.json();
   if (!body.name?.trim()) {
-    return NextResponse.json({ error: 'Category name is required' }, { status: 422 });
+    return apiError('Category name is required', 422);
   }
 
   const admin = createSupabaseAdminClient();
@@ -38,10 +41,19 @@ export async function POST(request: NextRequest) {
   if (error) {
     if (error.message.includes('duplicate') || error.message.includes('unique')) {
       const existing = await admin.from('product_categories').select('*').eq('slug', slug).single();
-      if (existing.data) return NextResponse.json({ data: existing.data });
+      if (existing.data) return apiSuccess(existing.data);
     }
-    return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 422 });
+    return apiError(sanitizeDbError(error.message), 422);
   }
 
-  return NextResponse.json({ data }, { status: 201 });
-}
+  await logAudit({
+    action: 'category.create',
+    target_type: 'category',
+    target_id: String(data.id),
+    actor_user_id: userId,
+    actor_role: 'admin',
+    changes: { name: body.name.trim(), slug },
+  }).catch(() => {});
+
+  return apiSuccess(data, 201);
+});

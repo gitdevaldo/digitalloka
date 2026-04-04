@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
+import { withErrorHandler } from '@/lib/api-handler';
 
-export async function GET() {
+export const GET = withErrorHandler(async () => {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -32,4 +33,4 @@ export async function GET() {
   }
 
   return NextResponse.json({ data: products || [] });
-}
+});

@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiError, apiJson } from '@/lib/api-response';
+import { logAudit } from '@/lib/services/audit-log';
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const admin = createSupabaseAdminClient();
   const url = new URL(request.url);
@@ -28,7 +31,7 @@ export async function GET(request: NextRequest) {
     if (error.message.includes('product_stock_items')) {
       return NextResponse.json({ data: [], _table_missing: true });
     }
-    return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
+    return apiError(sanitizeDbError(error.message), 500);
   }
 
   let results = data || [];
@@ -40,15 +43,15 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ data: results.slice(0, 50) });
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const body = await request.json();
   if (!body.product_id || !body.credential_data || typeof body.credential_data !== 'object') {
-    return NextResponse.json({ error: 'product_id and credential_data (object) are required' }, { status: 422 });
+    return apiError('product_id and credential_data (object) are required', 422);
   }
 
   const admin = createSupabaseAdminClient();
@@ -63,7 +66,7 @@ export async function POST(request: NextRequest) {
     .limit(1);
 
   if (existing && existing.length > 0) {
-    return NextResponse.json({ error: 'Duplicate stock credentials for this product' }, { status: 422 });
+    return apiError('Duplicate stock credentials for this product', 422);
   }
 
   const { data, error } = await admin
@@ -77,9 +80,19 @@ export async function POST(request: NextRequest) {
     .select('*, product:products(id, name, slug, product_type)')
     .single();
 
-  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 422 });
-  return NextResponse.json({ item: data }, { status: 201 });
-}
+  if (error) return apiError(sanitizeDbError(error.message), 422);
+
+  await logAudit({
+    action: 'product_stock.create',
+    target_type: 'product_stock',
+    target_id: String(data.id),
+    actor_user_id: userId,
+    actor_role: 'admin',
+    changes: { product_id: body.product_id },
+  }).catch(() => {});
+
+  return apiJson({ item: data }, 201);
+});
 
 async function hashCredentials(data: Record<string, unknown>): Promise<string> {
   const sorted = Object.keys(data).sort().reduce((acc: Record<string, unknown>, key) => {

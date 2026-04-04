@@ -5,10 +5,13 @@ import { sanitizeDbError } from '@/lib/error-sanitizer';
 import type { Json } from '@/lib/supabase/database.types';
 import { parseRequestBody } from '@/lib/validation';
 import { productCreateSchema } from '@/lib/validation/schemas';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiSuccess, apiError } from '@/lib/api-response';
+import { logAudit } from '@/lib/services/audit-log';
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
@@ -16,13 +19,13 @@ export async function GET(request: NextRequest) {
     .select('*, category:product_categories(*)')
     .order('created_at', { ascending: false });
 
-  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 500 });
-  return NextResponse.json({ data: data || [] });
-}
+  if (error) return apiError(sanitizeDbError(error.message), 500);
+  return apiSuccess(data || []);
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const parsed = await parseRequestBody(request, productCreateSchema);
   if (!parsed.success) return parsed.response;
@@ -84,7 +87,16 @@ export async function POST(request: NextRequest) {
     price_billing_period: data.price_billing_period,
   }).select().single();
 
-  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 422 });
+  if (error) return apiError(sanitizeDbError(error.message), 422);
 
-  return NextResponse.json({ data: product }, { status: 201 });
-}
+  await logAudit({
+    action: 'product.create',
+    target_type: 'product',
+    target_id: String(product.id),
+    actor_user_id: userId,
+    actor_role: 'admin',
+    changes: { name: data.name, slug: data.slug, product_type: data.product_type },
+  }).catch(() => {});
+
+  return apiSuccess(product, 201);
+});

@@ -1,13 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
 import { parseRequestBody } from '@/lib/validation';
 import { productUpdateSchema } from '@/lib/validation/schemas';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiSuccess, apiError } from '@/lib/api-response';
+import { logAudit } from '@/lib/services/audit-log';
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const GET = withErrorHandler(async (_request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { id } = await params;
   const admin = createSupabaseAdminClient();
@@ -18,13 +21,13 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     .eq('id', Number(id))
     .single();
 
-  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 404 });
-  return NextResponse.json({ data });
-}
+  if (error) return apiError(sanitizeDbError(error.message), 404);
+  return apiSuccess(data);
+});
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const PUT = withErrorHandler(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { id } = await params;
   const parsed = await parseRequestBody(request, productUpdateSchema);
@@ -87,7 +90,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   if (validatedBody.price_billing_period !== undefined) updates.price_billing_period = validatedBody.price_billing_period;
 
   const { data, error } = await admin.from('products').update(updates).eq('id', Number(id)).select().single();
-  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 422 });
+  if (error) return apiError(sanitizeDbError(error.message), 422);
 
-  return NextResponse.json({ data });
-}
+  await logAudit({
+    action: 'product.update',
+    target_type: 'product',
+    target_id: id,
+    actor_user_id: userId,
+    actor_role: 'admin',
+    changes: updates,
+  }).catch(() => {});
+
+  return apiSuccess(data);
+});

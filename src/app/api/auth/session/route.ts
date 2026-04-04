@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiError } from '@/lib/api-response';
 
-export async function GET() {
+export const GET = withErrorHandler(async () => {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -11,7 +13,7 @@ export async function GET() {
   }
 
   return NextResponse.json({ authenticated: true, user: { id: user.id, email: user.email } });
-}
+});
 
 
 async function syncUserToTable(userId: string, email: string) {
@@ -28,13 +30,13 @@ async function syncUserToTable(userId: string, email: string) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandler(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { access_token, refresh_token } = body;
 
     if (!access_token) {
-      return NextResponse.json({ error: 'Missing access_token' }, { status: 400 });
+      return apiError('Missing access_token', 400);
     }
 
     const supabase = await createSupabaseServerClient();
@@ -44,7 +46,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 401 });
+      return apiError(sanitizeDbError(error.message), 401);
     }
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -54,6 +56,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    return apiError('Invalid request', 400);
   }
-}
+});

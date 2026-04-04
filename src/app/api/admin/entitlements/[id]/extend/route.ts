@@ -1,11 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiSuccess, apiError } from '@/lib/api-response';
+import { logAudit } from '@/lib/services/audit-log';
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const PUT = withErrorHandler(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { id } = await params;
   const body = await request.json();
@@ -20,7 +23,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     .single();
 
   if (fetchError || !entitlement) {
-    return NextResponse.json({ error: 'Entitlement not found' }, { status: 404 });
+    return apiError('Entitlement not found', 404);
   }
 
   const currentExpiry = entitlement.expires_at ? new Date(entitlement.expires_at) : new Date();
@@ -34,6 +37,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 422 });
-  return NextResponse.json({ data });
-}
+  if (error) return apiError(sanitizeDbError(error.message), 422);
+
+  await logAudit({
+    action: 'entitlement.extend',
+    target_type: 'entitlement',
+    target_id: id,
+    actor_user_id: userId,
+    actor_role: 'admin',
+    changes: { days, new_expires_at: newExpiry.toISOString() },
+  }).catch(() => {});
+
+  return apiSuccess(data);
+});

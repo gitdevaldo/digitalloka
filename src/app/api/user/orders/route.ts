@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getSessionUserId } from '@/lib/services/supabase-auth';
 import { listUserOrders } from '@/lib/services/orders';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiError } from '@/lib/api-response';
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!userId) return apiError('Unauthorized', 401);
 
   const sp = request.nextUrl.searchParams;
   const mode = (sp.get('mode') === 'offset' ? 'offset' : 'cursor') as 'cursor' | 'offset';
@@ -19,8 +21,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result);
   } catch (err) {
     if (err instanceof Error && err.message === 'Invalid cursor format') {
-      return NextResponse.json({ error: 'Invalid cursor' }, { status: 400 });
+      return apiError('Invalid cursor', 400);
     }
-    return NextResponse.json({ error: 'Failed to load orders' }, { status: 500 });
+    return apiError('Failed to load orders', 500);
   }
-}
+});

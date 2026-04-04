@@ -5,10 +5,13 @@ import { sanitizeDbError } from '@/lib/error-sanitizer';
 import type { Json } from '@/lib/supabase/database.types';
 import { parseRequestBody } from '@/lib/validation';
 import { stockImportSchema } from '@/lib/validation/schemas';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiError } from '@/lib/api-response';
+import { logAudit } from '@/lib/services/audit-log';
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const parsed = await parseRequestBody(request, stockImportSchema);
   if (!parsed.success) return parsed.response;
@@ -19,7 +22,7 @@ export async function POST(request: NextRequest) {
   const normalizedHeaders = headers.map((h: string) => h.trim()).filter(Boolean);
 
   if (normalizedHeaders.length === 0) {
-    return NextResponse.json({ error: 'Headers cannot be empty' }, { status: 422 });
+    return apiError('Headers cannot be empty', 422);
   }
 
   const lines = rows.split(/\r?\n/).filter((l: string) => l.trim());
@@ -98,6 +101,15 @@ export async function POST(request: NextRequest) {
     await admin.from('products').update({ meta: meta as Json }).eq('id', product_id);
   }
 
+  await logAudit({
+    action: 'product_stock.import',
+    target_type: 'product_stock',
+    target_id: String(product_id),
+    actor_user_id: userId,
+    actor_role: 'admin',
+    changes: { inserted, skipped_duplicates: skippedDuplicates, total_lines: lines.length },
+  }).catch(() => {});
+
   return NextResponse.json({
     success: true,
     product_id,
@@ -107,7 +119,7 @@ export async function POST(request: NextRequest) {
     invalid_rows: invalidRows,
     headers: normalizedHeaders,
   }, { status: 201 });
-}
+});
 
 async function hashCredentials(data: Record<string, unknown>): Promise<string> {
   const encoder = new TextEncoder();

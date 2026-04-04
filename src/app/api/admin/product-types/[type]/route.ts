@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiError } from '@/lib/api-response';
+import { logAudit } from '@/lib/services/audit-log';
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ type: string }> }) {
+export const PUT = withErrorHandler(async (request: NextRequest, { params }: { params: Promise<{ type: string }> }) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { type } = await params;
   const body = await request.json();
@@ -24,8 +27,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 422 });
-  if (!data) return NextResponse.json({ error: 'Product type not found' }, { status: 404 });
+  if (error) return apiError(sanitizeDbError(error.message), 422);
+  if (!data) return apiError('Product type not found', 404);
+
+  await logAudit({
+    action: 'product_type.update',
+    target_type: 'product_type',
+    target_id: type,
+    actor_user_id: userId,
+    actor_role: 'admin',
+    changes: updates,
+  }).catch(() => {});
 
   return NextResponse.json({
     data: {
@@ -37,11 +49,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       fields: data.fields || [],
     },
   });
-}
+});
 
-export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ type: string }> }) {
+export const DELETE = withErrorHandler(async (_request: NextRequest, { params }: { params: Promise<{ type: string }> }) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { type } = await params;
   const admin = createSupabaseAdminClient();
@@ -51,6 +63,15 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     .delete()
     .eq('type_key', type);
 
-  if (error) return NextResponse.json({ error: sanitizeDbError(error.message) }, { status: 422 });
+  if (error) return apiError(sanitizeDbError(error.message), 422);
+
+  await logAudit({
+    action: 'product_type.delete',
+    target_type: 'product_type',
+    target_id: type,
+    actor_user_id: userId,
+    actor_role: 'admin',
+  }).catch(() => {});
+
   return NextResponse.json({ deleted: true });
-}
+});

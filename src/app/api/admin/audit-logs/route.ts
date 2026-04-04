@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { listAuditLogs } from '@/lib/services/audit-log';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiError } from '@/lib/api-response';
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const sp = request.nextUrl.searchParams;
   const filters: Record<string, string> = {};
@@ -23,8 +25,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result);
   } catch (err) {
     if (err instanceof Error && err.message === 'Invalid cursor format') {
-      return NextResponse.json({ error: 'Invalid cursor' }, { status: 400 });
+      return apiError('Invalid cursor', 400);
     }
-    return NextResponse.json({ error: 'Failed to load audit logs' }, { status: 500 });
+    return apiError('Failed to load audit logs', 500);
   }
-}
+});

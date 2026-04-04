@@ -287,7 +287,8 @@ export async function listDroplets(dropletIds: number[]): Promise<Droplet[]> {
     }
 
     droplets = Array.from(found.values());
-  } catch {
+  } catch (err) {
+    console.error('[DigitalOcean] listDroplets failed for IDs', dropletIds, err);
     droplets = [];
   }
 

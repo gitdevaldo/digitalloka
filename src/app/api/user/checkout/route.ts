@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { getSessionUserId } from '@/lib/services/supabase-auth';
@@ -7,6 +7,8 @@ import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { parseRequestBody } from '@/lib/validation';
 import { checkoutSchema } from '@/lib/validation/schemas';
 import { createInvoice } from '@/lib/services/mayar';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiSuccess, apiError } from '@/lib/api-response';
 
 const CHECKOUT_LIMIT = { windowMs: 60_000, maxRequests: 10 };
 
@@ -16,9 +18,9 @@ function getAppBaseUrl(): string {
   return 'http://localhost:5000';
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!userId) return apiError('Unauthorized', 401);
 
   const { allowed, retryAfterMs } = await checkRateLimit(`checkout:user:${userId}`, CHECKOUT_LIMIT);
   if (!allowed) return rateLimitResponse(retryAfterMs);
@@ -82,14 +84,12 @@ export async function POST(request: NextRequest) {
       },
     }).eq('id', order.id);
 
-    return NextResponse.json({
-      data: {
-        ...order,
-        payment_link: mayarResponse.data.link,
-      },
-    }, { status: 201 });
+    return apiSuccess({
+      ...order,
+      payment_link: mayarResponse.data.link,
+    }, 201);
   } catch (err) {
     console.error('[checkout] Error:', err);
-    return NextResponse.json({ error: 'Checkout failed' }, { status: 422 });
+    return apiError('Checkout failed', 422);
   }
-}
+});

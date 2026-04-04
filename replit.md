@@ -18,6 +18,18 @@ DigitalLoka is a Next.js application designed to provide a comprehensive platfor
   - To push new commits from Replit: Use ONLY regular `git push`. If it fails with "non-fast-forward", use `git pull origin main --rebase` first, then `git push`. Never force-push.
   - Checkpoints are precious. Replit checkpoints capture all file changes. Do not run any git command that could cause checkpoint data to be lost. If unsure whether a command is safe, DO NOT RUN IT.
 
+## Tech Stack
+- **Framework:** Next.js 14 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS 3.4 with Neo-Brutalist design tokens
+- **Database/Auth:** Supabase (magic link auth via `@supabase/ssr`)
+- **External API:** DigitalOcean API v2 (droplet management, typed interfaces in `src/lib/services/digitalocean.ts`)
+- **Fonts:** Outfit (headings) + Plus Jakarta Sans (body)
+- **Icons:** Lucide React
+- **Port:** 5000
+- **Security:** CSP, HSTS, Permissions-Policy headers via next.config.js; error sanitization via `src/lib/error-sanitizer.ts`; ilike injection protection in audit logs
+- **Error Handling:** Centralized `withErrorHandler` wrapper (`src/lib/api-handler.ts`) on all API routes; shared response helpers (`src/lib/api-response.ts`: `apiSuccess`, `apiError`, `apiJson`); audit logging on all admin write operations via `logAudit`
+
 ## System Architecture
 The application is built with Next.js 14 (App Router) using TypeScript and styled with Tailwind CSS 3.4, adhering to a Neo-Brutalist design system. Supabase handles database operations and magic link authentication.
 
