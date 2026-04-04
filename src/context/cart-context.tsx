@@ -15,6 +15,7 @@ export interface VpsConfig {
   transfer: number;
   priceMonthly: number;
   os?: string;
+  osName?: string;
 }
 
 export interface CartItem {

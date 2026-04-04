@@ -87,6 +87,42 @@ interface DOListSizesResponse {
   links: { pages?: { next?: string; last?: string } };
 }
 
+interface DORegion {
+  slug: string;
+  name: string;
+  available: boolean;
+  features: string[];
+  sizes: string[];
+}
+
+interface DOListRegionsResponse {
+  regions: DORegion[];
+  meta: { total: number };
+  links: { pages?: { next?: string; last?: string } };
+}
+
+export interface DOImage {
+  id: number;
+  name: string;
+  distribution: string;
+  slug: string | null;
+  type: string;
+  public: boolean;
+  regions: string[];
+  min_disk_size: number;
+  size_gigabytes: number;
+  status: string;
+  description: string;
+  created_at: string;
+  tags: string[];
+}
+
+interface DOListImagesResponse {
+  images: DOImage[];
+  meta: { total: number };
+  links: { pages?: { next?: string; last?: string } };
+}
+
 interface DOCreateDropletResponse {
   droplet: Droplet;
   links: { actions: { id: number; rel: string; href: string }[] };
@@ -97,7 +133,7 @@ interface DOErrorResponse {
   id?: string;
 }
 
-type DOApiResponse = DOListDropletsResponse | DOGetDropletResponse | DOActionResponse | DOListActionsResponse | DOListSizesResponse | DOCreateDropletResponse;
+type DOApiResponse = DOListDropletsResponse | DOGetDropletResponse | DOActionResponse | DOListActionsResponse | DOListSizesResponse | DOListRegionsResponse | DOListImagesResponse | DOCreateDropletResponse;
 
 export interface DOSize {
   slug: string;
@@ -348,6 +384,52 @@ export async function listSizes(): Promise<DOSize[]> {
   const ttl = Number(process.env.DIGITALOCEAN_SIZES_CACHE_SECONDS || 3600);
   await setCache(cacheKey, allSizes, ttl);
   return allSizes;
+}
+
+export async function listRegions(): Promise<DORegion[]> {
+  const cacheKey = 'do:regions:all';
+  const cached = await getCached<DORegion[]>(cacheKey);
+  if (cached) return cached;
+
+  const allRegions: DORegion[] = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const data = await doRequest<DOListRegionsResponse>('GET', `/regions?per_page=200&page=${page}`);
+    const pageRegions = data.regions || [];
+    allRegions.push(...pageRegions);
+    hasMore = !!data.links?.pages?.next;
+    page++;
+  }
+
+  const ttl = Number(process.env.DIGITALOCEAN_REGIONS_CACHE_SECONDS || 3600);
+  await setCache(cacheKey, allRegions, ttl);
+  return allRegions;
+}
+
+export async function listDistributionImages(): Promise<DOImage[]> {
+  const cacheKey = 'do:images:distribution';
+  const cached = await getCached<DOImage[]>(cacheKey);
+  if (cached) return cached;
+
+  const allImages: DOImage[] = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const data = await doRequest<DOListImagesResponse>('GET', `/images?type=distribution&per_page=200&page=${page}`);
+    const pageImages = data.images || [];
+    allImages.push(...pageImages);
+    hasMore = !!data.links?.pages?.next;
+    page++;
+  }
+
+  const filtered = allImages.filter(img => img.status === 'available' && img.slug);
+
+  const ttl = Number(process.env.DIGITALOCEAN_IMAGES_CACHE_SECONDS || 3600);
+  await setCache(cacheKey, filtered, ttl);
+  return filtered;
 }
 
 export async function createDroplet(params: CreateDropletParams): Promise<Droplet> {

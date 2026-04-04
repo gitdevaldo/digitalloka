@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { listSizes } from '@/lib/services/digitalocean';
+import { syncDigitalOceanProviderData } from '@/lib/services/sync-provider-data';
 
 export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getSessionUserId();
@@ -80,7 +81,18 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     synced++;
   }
 
-  return NextResponse.json({ synced, created, updated, total_sizes: sizes.length });
+  let providerDataResult = null;
+  try {
+    providerDataResult = await syncDigitalOceanProviderData();
+    console.log(`[sync-sizes] Provider data synced: ${providerDataResult.regions.synced} regions, ${providerDataResult.images.synced} images`);
+  } catch (err) {
+    console.error('[sync-sizes] Provider data sync failed:', err);
+  }
+
+  return NextResponse.json({
+    synced, created, updated, total_sizes: sizes.length,
+    provider_data: providerDataResult,
+  });
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

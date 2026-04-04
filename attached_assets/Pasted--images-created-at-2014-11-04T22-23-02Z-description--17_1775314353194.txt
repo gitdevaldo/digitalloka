@@ -1,0 +1,124 @@
+{
+  "images": [
+    {
+      "created_at": "2014-11-04T22:23:02Z",
+      "description": "",
+      "distribution": "Ubuntu",
+      "error_message": "",
+      "id": 7555620,
+      "min_disk_size": 20,
+      "name": "Nifty New Snapshot",
+      "public": false,
+      "regions": [
+        "nyc2",
+        "nyc3"
+      ],
+      "size_gigabytes": 2.34,
+      "slug": null,
+      "status": "available",
+      "tags": [],
+      "type": "snapshot"
+    },
+    {
+      "created_at": "2014-11-04T22:23:02Z",
+      "description": "",
+      "distribution": "Ubuntu",
+      "error_message": "",
+      "id": 7555621,
+      "min_disk_size": 20,
+      "name": "Another Snapshot",
+      "public": false,
+      "regions": [
+        "nyc2"
+      ],
+      "size_gigabytes": 2.34,
+      "slug": null,
+      "status": "available",
+      "tags": [],
+      "type": "snapshot"
+    },
+    {
+      "created_at": "2020-05-15T05:47:50Z",
+      "description": "",
+      "distribution": "Ubuntu",
+      "error_message": "",
+      "id": 63663980,
+      "min_disk_size": 20,
+      "name": "20.04 (LTS) x64",
+      "public": true,
+      "regions": [
+        "nyc2",
+        "nyc3"
+      ],
+      "size_gigabytes": 2.36,
+      "slug": "ubuntu-20-04-x64",
+      "status": "available",
+      "tags": [],
+      "type": "snapshot"
+    },
+    {
+      "created_at": "2014-11-04T22:23:02Z",
+      "description": "",
+      "distribution": "Arch Linux",
+      "error_message": "",
+      "id": 7555621,
+      "min_disk_size": 20,
+      "name": "A custom image",
+      "public": false,
+      "regions": [
+        "nyc3"
+      ],
+      "size_gigabytes": 2.34,
+      "slug": null,
+      "status": "available",
+      "tags": [],
+      "type": "custom"
+    },
+    {
+      "created_at": "2014-11-04T22:23:02Z",
+      "description": "",
+      "distribution": "Fedora",
+      "error_message": "",
+      "id": 7555621,
+      "min_disk_size": 20,
+      "name": "An APP image",
+      "public": false,
+      "regions": [
+        "nyc2",
+        "nyc3"
+      ],
+      "size_gigabytes": 2.34,
+      "slug": null,
+      "status": "available",
+      "tags": [],
+      "type": "snapshot"
+    },
+    {
+      "created_at": "2014-11-04T22:23:02Z",
+      "description": "",
+      "distribution": "CentOS",
+      "error_message": "",
+      "id": 7555621,
+      "min_disk_size": 20,
+      "name": "A simple tagged image",
+      "public": false,
+      "regions": [
+        "nyc2",
+        "nyc3"
+      ],
+      "size_gigabytes": 2.34,
+      "slug": null,
+      "status": "available",
+      "tags": [
+        "simple-image"
+      ],
+      "type": "snapshot"
+    }
+  ],
+  "links": {
+    "pages": {}
+  },
+  "meta": {
+    "total": 6
+  }
+}

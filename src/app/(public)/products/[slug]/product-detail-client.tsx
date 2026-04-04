@@ -45,51 +45,63 @@ interface VpsSize {
   provider: string;
 }
 
-const REGION_MAP: Record<string, { name: string; country: string; flag: string }> = {
-  sgp1: { name: 'Singapore', country: 'SG', flag: '🇸🇬' },
-  nyc1: { name: 'New York 1', country: 'US', flag: '🇺🇸' },
-  nyc2: { name: 'New York 2', country: 'US', flag: '🇺🇸' },
-  nyc3: { name: 'New York 3', country: 'US', flag: '🇺🇸' },
-  sfo2: { name: 'San Francisco 2', country: 'US', flag: '🇺🇸' },
-  sfo3: { name: 'San Francisco 3', country: 'US', flag: '🇺🇸' },
-  lon1: { name: 'London', country: 'UK', flag: '🇬🇧' },
-  ams3: { name: 'Amsterdam', country: 'NL', flag: '🇳🇱' },
-  fra1: { name: 'Frankfurt', country: 'DE', flag: '🇩🇪' },
-  tor1: { name: 'Toronto', country: 'CA', flag: '🇨🇦' },
-  blr1: { name: 'Bangalore', country: 'IN', flag: '🇮🇳' },
-  syd1: { name: 'Sydney', country: 'AU', flag: '🇦🇺' },
+interface ProviderRegion {
+  slug: string;
+  name: string;
+  available: boolean;
+  data: { features?: string[]; sizes?: string[] };
+}
+
+interface ProviderImage {
+  slug: string;
+  name: string;
+  available: boolean;
+  data: { distribution?: string; regions?: string[]; min_disk_size?: number };
+}
+
+const REGION_FLAG_MAP: Record<string, string> = {
+  nyc: '🇺🇸', sfo: '🇺🇸', tor: '🇨🇦', lon: '🇬🇧', ams: '🇳🇱',
+  fra: '🇩🇪', sgp: '🇸🇬', blr: '🇮🇳', syd: '🇦🇺',
 };
 
-const OS_OPTIONS = [
-  { id: 'ubuntu-24', name: 'Ubuntu 24.04', sub: 'Recommended', icon: '🐧' },
-  { id: 'debian-12', name: 'Debian 12', sub: 'Stable LTS', icon: '🌀' },
-  { id: 'rocky-9', name: 'Rocky Linux 9', sub: 'Enterprise', icon: '🏔️' },
-];
+const DISTRO_ICONS: Record<string, string> = {
+  Ubuntu: '🐧', Debian: '🌀', 'Rocky Linux': '🏔️', CentOS: '🔴',
+  Fedora: '🎩', 'Arch Linux': '🔵', AlmaLinux: '🟢', FreeBSD: '😈',
+};
+
+function getRegionFlag(slug: string): string {
+  const prefix = slug.replace(/[0-9]/g, '');
+  return REGION_FLAG_MAP[prefix] || '🌍';
+}
+
+function getDistroIcon(distribution: string): string {
+  return DISTRO_ICONS[distribution] || '💿';
+}
 
 function formatMemory(mb: number): string {
   if (mb >= 1024) return `${(mb / 1024).toFixed(mb % 1024 === 0 ? 0 : 1)} GB`;
   return `${mb} MB`;
 }
 
-function getRegionInfo(slug: string) {
-  return REGION_MAP[slug] || { name: slug.toUpperCase(), country: '??', flag: '🌍' };
-}
-
 function VpsConfigurator({
   sizes,
+  allRegions,
+  allImages,
   loading,
   currency,
   onConfigChange,
 }: {
   sizes: VpsSize[];
+  allRegions: ProviderRegion[];
+  allImages: ProviderImage[];
   loading: boolean;
   currency: string;
-  onConfigChange: (config: { provider: string; region: string; regionName: string; size: VpsSize; os: string } | null) => void;
+  onConfigChange: (config: { provider: string; region: string; regionName: string; size: VpsSize; os: string; osName: string } | null) => void;
 }) {
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [selectedSizeId, setSelectedSizeId] = useState<number | null>(null);
-  const [selectedOs, setSelectedOs] = useState<string>('ubuntu-24');
+  const [selectedOs, setSelectedOs] = useState<string | null>(null);
 
   const providers = useMemo(() => {
     const providerSet = new Set<string>();
@@ -109,14 +121,19 @@ function VpsConfigurator({
   }, [sizes, selectedProvider]);
 
   const regions = useMemo(() => {
-    const regionSet = new Set<string>();
-    sizesForProvider.forEach(s => s.regions.forEach(r => regionSet.add(r)));
-    return Array.from(regionSet).sort((a, b) => {
-      const aInfo = getRegionInfo(a);
-      const bInfo = getRegionInfo(b);
-      return aInfo.name.localeCompare(bInfo.name);
-    });
-  }, [sizesForProvider]);
+    const regionSlugsFromSizes = new Set<string>();
+    sizesForProvider.forEach(s => s.regions.forEach(r => regionSlugsFromSizes.add(r)));
+
+    if (allRegions.length > 0) {
+      return allRegions
+        .filter(r => regionSlugsFromSizes.has(r.slug))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    return Array.from(regionSlugsFromSizes)
+      .map(slug => ({ slug, name: slug.toUpperCase(), available: true, data: {} }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [sizesForProvider, allRegions]);
 
   const sizesForRegion = useMemo(() => {
     if (!selectedRegion) return [];
@@ -127,15 +144,30 @@ function VpsConfigurator({
     return sizesForRegion.find(s => s.stock_id === selectedSizeId) || null;
   }, [sizesForRegion, selectedSizeId]);
 
+  const osImages = useMemo(() => {
+    if (!selectedRegion) return [];
+    if (allImages.length > 0) {
+      return allImages.filter(img => {
+        const imgRegions = img.data?.regions || [];
+        return imgRegions.length === 0 || imgRegions.includes(selectedRegion);
+      });
+    }
+    return [];
+  }, [allImages, selectedRegion]);
+
   useEffect(() => {
-    if (selectedProvider && selectedRegion && selectedSize) {
-      const regionInfo = getRegionInfo(selectedRegion);
+    if (selectedProvider && selectedRegion && selectedSize && selectedOs) {
+      const regionObj = regions.find(r => r.slug === selectedRegion);
+      const regionName = regionObj ? regionObj.name : selectedRegion.toUpperCase();
+      const osObj = osImages.find(o => o.slug === selectedOs);
+      const osName = osObj ? osObj.name : selectedOs;
       onConfigChange({
         provider: selectedProvider,
         region: selectedRegion,
-        regionName: `${regionInfo.name}, ${regionInfo.country}`,
+        regionName,
         size: selectedSize,
         os: selectedOs,
+        osName,
       });
     } else {
       onConfigChange(null);
@@ -146,11 +178,13 @@ function VpsConfigurator({
     setSelectedProvider(p);
     setSelectedRegion(null);
     setSelectedSizeId(null);
+    setSelectedOs(null);
   };
 
   const handleRegionSelect = (r: string) => {
     setSelectedRegion(r);
     setSelectedSizeId(null);
+    setSelectedOs(null);
   };
 
   if (loading) {
@@ -182,7 +216,7 @@ function VpsConfigurator({
     );
   }
 
-  const currentStep = !selectedProvider ? 1 : !selectedRegion ? 2 : !selectedSize ? 3 : 4;
+  const currentStep = !selectedProvider ? 1 : !selectedRegion ? 2 : !selectedSize ? 3 : !selectedOs ? 4 : 5;
 
   return (
     <section className="features-section">
@@ -240,29 +274,28 @@ function VpsConfigurator({
               <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Region
               </div>
-              {selectedRegion && (
-                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--accent)', marginLeft: 'auto' }}>
-                  {getRegionInfo(selectedRegion).flag} {getRegionInfo(selectedRegion).name}
-                </span>
-              )}
+              {selectedRegion && (() => {
+                const regionObj = regions.find(r => r.slug === selectedRegion);
+                return (
+                  <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--accent)', marginLeft: 'auto' }}>
+                    {getRegionFlag(selectedRegion)} {regionObj?.name || selectedRegion}
+                  </span>
+                );
+              })()}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
-              {regions.map(r => {
-                const info = getRegionInfo(r);
-                return (
-                  <div
-                    key={r}
-                    onClick={() => handleRegionSelect(r)}
-                    className="vps-config-card"
-                    data-selected={selectedRegion === r}
-                  >
-                    <div style={{ fontSize: '1rem', marginBottom: '2px' }}>{info.flag}</div>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 700 }}>{info.country}</div>
-                    <div style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)' }}>{info.name}</div>
-                    <div style={{ fontSize: '0.6rem', color: 'var(--muted-foreground)', fontFamily: 'monospace' }}>{r.toUpperCase()}</div>
-                  </div>
-                );
-              })}
+              {regions.map(r => (
+                <div
+                  key={r.slug}
+                  onClick={() => handleRegionSelect(r.slug)}
+                  className="vps-config-card"
+                  data-selected={selectedRegion === r.slug}
+                >
+                  <div style={{ fontSize: '1rem', marginBottom: '2px' }}>{getRegionFlag(r.slug)}</div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700 }}>{r.name}</div>
+                  <div style={{ fontSize: '0.6rem', color: 'var(--muted-foreground)', fontFamily: 'monospace' }}>{r.slug.toUpperCase()}</div>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -315,37 +348,50 @@ function VpsConfigurator({
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
               <div style={{
                 width: '28px', height: '28px', borderRadius: '50%',
-                background: 'var(--accent)', color: '#fff',
+                background: selectedOs ? 'var(--accent)' : 'var(--muted)',
+                color: selectedOs ? '#fff' : 'var(--muted-foreground)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '0.72rem', fontWeight: 800, border: '2px solid var(--border)',
               }}>4</div>
               <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Operating System
               </div>
-              {selectedOs && (
-                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--accent)', marginLeft: 'auto' }}>
-                  {OS_OPTIONS.find(o => o.id === selectedOs)?.name}
-                </span>
-              )}
+              {selectedOs && (() => {
+                const osObj = osImages.find(o => o.slug === selectedOs);
+                return (
+                  <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--accent)', marginLeft: 'auto' }}>
+                    {osObj?.name || selectedOs}
+                  </span>
+                );
+              })()}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
-              {OS_OPTIONS.map(os => (
-                <div
-                  key={os.id}
-                  onClick={() => setSelectedOs(os.id)}
-                  className="vps-config-card"
-                  data-selected={selectedOs === os.id}
-                >
-                  <div style={{ fontSize: '1.1rem', marginBottom: '2px' }}>{os.icon}</div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 700 }}>{os.name}</div>
-                  <div style={{ fontSize: '0.62rem', color: selectedOs === os.id ? 'var(--accent)' : 'var(--muted-foreground)', fontWeight: 600 }}>{os.sub}</div>
-                </div>
-              ))}
-            </div>
+            {osImages.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px' }}>
+                {osImages.map(img => {
+                  const distro = img.data?.distribution || '';
+                  return (
+                    <div
+                      key={img.slug}
+                      onClick={() => setSelectedOs(img.slug)}
+                      className="vps-config-card"
+                      data-selected={selectedOs === img.slug}
+                    >
+                      <div style={{ fontSize: '1.1rem', marginBottom: '2px' }}>{getDistroIcon(distro)}</div>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 700 }}>{img.name}</div>
+                      <div style={{ fontSize: '0.6rem', color: 'var(--muted-foreground)', fontFamily: 'monospace' }}>{img.slug}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)', padding: '12px 0' }}>
+                No OS images synced yet. Please sync provider data from the admin panel.
+              </div>
+            )}
           </div>
         )}
 
-        {currentStep < 4 && (
+        {currentStep < 5 && (
           <div style={{
             textAlign: 'center', padding: '16px', fontSize: '0.78rem',
             color: 'var(--muted-foreground)', fontWeight: 600,
@@ -353,6 +399,7 @@ function VpsConfigurator({
             {currentStep === 1 && 'Select a provider to continue'}
             {currentStep === 2 && 'Select a region to continue'}
             {currentStep === 3 && 'Select a server spec to continue'}
+            {currentStep === 4 && 'Select an operating system to continue'}
           </div>
         )}
       </div>
@@ -370,19 +417,25 @@ export default function ProductDetailClient({ product }: { product: ProductData 
   const isInCart = checkInCart(product.id);
 
   const [vpsSizes, setVpsSizes] = useState<VpsSize[]>([]);
+  const [vpsRegions, setVpsRegions] = useState<ProviderRegion[]>([]);
+  const [vpsImages, setVpsImages] = useState<ProviderImage[]>([]);
   const [sizesLoading, setSizesLoading] = useState(false);
-  const [vpsConfig, setVpsConfig] = useState<{ provider: string; region: string; regionName: string; size: VpsSize; os: string } | null>(null);
+  const [vpsConfig, setVpsConfig] = useState<{ provider: string; region: string; regionName: string; size: VpsSize; os: string; osName: string } | null>(null);
 
   const isDroplet = product.product_type === 'vps_droplet';
 
   useEffect(() => {
     if (!isDroplet) return;
     setSizesLoading(true);
-    fetch(`/api/products/${product.slug}/sizes`)
-      .then(r => r.json())
-      .then(d => {
-        const sizes = d.data || [];
-        setVpsSizes(sizes);
+    Promise.all([
+      fetch(`/api/products/${product.slug}/sizes`).then(r => r.json()),
+      fetch(`/api/products/${product.slug}/regions`).then(r => r.json()),
+      fetch(`/api/products/${product.slug}/images`).then(r => r.json()),
+    ])
+      .then(([sizesRes, regionsRes, imagesRes]) => {
+        setVpsSizes(sizesRes.data || []);
+        setVpsRegions(regionsRes.data || []);
+        setVpsImages(imagesRes.data || []);
       })
       .catch(() => {})
       .finally(() => setSizesLoading(false));
@@ -409,6 +462,7 @@ export default function ProductDetailClient({ product }: { product: ProductData 
       transfer: vpsConfig.size.transfer,
       priceMonthly: vpsConfig.size.price_monthly,
       os: vpsConfig.os,
+      osName: vpsConfig.osName,
     };
   };
 
@@ -419,6 +473,7 @@ export default function ProductDetailClient({ product }: { product: ProductData 
       addToCart(product.id, 1, {
         selectedStockId: vpsConfig.size.stock_id,
         selectedRegion: vpsConfig.region,
+        selectedImage: vpsConfig.os,
         vpsConfig: config,
       });
     } else {
@@ -433,6 +488,7 @@ export default function ProductDetailClient({ product }: { product: ProductData 
       addToCart(product.id, 1, {
         selectedStockId: vpsConfig.size.stock_id,
         selectedRegion: vpsConfig.region,
+        selectedImage: vpsConfig.os,
         vpsConfig: config,
       });
     } else {
@@ -575,7 +631,7 @@ export default function ProductDetailClient({ product }: { product: ProductData 
                   <div><span style={{ fontWeight: 600, color: 'var(--muted-foreground)' }}>Provider:</span> {vpsConfig.provider}</div>
                   <div><span style={{ fontWeight: 600, color: 'var(--muted-foreground)' }}>Region:</span> {vpsConfig.regionName}</div>
                   <div><span style={{ fontWeight: 600, color: 'var(--muted-foreground)' }}>Spec:</span> {vpsConfig.size.vcpus} vCPU · {formatMemory(vpsConfig.size.memory)} · {vpsConfig.size.disk} GB</div>
-                  <div><span style={{ fontWeight: 600, color: 'var(--muted-foreground)' }}>OS:</span> {OS_OPTIONS.find(o => o.id === vpsConfig.os)?.name}</div>
+                  <div><span style={{ fontWeight: 600, color: 'var(--muted-foreground)' }}>OS:</span> {vpsConfig.osName || vpsConfig.os}</div>
                 </div>
               </div>
             )}
@@ -660,6 +716,8 @@ export default function ProductDetailClient({ product }: { product: ProductData 
           <div className="divider"></div>
           <VpsConfigurator
             sizes={vpsSizes}
+            allRegions={vpsRegions}
+            allImages={vpsImages}
             loading={sizesLoading}
             currency={currency}
             onConfigChange={setVpsConfig}

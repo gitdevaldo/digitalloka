@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { listSizes } from '@/lib/services/digitalocean';
+import { syncDigitalOceanProviderData } from '@/lib/services/sync-provider-data';
 
 const CRON_SECRET = process.env.CRON_SECRET;
 
@@ -112,10 +113,19 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  let providerDataResult = null;
+  try {
+    providerDataResult = await syncDigitalOceanProviderData();
+    console.log(`[cron/sync-sizes] Provider data synced: ${providerDataResult.regions.synced} regions, ${providerDataResult.images.synced} images`);
+  } catch (err) {
+    console.error('[cron/sync-sizes] Provider data sync failed:', err);
+  }
+
   return NextResponse.json({
     message: 'Sync complete',
     timestamp: new Date().toISOString(),
     products_processed: results.length,
     results,
+    provider_data: providerDataResult,
   });
 }
