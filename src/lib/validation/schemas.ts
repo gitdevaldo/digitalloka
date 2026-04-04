@@ -26,7 +26,7 @@ export const cartCheckoutSchema = z.object({
 const productBaseFields = {
   name: z.string().min(1, 'name is required').max(255),
   slug: z.string().min(1, 'slug is required').max(255),
-  product_type: z.enum(['digital', 'physical', 'subscription', 'service']).optional().default('digital'),
+  product_type: z.enum(['digital', 'physical', 'subscription', 'service', 'vps_droplet', 'template', 'course', 'ebook', 'plugin', 'ui_kit']).optional().default('digital'),
   status: z.enum(['available', 'unavailable', 'draft', 'archived']).optional().default('available'),
   short_description: z.string().max(1000).optional(),
   description: z.string().optional(),
@@ -54,7 +54,7 @@ export const productCreateSchema = z.object({
 export const productUpdateSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   slug: z.string().min(1).max(255).optional(),
-  product_type: z.enum(['digital', 'physical', 'subscription', 'service']).optional(),
+  product_type: z.enum(['digital', 'physical', 'subscription', 'service', 'vps_droplet', 'template', 'course', 'ebook', 'plugin', 'ui_kit']).optional(),
   status: z.enum(['available', 'unavailable', 'draft', 'archived']).optional(),
   short_description: z.string().max(1000).optional(),
   description: z.string().optional(),
