@@ -191,10 +191,20 @@ export default function EditVpsStockPage() {
           <div style={{ display: 'grid', gap: 16 }}>
             <div>
               <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1.5">Provider</label>
-              <div className="border-2 border-border rounded-[var(--r-sm)] px-3 py-2 text-[0.85rem] font-bold bg-muted text-foreground">
-                {provider || 'Loading...'}
-              </div>
-              <div className="text-[0.65rem] text-muted-foreground mt-1">Set in Product Edit → VPS Provider field</div>
+              {!provider && loading ? (
+                <div className="border-2 border-border rounded-[var(--r-sm)] px-3 py-2 text-[0.85rem] bg-muted text-muted-foreground">Loading...</div>
+              ) : provider ? (
+                <div className="border-2 border-border rounded-[var(--r-sm)] px-3 py-2 text-[0.85rem] font-bold bg-muted text-foreground">{provider}</div>
+              ) : (
+                <div className="border-2 border-secondary rounded-[var(--r-sm)] px-3 py-2 bg-secondary/10">
+                  <div className="text-[0.8rem] font-bold text-secondary">Provider not set</div>
+                  <div className="text-[0.65rem] text-muted-foreground mt-0.5">
+                    Go to{' '}
+                    <a href={`/admin/products/${(product as Record<string, unknown>)?.id || productId}/edit`} className="text-accent underline font-bold">Product Edit</a>
+                    {' '}and set the "VPS Provider" field first.
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
