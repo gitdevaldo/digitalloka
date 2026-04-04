@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
 import { withErrorHandler } from '@/lib/api-handler';
-import { apiError } from '@/lib/api-response';
+import { apiError, apiJson } from '@/lib/api-response';
 import { logAudit } from '@/lib/services/audit-log';
+import { productTypeCreateSchema } from '@/lib/validation/schemas';
 
 export const GET = withErrorHandler(async () => {
   const userId = await getSessionUserId();
@@ -27,7 +28,7 @@ export const GET = withErrorHandler(async () => {
     fields: row.fields || [],
   }));
 
-  return NextResponse.json({ data: types });
+  return apiJson({ data: types });
 });
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
@@ -35,8 +36,9 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const body = await request.json();
-  if (!body.type || !body.label) {
-    return apiError('type and label are required', 422);
+  const parsed = productTypeCreateSchema.safeParse(body);
+  if (!parsed.success) {
+    return apiError(parsed.error.issues.map(i => i.message).join(', '), 422);
   }
 
   const admin = createSupabaseAdminClient();
@@ -44,11 +46,11 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   const { data, error } = await admin
     .from('product_types')
     .insert({
-      type_key: body.type,
-      label: body.label,
-      description: body.description || '',
-      is_active: body.is_active ?? true,
-      fields: body.fields || [],
+      type_key: parsed.data.type,
+      label: parsed.data.label,
+      description: parsed.data.description,
+      is_active: parsed.data.is_active,
+      fields: parsed.data.fields as import('@/lib/supabase/database.types').Json,
     })
     .select()
     .single();
@@ -66,10 +68,12 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     target_id: String(data.id),
     actor_user_id: userId,
     actor_role: 'admin',
-    changes: { type: body.type, label: body.label },
-  }).catch(() => {});
+    changes: { type: parsed.data.type, label: parsed.data.label },
+  }).catch((err: unknown) => {
+    console.error('[audit-log] Failed to log product_type.create:', err);
+  });
 
-  return NextResponse.json({
+  return apiJson({
     data: {
       id: data.id,
       type: data.type_key,
@@ -78,5 +82,5 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       is_active: data.is_active,
       fields: data.fields || [],
     },
-  }, { status: 201 });
+  }, 201);
 });

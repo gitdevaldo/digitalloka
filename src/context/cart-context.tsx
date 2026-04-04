@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 export interface VpsConfig {
@@ -261,10 +261,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const isInCart = useCallback((productId: number) => items.some(i => i.productId === productId), [items]);
 
-  const count = items.reduce((acc, i) => acc + i.quantity, 0);
+  const count = useMemo(() => items.reduce((acc, i) => acc + i.quantity, 0), [items]);
+
+  const contextValue = useMemo(() => ({
+    items, count, hydrated: loaded, addItem, removeItem, updateQuantity, clearCart, isInCart,
+  }), [items, count, loaded, addItem, removeItem, updateQuantity, clearCart, isInCart]);
 
   return (
-    <CartContext.Provider value={{ items, count, hydrated: loaded, addItem, removeItem, updateQuantity, clearCart, isInCart }}>
+    <CartContext.Provider value={contextValue}>
       {children}
     </CartContext.Provider>
   );

@@ -1,20 +1,36 @@
-import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { listDroplets } from '@/lib/services/digitalocean';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
 import { withErrorHandler } from '@/lib/api-handler';
-import { apiError } from '@/lib/api-response';
+import { apiError, apiJson } from '@/lib/api-response';
 
-export const GET = withErrorHandler(async () => {
+const PAGE_SIZE = 50;
+
+export const GET = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
   if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
+  const sp = request.nextUrl.searchParams;
+  const page = Math.max(1, Number(sp.get('page') || '1'));
+
   const admin = createSupabaseAdminClient();
+
+  const { count: totalUsers } = await admin
+    .from('users')
+    .select('id', { count: 'exact', head: true })
+    .not('droplet_ids', 'is', null);
+
+  const from = (page - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
 
   const { data: users, error: usersError } = await admin
     .from('users')
-    .select('id, email, droplet_ids');
+    .select('id, email, droplet_ids')
+    .not('droplet_ids', 'is', null)
+    .order('created_at', { ascending: false })
+    .range(from, to);
 
   if (usersError) return apiError(sanitizeDbError(usersError.message), 500);
 
@@ -31,7 +47,7 @@ export const GET = withErrorHandler(async () => {
 
   const dropletIds = Object.keys(ownersByDropletId).map(Number);
   if (dropletIds.length === 0) {
-    return NextResponse.json({ droplets: [] });
+    return apiJson({ droplets: [], page, total_pages: Math.ceil((totalUsers || 0) / PAGE_SIZE), has_more: false });
   }
 
   try {
@@ -69,7 +85,8 @@ export const GET = withErrorHandler(async () => {
       };
     });
 
-    return NextResponse.json({ droplets: mapped });
+    const totalPages = Math.ceil((totalUsers || 0) / PAGE_SIZE);
+    return apiJson({ droplets: mapped, page, total_pages: totalPages, has_more: page < totalPages });
   } catch {
     return apiError('Failed to load droplets', 502);
   }

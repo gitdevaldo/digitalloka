@@ -15,7 +15,12 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
   return (
     <div
       className="fixed inset-0 bg-foreground/45 z-[500] flex items-center justify-center backdrop-blur-[3px]"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      tabIndex={-1}
       onClick={onClose}
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}
     >
       <div
         className={cn(
@@ -29,6 +34,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
           <span>{title}</span>
           <button
             onClick={onClose}
+            aria-label="Close dialog"
             className="text-xs font-bold bg-muted border border-border rounded-full px-2 py-1 cursor-pointer hover:bg-border transition-colors"
           >
             ✕ Close

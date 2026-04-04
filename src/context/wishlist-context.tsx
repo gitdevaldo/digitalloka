@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 interface WishlistContextType {
@@ -106,8 +106,12 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     }
   }, [isLoggedIn]);
 
+  const contextValue = useMemo(() => ({
+    items, count: items.length, isInWishlist, toggleWishlist, isLoggedIn,
+  }), [items, isInWishlist, toggleWishlist, isLoggedIn]);
+
   return (
-    <WishlistContext.Provider value={{ items, count: items.length, isInWishlist, toggleWishlist, isLoggedIn }}>
+    <WishlistContext.Provider value={contextValue}>
       {children}
     </WishlistContext.Provider>
   );

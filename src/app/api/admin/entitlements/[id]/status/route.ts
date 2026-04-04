@@ -27,7 +27,9 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: { p
       actor_user_id: userId,
       actor_role: 'admin',
       changes: { status: body.status, reason: body.reason },
-    }).catch(() => {});
+    }).catch((err: unknown) => {
+      console.error('[audit-log] Failed to log entitlement.status_change:', err);
+    });
 
     return apiJson({ success: true });
   } catch {

@@ -38,7 +38,9 @@ export const PUT = withErrorHandler(async (request: NextRequest) => {
       actor_user_id: userId,
       actor_role: 'admin',
       changes: { group, values },
-    }).catch(() => {});
+    }).catch((err: unknown) => {
+      console.error('[audit-log] Failed to log settings.update:', err);
+    });
 
     return NextResponse.json({ success: true, data: result });
   } catch {

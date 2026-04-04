@@ -1,12 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { listSizes } from '@/lib/services/digitalocean';
 import { syncDigitalOceanProviderData } from '@/lib/services/sync-provider-data';
+import { apiError, apiJson } from '@/lib/api-response';
+import { withErrorHandler } from '@/lib/api-handler';
+import { syncSizesUpdateSchema, manualSizeCreateSchema } from '@/lib/validation/schemas';
 
-export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const POST = withErrorHandler(async (_request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { id } = await params;
   const productId = Number(id);
@@ -19,7 +22,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     .single();
 
   if (!product || product.product_type !== 'vps_droplet') {
-    return NextResponse.json({ error: 'Product not found or not a VPS droplet type' }, { status: 422 });
+    return apiError('Product not found or not a VPS droplet type', 422);
   }
 
   const sizes = await listSizes();
@@ -89,24 +92,24 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     console.error('[sync-sizes] Provider data sync failed:', err);
   }
 
-  return NextResponse.json({
+  return apiJson({
     synced, created, updated, total_sizes: sizes.length,
     provider_data: providerDataResult,
   });
-}
+});
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const PATCH = withErrorHandler(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { id } = await params;
   const productId = Number(id);
   const body = await request.json();
-  const { stock_item_id, status, selling_price } = body;
-
-  if (!stock_item_id) {
-    return NextResponse.json({ error: 'stock_item_id required' }, { status: 422 });
+  const parsed = syncSizesUpdateSchema.safeParse(body);
+  if (!parsed.success) {
+    return apiError(parsed.error.issues.map(i => i.message).join(', '), 422);
   }
+  const { stock_item_id, status, selling_price } = parsed.data;
 
   const admin = createSupabaseAdminClient();
 
@@ -118,49 +121,49 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     .single();
 
   if (!stock) {
-    return NextResponse.json({ error: 'Stock item not found' }, { status: 404 });
+    return apiError('Stock item not found', 404);
   }
 
   const updates: Record<string, unknown> = {};
 
   if (status && ['enabled', 'disabled'].includes(status)) {
     if (stock.status === 'sold') {
-      return NextResponse.json({ error: 'Cannot change status of sold stock item' }, { status: 422 });
+      return apiError('Cannot change status of sold stock item', 422);
     }
     updates.status = status;
   }
 
   if (selling_price !== undefined) {
     const existingMeta = (stock.meta as Record<string, unknown>) || {};
-    updates.meta = { ...existingMeta, selling_price: Number(selling_price) };
+    updates.meta = { ...existingMeta, selling_price: selling_price };
   }
 
   if (Object.keys(updates).length === 0) {
-    return NextResponse.json({ error: 'No valid updates provided' }, { status: 422 });
+    return apiError('No valid updates provided', 422);
   }
 
   const { error } = await admin.from('product_stock_items')
     .update(updates)
     .eq('id', stock_item_id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiError(error.message, 500);
 
-  return NextResponse.json({ updated: true, stock_item_id, updates });
-}
+  return apiJson({ updated: true, stock_item_id, updates });
+});
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const PUT = withErrorHandler(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const userId = await getSessionUserId();
-  if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { id } = await params;
   const productId = Number(id);
   const body = await request.json();
-
-  const { provider, slug, vcpus, memory, disk } = body;
-
-  if (!provider || !slug || !vcpus || !memory || !disk) {
-    return NextResponse.json({ error: 'provider, slug, vcpus, memory, disk are required' }, { status: 422 });
+  const parsed = manualSizeCreateSchema.safeParse(body);
+  if (!parsed.success) {
+    return apiError(parsed.error.issues.map(i => i.message).join(', '), 422);
   }
+
+  const { provider, slug, vcpus, memory, disk } = parsed.data;
 
   const admin = createSupabaseAdminClient();
 
@@ -171,17 +174,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     vcpus: Number(vcpus),
     memory: Number(memory),
     disk: Number(disk),
-    transfer: Number(body.transfer || 0),
-    price_monthly: Number(body.price_monthly || 0),
-    price_hourly: Number(((body.price_monthly || 0) / 730).toFixed(5)),
+    transfer: parsed.data.transfer,
+    price_monthly: parsed.data.price_monthly,
+    price_hourly: Number((parsed.data.price_monthly / 730).toFixed(5)),
     available: true,
-    regions: body.regions || [],
+    regions: parsed.data.regions,
   };
 
   const meta: Record<string, unknown> = {
     type: 'manual_size',
     provider,
-    selling_price: Number(body.selling_price || body.price_monthly || 0),
+    selling_price: parsed.data.selling_price ?? parsed.data.price_monthly,
     added_by: userId,
     added_at: new Date().toISOString(),
   };
@@ -208,19 +211,19 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     .single();
 
   if (existing) {
-    return NextResponse.json({ error: 'Size with this slug and provider already exists' }, { status: 409 });
+    return apiError('Size with this slug and provider already exists', 409);
   }
 
   const { error } = await admin.from('product_stock_items').insert({
     product_id: productId,
-    credential_data: credentialData,
+    credential_data: credentialData as import('@/lib/supabase/database.types').Json,
     credential_hash: hash,
     status: 'disabled',
     is_unlimited: true,
-    meta,
+    meta: meta as import('@/lib/supabase/database.types').Json,
   });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiError(error.message, 500);
 
-  return NextResponse.json({ created: true, slug, provider });
-}
+  return apiJson({ created: true, slug, provider });
+});

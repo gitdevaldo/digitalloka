@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
@@ -6,7 +6,7 @@ import type { Json } from '@/lib/supabase/database.types';
 import { parseRequestBody } from '@/lib/validation';
 import { stockImportSchema } from '@/lib/validation/schemas';
 import { withErrorHandler } from '@/lib/api-handler';
-import { apiError } from '@/lib/api-response';
+import { apiError, apiJson } from '@/lib/api-response';
 import { logAudit } from '@/lib/services/audit-log';
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
@@ -108,9 +108,11 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     actor_user_id: userId,
     actor_role: 'admin',
     changes: { inserted, skipped_duplicates: skippedDuplicates, total_lines: lines.length },
-  }).catch(() => {});
+  }).catch((err: unknown) => {
+    console.error('[audit-log] Failed to log product_stock.import:', err);
+  });
 
-  return NextResponse.json({
+  return apiJson({
     success: true,
     product_id,
     inserted,
@@ -118,7 +120,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     invalid_count: invalidRows.length,
     invalid_rows: invalidRows,
     headers: normalizedHeaders,
-  }, { status: 201 });
+  }, 201);
 });
 
 async function hashCredentials(data: Record<string, unknown>): Promise<string> {

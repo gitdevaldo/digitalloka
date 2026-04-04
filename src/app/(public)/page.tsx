@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
 import { useWishlist } from '@/context/wishlist-context';
@@ -154,16 +154,16 @@ export default function CatalogPage() {
 
   useEffect(() => { loadProducts(); }, [loadProducts]);
 
-  const categoryCounts = products.reduce<Record<string, number>>((acc, p) => {
+  const categoryCounts = useMemo(() => products.reduce<Record<string, number>>((acc, p) => {
     acc[p.category] = (acc[p.category] ?? 0) + 1;
     return acc;
-  }, {});
+  }, {}), [products]);
 
-  const avgRating = products.length > 0
+  const avgRating = useMemo(() => products.length > 0
     ? (products.reduce((sum, p) => sum + p.rating, 0) / products.length).toFixed(1)
-    : '0.0';
+    : '0.0', [products]);
 
-  const totalReviews = products.reduce((sum, p) => sum + p.reviews, 0);
+  const totalReviews = useMemo(() => products.reduce((sum, p) => sum + p.reviews, 0), [products]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);

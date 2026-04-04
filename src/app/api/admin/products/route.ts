@@ -96,7 +96,9 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     actor_user_id: userId,
     actor_role: 'admin',
     changes: { name: data.name, slug: data.slug, product_type: data.product_type },
-  }).catch(() => {});
+  }).catch((err: unknown) => {
+    console.error('[audit-log] Failed to log product.create:', err);
+  });
 
   return apiSuccess(product, 201);
 });

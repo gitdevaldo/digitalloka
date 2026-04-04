@@ -35,6 +35,11 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       || request.headers.get('x-mayar-signature');
 
     const isSandbox = process.env.MAYAR_SANDBOX === 'true';
+    const isProduction = process.env.NODE_ENV === 'production';
+    if (isSandbox && isProduction) {
+      console.error('[mayar-webhook] MAYAR_SANDBOX=true is not allowed in production');
+      return apiError('Sandbox mode is not allowed in production', 403);
+    }
     if (!isSandbox && !verifyWebhookSignature(rawBody, signature)) {
       console.error('[mayar-webhook] Invalid signature');
       return apiError('Invalid signature', 401);

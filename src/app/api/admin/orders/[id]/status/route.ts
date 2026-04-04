@@ -23,7 +23,9 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: { p
       actor_user_id: userId,
       actor_role: 'admin',
       changes: { status: body.status },
-    }).catch(() => {});
+    }).catch((err: unknown) => {
+      console.error('[audit-log] Failed to log order.status_change:', err);
+    });
 
     return apiSuccess(order);
   } catch {

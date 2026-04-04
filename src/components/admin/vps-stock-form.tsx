@@ -111,13 +111,15 @@ export function VpsStockForm({
     const isLoading = loadingProviderData[field.key] || false;
     const isDependentEmpty = field.depends_on && !values[field.depends_on];
 
+    const fieldId = `vps_field_${field.key}`;
+
     if (field.type === 'select') {
       const options = getOptionsForField(field);
 
       if (isDependentEmpty) {
         return (
           <div key={field.key}>
-            <label className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
+            <label htmlFor={fieldId} className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
             <div className="text-[0.78rem] text-muted-foreground italic">
               Select {fields.find(f => f.key === field.depends_on)?.label?.toLowerCase() || field.depends_on} first
             </div>
@@ -128,7 +130,7 @@ export function VpsStockForm({
       if (isLoading) {
         return (
           <div key={field.key}>
-            <label className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
+            <label htmlFor={fieldId} className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
             <div className="border-2 border-border rounded-[var(--r-sm)] px-3 py-2 text-[0.85rem] bg-muted text-muted-foreground">
               Loading {field.label.toLowerCase()}...
             </div>
@@ -139,7 +141,7 @@ export function VpsStockForm({
       if (options.length === 0 && field.provider_data_type) {
         return (
           <div key={field.key}>
-            <label className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
+            <label htmlFor={fieldId} className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
             <div className="border-2 border-border rounded-[var(--r-sm)] px-3 py-2 bg-muted/50">
               <div className="text-[0.78rem] text-muted-foreground">
                 No {field.label.toLowerCase()} data available for {values['provider'] || 'this provider'}
@@ -155,7 +157,7 @@ export function VpsStockForm({
       if (options.length === 0) {
         return (
           <div key={field.key}>
-            <label className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
+            <label htmlFor={fieldId} className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
             <div className="border-2 border-secondary rounded-[var(--r-sm)] px-3 py-2 bg-secondary/10">
               <div className="text-[0.8rem] font-bold text-secondary">No options defined</div>
               <div className="text-[0.65rem] text-muted-foreground mt-0.5">
@@ -168,18 +170,20 @@ export function VpsStockForm({
 
       return (
         <div key={field.key}>
-          <label className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
+          <label htmlFor={fieldId} className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
           <select
+            id={fieldId}
             className={selectClass}
             value={value}
             onChange={e => hasDependents ? handleFieldChange(field.key, e.target.value) : onChange(field.key, e.target.value)}
+            aria-required={field.required}
           >
             <option value="">— select {field.label.toLowerCase()} —</option>
             {options.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
-          {field.help_text && <div className="text-[0.65rem] text-muted-foreground mt-1">{field.help_text}</div>}
+          {field.help_text && <div id={`${fieldId}_help`} className="text-[0.65rem] text-muted-foreground mt-1">{field.help_text}</div>}
         </div>
       );
     }
@@ -187,13 +191,16 @@ export function VpsStockForm({
     if (field.type === 'number') {
       return (
         <div key={field.key}>
-          <label className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
+          <label htmlFor={fieldId} className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
           <input
+            id={fieldId}
             type="number"
             className={inputClass}
             value={value}
             onChange={e => onChange(field.key, e.target.value)}
             placeholder={field.help_text || ''}
+            aria-required={field.required}
+            aria-describedby={field.help_text ? `${fieldId}_help` : undefined}
           />
         </div>
       );
@@ -202,12 +209,14 @@ export function VpsStockForm({
     if (field.type === 'textarea') {
       return (
         <div key={field.key}>
-          <label className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
+          <label htmlFor={fieldId} className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
           <textarea
+            id={fieldId}
             className={inputClass + ' min-h-[60px]'}
             value={value}
             onChange={e => onChange(field.key, e.target.value)}
             placeholder={field.help_text || ''}
+            aria-required={field.required}
           />
         </div>
       );
@@ -232,12 +241,14 @@ export function VpsStockForm({
 
     return (
       <div key={field.key}>
-        <label className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
+        <label htmlFor={fieldId} className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
         <input
+          id={fieldId}
           className={inputClass + (field.key === 'slug' ? ' font-mono' : '')}
           value={value}
           onChange={e => onChange(field.key, e.target.value)}
           placeholder={field.help_text || ''}
+          aria-required={field.required}
         />
       </div>
     );
@@ -260,11 +271,11 @@ export function VpsStockForm({
     fields.find(f => f.key === 'os')?.options?.find(o => o === selectedOs) || selectedOs;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-      <div style={{ display: 'grid', gap: 20, alignContent: 'start' }}>
+    <div className="grid grid-cols-2 gap-5">
+      <div className="grid gap-5 content-start">
         <div className="p-5 bg-card border-2 border-border rounded-[var(--r-md)]">
           <h3 className="text-[0.8rem] font-extrabold uppercase tracking-wider mb-4">Size Configuration</h3>
-          <div style={{ display: 'grid', gap: 16 }}>
+          <div className="grid gap-4">
             {otherConfigFields.map(f => renderField(f))}
             {numberFields.length > 0 && (
               <>
@@ -274,7 +285,7 @@ export function VpsStockForm({
                     pairs.push(numberFields.slice(i, i + 2));
                   }
                   return pairs.map((pair, idx) => (
-                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: pair.length === 2 ? '1fr 1fr' : '1fr', gap: 12 }}>
+                    <div key={idx} className={`grid gap-3 ${pair.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
                       {pair.map(f => renderField(f))}
                     </div>
                   ));
@@ -287,29 +298,31 @@ export function VpsStockForm({
         {locationFields.length > 0 && (
           <div className="p-5 bg-card border-2 border-border rounded-[var(--r-md)]">
             <h3 className="text-[0.8rem] font-extrabold uppercase tracking-wider mb-4">Region & OS</h3>
-            <div style={{ display: 'grid', gap: 16 }}>
+            <div className="grid gap-4">
               {locationFields.map(f => renderField(f))}
             </div>
           </div>
         )}
       </div>
 
-      <div style={{ display: 'grid', gap: 20, alignContent: 'start' }}>
+      <div className="grid gap-5 content-start">
         <div className="p-5 bg-card border-2 border-border rounded-[var(--r-md)]">
           <h3 className="text-[0.8rem] font-extrabold uppercase tracking-wider mb-4">
             {mode === 'edit' ? 'Pricing & Status' : 'Pricing'}
           </h3>
-          <div style={{ display: 'grid', gap: 16 }}>
+          <div className="grid gap-4">
             <div>
-              <label className={labelClass}>Selling Price (IDR/mo) *</label>
+              <label htmlFor="vps_selling_price" className={labelClass}>Selling Price (IDR/mo) *</label>
               <div className="flex items-center gap-2">
                 <span className="text-[0.85rem] font-bold text-muted-foreground">Rp</span>
                 <input
+                  id="vps_selling_price"
                   type="number"
                   className={inputClass + ' font-bold'}
                   value={sellingPrice}
                   onChange={e => onSellingPriceChange(e.target.value)}
                   placeholder="50000"
+                  aria-required
                 />
               </div>
               {sellingPrice && Number(sellingPrice) > 0 && (
@@ -321,9 +334,10 @@ export function VpsStockForm({
 
             {mode === 'edit' && onStatusChange && (
               <div>
-                <label className={labelClass}>Status</label>
+                <label htmlFor="vps_status" className={labelClass}>Status</label>
                 <select
-                  className="w-full border-2 border-border rounded-[var(--r-sm)] px-3 py-2 font-body text-[0.85rem] font-semibold bg-input text-foreground focus:outline-none focus:border-accent"
+                  id="vps_status"
+                  className={selectClass}
                   value={status}
                   onChange={e => onStatusChange(e.target.value)}
                 >
@@ -337,12 +351,12 @@ export function VpsStockForm({
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  id="unlimited"
+                  id="vps_unlimited"
                   checked={isUnlimited}
                   onChange={e => onUnlimitedChange(e.target.checked)}
-                  className="accent-[var(--accent)]"
+                  className="w-4 h-4 accent-[var(--accent)]"
                 />
-                <label htmlFor="unlimited" className="text-[0.8rem] font-semibold cursor-pointer">Unlimited stock</label>
+                <label htmlFor="vps_unlimited" className="text-[0.8rem] font-semibold cursor-pointer">Unlimited stock</label>
               </div>
             )}
           </div>
@@ -350,13 +364,13 @@ export function VpsStockForm({
 
         <div className="p-5 bg-card border-2 border-border rounded-[var(--r-md)]">
           <h3 className="text-[0.8rem] font-extrabold uppercase tracking-wider mb-4">Preview</h3>
-          <div style={{ background: 'var(--muted)', borderRadius: 'var(--r-sm)', padding: 16 }}>
+          <div className="bg-muted rounded-[var(--r-sm)] p-4">
             <div className="flex items-center gap-2 mb-2">
-              <span style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em', color: 'var(--accent)' }}>
+              <span className="text-[0.68rem] font-extrabold uppercase tracking-wide text-accent">
                 {values['provider'] || '—'}
               </span>
             </div>
-            <div style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.9rem', marginBottom: 4 }}>
+            <div className="font-mono font-bold text-[0.9rem] mb-1">
               {values['slug'] || '—'}
             </div>
             <div className="flex gap-1.5 flex-wrap mb-3">
@@ -375,7 +389,7 @@ export function VpsStockForm({
                 )}
               </div>
             )}
-            <div style={{ fontSize: '1.1rem', fontWeight: 900 }}>
+            <div className="text-[1.1rem] font-black">
               {sellingPrice && Number(sellingPrice) > 0 ? `${formatCurrency(Number(sellingPrice), 'IDR')}/mo` : 'No price set'}
             </div>
           </div>

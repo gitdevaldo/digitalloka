@@ -9,5 +9,7 @@ export const GET = withErrorHandler(async (_request: NextRequest, { params }: { 
   const supabase = await createSupabaseServerClient();
   const product = await getProductBySlug(supabase, slug);
   if (!product) return apiError('Product not found', 404);
-  return apiSuccess(product);
+  const response = apiSuccess(product);
+  response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
+  return response;
 });

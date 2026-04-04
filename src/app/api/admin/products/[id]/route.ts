@@ -99,7 +99,9 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: { p
     actor_user_id: userId,
     actor_role: 'admin',
     changes: updates,
-  }).catch(() => {});
+  }).catch((err: unknown) => {
+    console.error('[audit-log] Failed to log product.update:', err);
+  });
 
   return apiSuccess(data);
 });

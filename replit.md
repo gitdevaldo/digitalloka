@@ -27,8 +27,9 @@ DigitalLoka is a Next.js application designed to provide a comprehensive platfor
 - **Fonts:** Outfit (headings) + Plus Jakarta Sans (body)
 - **Icons:** Lucide React
 - **Port:** 5000
-- **Security:** CSP, HSTS, Permissions-Policy headers via next.config.js; error sanitization via `src/lib/error-sanitizer.ts`; ilike injection protection in audit logs
-- **Error Handling:** Centralized `withErrorHandler` wrapper (`src/lib/api-handler.ts`) on all API routes; shared response helpers (`src/lib/api-response.ts`: `apiSuccess`, `apiError`, `apiJson`); audit logging on all admin write operations via `logAudit`
+- **Security:** CSP, HSTS, Permissions-Policy headers via next.config.js; error sanitization via `src/lib/error-sanitizer.ts`; ilike injection protection in audit logs; XSS protection via `isomorphic-dompurify` (`src/lib/sanitize-html.ts`); CRON_SECRET auth on cron endpoints; Mayar sandbox production guard
+- **Error Handling:** Centralized `withErrorHandler` wrapper (`src/lib/api-handler.ts`) on all API routes; shared response helpers (`src/lib/api-response.ts`: `apiSuccess`, `apiError`, `apiJson`); audit logging on all admin write operations via `logAudit` with console.error on failures
+- **Input Validation:** Zod schemas in `src/lib/validation/schemas.ts` for admin mutation endpoints (product-stocks, product-types, sync-sizes)
 
 ## System Architecture
 The application is built with Next.js 14 (App Router) using TypeScript and styled with Tailwind CSS 3.4, adhering to a Neo-Brutalist design system. Supabase handles database operations and magic link authentication.
@@ -40,7 +41,7 @@ The application is built with Next.js 14 (App Router) using TypeScript and style
 - **Admin Panel:** Comprehensive CRUD operations for products, product types (with schema builder), stock items, users (with role/block management), orders (fulfillment), entitlements, DigitalOcean droplets, and site settings. Includes an audit log with CSV export and live statistics.
 - **Commerce System:** Features an atomic checkout flow, idempotent payment webhook processing, collision-resistant order numbers, and shared entitlement provisioning logic.
 - **Route Protection:** Middleware secures dashboard, admin, and API routes, with admin role checks implemented at the middleware level.
-- **Rate Limiting:** A sliding window rate limiter protects authentication, webhooks, and checkout endpoints, supporting in-memory or Supabase-backed storage.
+- **Rate Limiting:** A sliding window rate limiter protects authentication, webhooks, checkout, product, cart, wishlist, and user action endpoints, supporting in-memory or Supabase-backed storage.
 - **Post-Payment Fulfillment:** Automates provisioning for VPS droplets (via DigitalOcean API) and digital products (assigning stock items).
 - **VPS Size Synchronization:** Admin functionality to sync DigitalOcean sizes as stock items.
 - **VPS Provider Data Sync:** Regions and OS images are fetched from DigitalOcean API (`/regions` + `/images?type=distribution`) and stored in `vps_provider_data` table (column `resource_type` distinguishes 'region' vs 'image'). Synced automatically alongside sizes during manual sync and cron sync.

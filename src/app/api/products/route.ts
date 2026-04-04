@@ -23,7 +23,9 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 
     const supabase = await createSupabaseServerClient();
     const result = await listProducts(supabase, filters);
-    return NextResponse.json(result);
+    const response = NextResponse.json(result);
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    return response;
   } catch {
     return apiError('Failed to load products', 500);
   }

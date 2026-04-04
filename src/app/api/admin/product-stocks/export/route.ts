@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { withErrorHandler } from '@/lib/api-handler';
-import { apiError } from '@/lib/api-response';
+import { apiError, apiJson } from '@/lib/api-response';
 
 export const GET = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
@@ -42,7 +42,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     return headers.map((h) => data[h] || '').join('|');
   });
 
-  return NextResponse.json({
+  return apiJson({
     product_id: product.id,
     product_name: product.name,
     headers,

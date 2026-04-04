@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
 import { withErrorHandler } from '@/lib/api-handler';
-import { apiError, apiJson } from '@/lib/api-response';
+import { apiError, apiJson, apiSuccess } from '@/lib/api-response';
 import { logAudit } from '@/lib/services/audit-log';
+import { productStockCreateSchema } from '@/lib/validation/schemas';
 
 export const GET = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
@@ -19,30 +20,28 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   let query = admin
     .from('product_stock_items')
     .select('*, product:products(id, name, slug, product_type)')
-    .order('id', { ascending: false })
-    .limit(100);
+    .order('id', { ascending: false });
 
   if (productId) query = query.eq('product_id', Number(productId));
   if (status && ['unsold', 'sold', 'enabled', 'disabled'].includes(status)) query = query.eq('status', status);
+
+  if (search) {
+    const escaped = search.replace(/[%_\\]/g, '\\$&');
+    query = query.or(`credential_data->>slug.ilike.%${escaped}%,credential_data->>description.ilike.%${escaped}%`);
+  }
+
+  query = query.limit(50);
 
   const { data, error } = await query;
 
   if (error) {
     if (error.message.includes('product_stock_items')) {
-      return NextResponse.json({ data: [], _table_missing: true });
+      return apiJson({ data: [], _table_missing: true });
     }
     return apiError(sanitizeDbError(error.message), 500);
   }
 
-  let results = data || [];
-  if (search) {
-    results = results.filter((item) => {
-      const cred = JSON.stringify(item.credential_data || {}).toLowerCase();
-      return cred.includes(search);
-    });
-  }
-
-  return NextResponse.json({ data: results.slice(0, 50) });
+  return apiJson({ data: data || [] });
 });
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
@@ -50,12 +49,13 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const body = await request.json();
-  if (!body.product_id || !body.credential_data || typeof body.credential_data !== 'object') {
-    return apiError('product_id and credential_data (object) are required', 422);
+  const parsed = productStockCreateSchema.safeParse(body);
+  if (!parsed.success) {
+    return apiError(parsed.error.issues.map(i => i.message).join(', '), 422);
   }
 
   const admin = createSupabaseAdminClient();
-  const credentialData = body.credential_data;
+  const credentialData = parsed.data.credential_data as Record<string, unknown>;
   const credentialHash = await hashCredentials(credentialData);
 
   const { data: existing } = await admin
@@ -72,8 +72,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   const { data, error } = await admin
     .from('product_stock_items')
     .insert({
-      product_id: Number(body.product_id),
-      credential_data: credentialData,
+      product_id: parsed.data.product_id,
+      credential_data: credentialData as import('@/lib/supabase/database.types').Json,
       credential_hash: credentialHash,
       status: 'enabled',
     })
@@ -88,8 +88,10 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     target_id: String(data.id),
     actor_user_id: userId,
     actor_role: 'admin',
-    changes: { product_id: body.product_id },
-  }).catch(() => {});
+    changes: { product_id: parsed.data.product_id },
+  }).catch((err: unknown) => {
+    console.error('[audit-log] Failed to log product_stock.create:', err);
+  });
 
   return apiJson({ item: data }, 201);
 });

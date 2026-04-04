@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
@@ -81,7 +81,9 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: { p
     actor_user_id: userId,
     actor_role: 'admin',
     changes: updates,
-  }).catch(() => {});
+  }).catch((err: unknown) => {
+    console.error('[audit-log] Failed to log product_stock.update:', err);
+  });
 
   return apiJson({ item: data });
 });
@@ -106,7 +108,9 @@ export const DELETE = withErrorHandler(async (_request: NextRequest, { params }:
     target_id: id,
     actor_user_id: userId,
     actor_role: 'admin',
-  }).catch(() => {});
+  }).catch((err: unknown) => {
+    console.error('[audit-log] Failed to log product_stock.delete:', err);
+  });
 
-  return NextResponse.json({ deleted: true });
+  return apiJson({ deleted: true });
 });

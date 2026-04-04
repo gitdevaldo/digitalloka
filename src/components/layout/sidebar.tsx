@@ -204,12 +204,13 @@ export function Sidebar({ variant = 'dashboard', collapsed = false, onToggle }: 
     >
       <button
         onClick={onToggle}
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         className="absolute top-4 -right-3.5 w-7 h-7 rounded-full bg-card border-2 border-foreground shadow-[2px_2px_0_var(--shadow)] flex items-center justify-center cursor-pointer z-[110] text-foreground transition-all duration-200 hover:bg-accent hover:text-white hover:border-accent"
       >
         <ChevronLeft size={11} className={cn('transition-transform duration-[250ms]', collapsed && 'rotate-180')} style={{ transitionTimingFunction: 'var(--ease)' }} />
       </button>
 
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2.5 pt-3.5 pb-2.5 flex flex-col gap-0.5">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2.5 pt-3.5 pb-2.5 flex flex-col gap-0.5" aria-label="Main navigation">
         <div className={cn(
           'text-[0.62rem] font-extrabold uppercase tracking-[0.1em] text-muted-foreground px-2 pt-2.5 pb-1 whitespace-nowrap transition-opacity',
           collapsed && 'opacity-0'

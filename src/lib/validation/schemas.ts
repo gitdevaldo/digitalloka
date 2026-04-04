@@ -103,3 +103,39 @@ export const loginSchema = z.object({
   next: z.string().optional(),
   mode: z.enum(['user', 'admin']).optional().default('user'),
 });
+
+export const productStockCreateSchema = z.object({
+  product_id: z.coerce.number().int().positive('product_id must be a positive integer'),
+  credential_data: z.record(z.unknown()).refine(val => Object.keys(val).length > 0, 'credential_data must be a non-empty object'),
+});
+
+export const productStockBulkSchema = z.object({
+  headers: z.array(z.string().min(1)).min(1, 'headers must contain at least one entry'),
+  rows: z.string().min(1, 'rows is required'),
+});
+
+export const productTypeCreateSchema = z.object({
+  type: z.string().min(1, 'type is required').max(100),
+  label: z.string().min(1, 'label is required').max(255),
+  description: z.string().max(1000).optional().default(''),
+  is_active: z.boolean().optional().default(true),
+  fields: z.array(z.unknown()).optional().default([]),
+});
+
+export const syncSizesUpdateSchema = z.object({
+  stock_item_id: z.coerce.number().int().positive('stock_item_id is required'),
+  status: z.enum(['enabled', 'disabled']).optional(),
+  selling_price: z.coerce.number().min(0).optional(),
+});
+
+export const manualSizeCreateSchema = z.object({
+  provider: z.string().min(1, 'provider is required'),
+  slug: z.string().min(1, 'slug is required'),
+  vcpus: z.coerce.number().int().positive('vcpus is required'),
+  memory: z.coerce.number().int().positive('memory is required'),
+  disk: z.coerce.number().int().positive('disk is required'),
+  transfer: z.coerce.number().min(0).optional().default(0),
+  price_monthly: z.coerce.number().min(0).optional().default(0),
+  selling_price: z.coerce.number().min(0).optional(),
+  regions: z.array(z.string()).optional().default([]),
+});

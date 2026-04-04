@@ -9,6 +9,7 @@ import { LoginDialog } from '@/components/ui/login-dialog';
 import { FloatingBar } from '@/components/layout/floating-bar';
 import { Heart, ShoppingCart } from 'lucide-react';
 import { ProviderLogo } from '@/components/ui/provider-logo';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 import type { VpsConfig } from '@/context/cart-context';
 
 export interface ProductData {
@@ -429,6 +430,7 @@ export default function ProductDetailClient({ product }: { product: ProductData 
   const [vpsConfig, setVpsConfig] = useState<{ provider: string; region: string; regionName: string; size: VpsSize; os: string; osName: string } | null>(null);
 
   const isDroplet = product.product_type === 'vps_droplet';
+  const sanitizedDescription = useMemo(() => product.description ? sanitizeHtml(product.description) : '', [product.description]);
 
   useEffect(() => {
     if (!isDroplet) return;
@@ -740,7 +742,7 @@ export default function ProductDetailClient({ product }: { product: ProductData 
               <div className="section-sub">Full description and specifications</div>
             </div>
             <div className="details-card">
-              <div className="details-content" dangerouslySetInnerHTML={{ __html: product.description }} />
+              <div className="details-content" dangerouslySetInnerHTML={{ __html: sanitizedDescription }} />
             </div>
           </section>
         </>

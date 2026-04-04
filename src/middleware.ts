@@ -5,6 +5,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 const RATE_LIMITS = {
   auth: { windowMs: 60_000, maxRequests: 5 },
   webhook: { windowMs: 60_000, maxRequests: 30 },
+  api: { windowMs: 60_000, maxRequests: 60 },
 } as const;
 
 export async function middleware(request: NextRequest) {
@@ -15,8 +16,18 @@ export async function middleware(request: NextRequest) {
     if (limited) return limited;
   }
 
-  if (pathname.startsWith('/api/payments/webhook')) {
+  if (pathname.startsWith('/api/payments/webhook') || pathname.startsWith('/api/payments/mayar/webhook')) {
     const limited = await applyRateLimit(request, 'webhook', RATE_LIMITS.webhook);
+    if (limited) return limited;
+  }
+
+  if (
+    pathname.startsWith('/api/products') ||
+    pathname.startsWith('/api/wishlist') ||
+    pathname.startsWith('/api/cart') ||
+    pathname.startsWith('/api/user/')
+  ) {
+    const limited = await applyRateLimit(request, 'api', RATE_LIMITS.api);
     if (limited) return limited;
   }
 
@@ -39,6 +50,9 @@ export const config = {
     '/api/admin/:path*',
     '/api/user/:path*',
     '/api/auth/:path*',
-    '/api/payments/webhook',
+    '/api/payments/:path*',
+    '/api/products/:path*',
+    '/api/wishlist/:path*',
+    '/api/cart/:path*',
   ],
 };

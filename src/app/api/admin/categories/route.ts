@@ -53,7 +53,9 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     actor_user_id: userId,
     actor_role: 'admin',
     changes: { name: body.name.trim(), slug },
-  }).catch(() => {});
+  }).catch((err: unknown) => {
+    console.error('[audit-log] Failed to log category.create:', err);
+  });
 
   return apiSuccess(data, 201);
 });

@@ -46,7 +46,9 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: { p
     actor_user_id: userId,
     actor_role: 'admin',
     changes: { days, new_expires_at: newExpiry.toISOString() },
-  }).catch(() => {});
+  }).catch((err: unknown) => {
+    console.error('[audit-log] Failed to log entitlement.extend:', err);
+  });
 
   return apiSuccess(data);
 });

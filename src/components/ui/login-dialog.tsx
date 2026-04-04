@@ -11,9 +11,9 @@ export function LoginDialog({ open, onClose }: LoginDialogProps) {
   if (!open) return null;
 
   return (
-    <div className="login-dialog-overlay" onClick={onClose}>
+    <div className="login-dialog-overlay" role="dialog" aria-modal="true" aria-label="Login required" tabIndex={-1} onClick={onClose} onKeyDown={e => e.key === 'Escape' && onClose()}>
       <div className="login-dialog" onClick={e => e.stopPropagation()}>
-        <button className="login-dialog-close" onClick={onClose}>
+        <button className="login-dialog-close" onClick={onClose} aria-label="Close dialog">
           <X size={18} />
         </button>
         <div className="login-dialog-icon">🔒</div>

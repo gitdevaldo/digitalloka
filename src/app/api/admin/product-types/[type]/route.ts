@@ -37,7 +37,9 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: { p
     actor_user_id: userId,
     actor_role: 'admin',
     changes: updates,
-  }).catch(() => {});
+  }).catch((err: unknown) => {
+    console.error('[audit-log] Failed to log product_type.update:', err);
+  });
 
   return NextResponse.json({
     data: {
@@ -71,7 +73,9 @@ export const DELETE = withErrorHandler(async (_request: NextRequest, { params }:
     target_id: type,
     actor_user_id: userId,
     actor_role: 'admin',
-  }).catch(() => {});
+  }).catch((err: unknown) => {
+    console.error('[audit-log] Failed to log product_type.delete:', err);
+  });
 
   return NextResponse.json({ deleted: true });
 });

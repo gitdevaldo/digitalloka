@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import * as XLSX from 'xlsx';
+import type * as XLSXType from 'xlsx';
 
 const inputClass = "w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent";
 
@@ -37,7 +37,8 @@ export default function AddStockPage() {
       reader.readAsText(file);
     } else if (ext === 'xls' || ext === 'xlsx') {
       const reader = new FileReader();
-      reader.onload = (ev) => {
+      reader.onload = async (ev) => {
+        const XLSX: typeof XLSXType = await import('xlsx');
         const data = new Uint8Array(ev.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];

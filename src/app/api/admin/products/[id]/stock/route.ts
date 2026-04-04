@@ -5,6 +5,7 @@ import { sanitizeDbError } from '@/lib/error-sanitizer';
 import { withErrorHandler } from '@/lib/api-handler';
 import { apiSuccess, apiError, apiJson } from '@/lib/api-response';
 import { logAudit } from '@/lib/services/audit-log';
+import { productStockBulkSchema } from '@/lib/validation/schemas';
 
 export const GET = withErrorHandler(async (_request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const userId = await getSessionUserId();
@@ -34,14 +35,14 @@ export const POST = withErrorHandler(async (request: NextRequest, { params }: { 
 
   const { id } = await params;
   const body = await request.json();
-
-  if (!body.headers || !body.rows) {
-    return apiError('headers and rows are required', 422);
+  const parsed = productStockBulkSchema.safeParse(body);
+  if (!parsed.success) {
+    return apiError(parsed.error.issues.map(i => i.message).join(', '), 422);
   }
 
   const admin = createSupabaseAdminClient();
-  const headers: string[] = body.headers;
-  const lines = (body.rows as string).split(/\r?\n/).filter((l: string) => l.trim());
+  const headers: string[] = parsed.data.headers;
+  const lines = parsed.data.rows.split(/\r?\n/).filter((l: string) => l.trim());
   let inserted = 0;
 
   for (const line of lines) {
@@ -75,7 +76,9 @@ export const POST = withErrorHandler(async (request: NextRequest, { params }: { 
     actor_user_id: userId,
     actor_role: 'admin',
     changes: { inserted, total_lines: lines.length },
-  }).catch(() => {});
+  }).catch((err: unknown) => {
+    console.error('[audit-log] Failed to log product_stock.bulk_add:', err);
+  });
 
   return apiJson({ inserted, total_lines: lines.length });
 });

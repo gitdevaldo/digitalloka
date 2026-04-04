@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 
 const PROVIDER_DOMAINS: Record<string, string> = {
   'DigitalOcean': 'digitalocean.com',
@@ -71,11 +72,12 @@ export function ProviderLogo({ provider, size = 24 }: { provider: string; size?:
   }
 
   return (
-    <img
+    <Image
       src={logoUrl}
       alt={`${provider} logo`}
       width={size}
       height={size}
+      unoptimized
       onError={() => setError(true)}
       style={{
         borderRadius: '6px',

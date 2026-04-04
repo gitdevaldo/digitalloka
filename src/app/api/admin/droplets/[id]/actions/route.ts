@@ -31,7 +31,9 @@ export const POST = withErrorHandler(async (request: NextRequest, { params }: { 
       actor_user_id: userId,
       actor_role: 'admin',
       changes: { action_type: body.type },
-    }).catch(() => {});
+    }).catch((err: unknown) => {
+      console.error('[audit-log] Failed to log droplet.action:', err);
+    });
 
     return NextResponse.json({ action }, { status: 201 });
   } catch {

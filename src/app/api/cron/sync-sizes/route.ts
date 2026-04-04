@@ -1,14 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { listSizes } from '@/lib/services/digitalocean';
 import { syncDigitalOceanProviderData } from '@/lib/services/sync-provider-data';
+import { withErrorHandler } from '@/lib/api-handler';
+import { apiError, apiJson } from '@/lib/api-response';
 
 const CRON_SECRET = process.env.CRON_SECRET;
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandler(async (request: NextRequest) => {
+  if (!CRON_SECRET) {
+    return apiError('CRON_SECRET is not configured', 500);
+  }
   const authHeader = request.headers.get('authorization');
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (authHeader !== `Bearer ${CRON_SECRET}`) {
+    return apiError('Unauthorized', 401);
   }
 
   const admin = createSupabaseAdminClient();
@@ -20,7 +25,7 @@ export async function GET(request: NextRequest) {
     .eq('status', 'active');
 
   if (!vpsProducts || vpsProducts.length === 0) {
-    return NextResponse.json({ message: 'No active VPS products found', synced: 0 });
+    return apiJson({ message: 'No active VPS products found', synced: 0 });
   }
 
   const results: { product_id: number; product_name: string; provider: string; synced: number; created: number; updated: number; availability_changes: number }[] = [];
@@ -121,11 +126,11 @@ export async function GET(request: NextRequest) {
     console.error('[cron/sync-sizes] Provider data sync failed:', err);
   }
 
-  return NextResponse.json({
+  return apiJson({
     message: 'Sync complete',
     timestamp: new Date().toISOString(),
     products_processed: results.length,
     results,
     provider_data: providerDataResult,
   });
-}
+});
