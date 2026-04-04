@@ -103,6 +103,109 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
   return dispatchEmail({ to, subject, html });
 }
 
+const FONT_HEADING = "'Outfit',system-ui,sans-serif";
+const FONT_BODY = "'Plus Jakarta Sans',system-ui,sans-serif";
+const COLOR_BG = '#FFFDF5';
+const COLOR_PURPLE = '#8B5CF6';
+const COLOR_DARK = '#1E293B';
+const COLOR_YELLOW = '#FBBF24';
+const COLOR_GREEN = '#34D399';
+const COLOR_MUTED = '#64748B';
+const COLOR_LIGHT_PURPLE = '#F8F5FF';
+const COLOR_BORDER = '#E2E8F0';
+
+function emailShell(title: string, content: string): string {
+  return `<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>${title} — DigitalLoka</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: ${COLOR_BG}; font-family: ${FONT_BODY}; -webkit-font-smoothing: antialiased; }
+    @media only screen and (max-width: 600px) {
+      .email-wrapper { padding: 16px !important; }
+      .card-body { padding: 28px 20px !important; }
+      .hero-pad { padding: 28px 24px 44px !important; }
+      .hero-title { font-size: 26px !important; line-height: 1.15 !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:${COLOR_BG};">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:${COLOR_BG};">
+<tr><td class="email-wrapper" align="center" style="padding:48px 16px;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:560px;margin:0 auto;">
+
+  <!-- LOGO -->
+  <tr><td align="center" style="padding-bottom:28px;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
+      <td style="background-color:${COLOR_PURPLE};border:2px solid ${COLOR_DARK};border-radius:14px;box-shadow:4px 4px 0px ${COLOR_DARK};padding:10px 22px;">
+        <span style="font-family:${FONT_HEADING};font-size:20px;font-weight:800;color:#FFFFFF;letter-spacing:-0.5px;">
+          Digital<span style="color:${COLOR_YELLOW};">Loka</span>
+        </span>
+      </td>
+    </tr></table>
+  </td></tr>
+
+  <!-- MAIN CARD -->
+  <tr><td style="background-color:#FFFFFF;border:2px solid ${COLOR_DARK};border-radius:24px;box-shadow:8px 8px 0px ${COLOR_DARK};overflow:hidden;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    ${content}
+  </table>
+  </td></tr>
+
+  <!-- BOTTOM FOOTER -->
+  <tr><td align="center" style="padding-top:28px;">
+    <p style="font-family:${FONT_BODY};font-size:12px;color:#94A3B8;line-height:1.7;margin:0;">
+      &copy; 2026 DigitalLoka. All rights reserved.<br/>
+      <a href="#" style="color:${COLOR_PURPLE};text-decoration:none;font-weight:500;">Unsubscribe</a>
+      &nbsp;&middot;&nbsp;
+      <a href="#" style="color:${COLOR_PURPLE};text-decoration:none;font-weight:500;">Privacy Policy</a>
+    </p>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+function heroSection(emoji: string, heading: string): string {
+  return `
+    <tr><td class="hero-pad" style="background-color:${COLOR_PURPLE};padding:36px 40px 52px;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:20px;">
+        <tr><td style="background-color:${COLOR_YELLOW};border:2px solid ${COLOR_DARK};border-radius:9999px;box-shadow:4px 4px 0px ${COLOR_DARK};width:58px;height:58px;text-align:center;vertical-align:middle;font-size:24px;line-height:58px;">
+          ${emoji}
+        </td></tr>
+      </table>
+      <h1 class="hero-title" style="font-family:${FONT_HEADING};font-size:32px;font-weight:800;color:#FFFFFF;letter-spacing:-0.7px;line-height:1.15;margin:0;">
+        ${heading}
+      </h1>
+    </td></tr>`;
+}
+
+function cardFooter(message: string): string {
+  return `
+    <tr><td style="background-color:${COLOR_LIGHT_PURPLE};border-top:2px solid ${COLOR_BORDER};padding:20px 40px;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td style="font-family:${FONT_BODY};font-size:12px;color:${COLOR_MUTED};line-height:1.6;">
+            ${message}
+          </td>
+          <td align="right">
+            <span style="display:inline-block;background-color:${COLOR_GREEN};border:2px solid ${COLOR_DARK};border-radius:9999px;box-shadow:2px 2px 0px ${COLOR_DARK};padding:4px 12px;font-family:${FONT_HEADING};font-size:11px;font-weight:700;color:#FFFFFF;white-space:nowrap;">
+              CONFIRMED &#10003;
+            </span>
+          </td>
+        </tr>
+      </table>
+    </td></tr>`;
+}
+
 interface OrderEmailParams {
   customerName: string;
   orderNumber: string;
@@ -128,86 +231,69 @@ function buildOrderEmail(params: OrderEmailParams): string {
     minute: '2-digit',
   });
 
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Order Confirmation</title>
-</head>
-<body style="margin:0;padding:0;background:#f5f0e8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f0e8;padding:32px 16px;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border:3px solid #1a1a2e;border-radius:12px;overflow:hidden;">
-          <tr>
-            <td style="background:#6c5ce7;padding:32px;text-align:center;">
-              <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:900;letter-spacing:-0.5px;">
-                DigitalLoka
-              </h1>
-              <p style="margin:8px 0 0;color:#d4ccff;font-size:14px;">Order Confirmation</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:32px;">
-              <p style="margin:0 0 16px;font-size:16px;color:#1a1a2e;">
-                Hi <strong>${params.customerName}</strong>,
-              </p>
-              <p style="margin:0 0 24px;font-size:15px;color:#444;line-height:1.5;">
-                Thank you for your purchase! Your order has been confirmed and processed.
-              </p>
+  const content = `
+    ${heroSection('&#128230;', 'Your order is<br/>confirmed! &#127881;')}
 
-              <table width="100%" cellpadding="12" cellspacing="0" style="background:#f8f6f0;border:2px solid #1a1a2e;border-radius:8px;margin-bottom:24px;">
-                <tr>
-                  <td style="border-bottom:1px solid #e0ddd5;">
-                    <strong style="color:#666;font-size:12px;text-transform:uppercase;">Order Number</strong><br>
-                    <span style="font-size:16px;font-weight:700;color:#1a1a2e;">${params.orderNumber}</span>
-                  </td>
-                  <td style="border-bottom:1px solid #e0ddd5;text-align:right;">
-                    <strong style="color:#666;font-size:12px;text-transform:uppercase;">Date</strong><br>
-                    <span style="font-size:14px;color:#1a1a2e;">${formattedDate}</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td colspan="2">
-                    <strong style="color:#666;font-size:12px;text-transform:uppercase;">Total</strong><br>
-                    <span style="font-size:22px;font-weight:900;color:#6c5ce7;">${formattedTotal}</span>
-                  </td>
-                </tr>
-              </table>
+    <tr><td class="card-body" style="padding:36px 40px 32px;">
 
-              <h2 style="margin:0 0 12px;font-size:18px;color:#1a1a2e;border-bottom:2px solid #1a1a2e;padding-bottom:8px;">
-                Order Items
-              </h2>
-              ${params.itemsHtml}
+      <p style="font-family:${FONT_BODY};font-size:16px;color:${COLOR_DARK};line-height:1.7;margin:0 0 6px;">
+        Hey ${params.customerName} &#128075;
+      </p>
+      <p style="font-family:${FONT_BODY};font-size:16px;color:${COLOR_MUTED};line-height:1.7;margin:0 0 28px;">
+        Thank you for your purchase! Your order has been confirmed and processed successfully.
+      </p>
 
-              ${params.fulfillmentHtml}
+      <!-- ORDER INFO BOX -->
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:28px;">
+        <tr><td style="background-color:${COLOR_LIGHT_PURPLE};border:2px solid #C4B5FD;border-radius:16px;padding:20px 24px;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <td style="padding-bottom:12px;border-bottom:2px dashed #C4B5FD;">
+                <span style="font-family:${FONT_BODY};font-size:11px;font-weight:600;color:${COLOR_MUTED};text-transform:uppercase;letter-spacing:0.08em;">Order Number</span><br/>
+                <span style="font-family:${FONT_HEADING};font-size:18px;font-weight:800;color:${COLOR_DARK};letter-spacing:-0.3px;">${params.orderNumber}</span>
+              </td>
+              <td align="right" style="padding-bottom:12px;border-bottom:2px dashed #C4B5FD;">
+                <span style="font-family:${FONT_BODY};font-size:11px;font-weight:600;color:${COLOR_MUTED};text-transform:uppercase;letter-spacing:0.08em;">Date</span><br/>
+                <span style="font-family:${FONT_BODY};font-size:14px;font-weight:500;color:${COLOR_DARK};">${formattedDate}</span>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2" style="padding-top:12px;">
+                <span style="font-family:${FONT_BODY};font-size:11px;font-weight:600;color:${COLOR_MUTED};text-transform:uppercase;letter-spacing:0.08em;">Total</span><br/>
+                <span style="font-family:${FONT_HEADING};font-size:28px;font-weight:800;color:${COLOR_PURPLE};letter-spacing:-0.5px;">${formattedTotal}</span>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
 
-              <table width="100%" cellpadding="16" cellspacing="0" style="background:#e8f5e8;border:2px solid #2d8a4e;border-radius:8px;margin-top:24px;">
-                <tr>
-                  <td style="text-align:center;">
-                    <p style="margin:0;font-size:14px;color:#2d6a2e;">
-                      Your digital products are ready. Visit your dashboard to access them.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="background:#1a1a2e;padding:24px;text-align:center;">
-              <p style="margin:0;color:#999;font-size:12px;">
-                &copy; DigitalLoka — Premium Digital Products for Builders
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+      <!-- DIVIDER -->
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:0 0 20px;">
+        <tr>
+          <td style="border-top:2px dashed ${COLOR_BORDER};"></td>
+          <td style="padding:0 12px;white-space:nowrap;font-family:${FONT_BODY};font-size:11px;font-weight:600;color:${COLOR_MUTED};text-transform:uppercase;letter-spacing:0.08em;">order items</td>
+          <td style="border-top:2px dashed ${COLOR_BORDER};"></td>
+        </tr>
+      </table>
+
+      ${params.itemsHtml}
+
+      ${params.fulfillmentHtml}
+
+      <!-- DASHBOARD CTA -->
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0 0;">
+        <tr><td style="background-color:${COLOR_PURPLE};border:2px solid ${COLOR_DARK};border-radius:9999px;box-shadow:4px 4px 0px ${COLOR_DARK};">
+          <a href="#" style="display:inline-block;padding:14px 32px;font-family:${FONT_HEADING};font-size:15px;font-weight:700;color:#FFFFFF;text-decoration:none;letter-spacing:-0.2px;white-space:nowrap;">
+            View in Dashboard &nbsp;&rarr;
+          </a>
+        </td></tr>
+      </table>
+
+    </td></tr>
+
+    ${cardFooter('Sent by <strong style="color:' + COLOR_DARK + ';">DigitalLoka</strong> &middot; Order confirmation for your recent purchase.')}`;
+
+  return emailShell('Order Confirmation', content);
 }
 
 interface OrderItemRow {
@@ -220,29 +306,29 @@ interface OrderItemRow {
 }
 
 function buildItemsTable(items: OrderItemRow[]): string {
-  if (items.length === 0) return '<p style="color:#999;">No items</p>';
+  if (items.length === 0) return `<p style="font-family:${FONT_BODY};font-size:14px;color:${COLOR_MUTED};">No items</p>`;
 
   const rows = items.map(item => `
     <tr>
-      <td style="padding:8px 12px;border-bottom:1px solid #eee;font-size:14px;color:#1a1a2e;">
+      <td style="padding:10px 14px;border-bottom:1px solid ${COLOR_BORDER};font-family:${FONT_BODY};font-size:14px;font-weight:600;color:${COLOR_DARK};">
         ${item.item_name}
       </td>
-      <td style="padding:8px 12px;border-bottom:1px solid #eee;font-size:14px;color:#666;text-align:center;">
+      <td style="padding:10px 14px;border-bottom:1px solid ${COLOR_BORDER};font-family:${FONT_BODY};font-size:14px;color:${COLOR_MUTED};text-align:center;">
         ${item.quantity}
       </td>
-      <td style="padding:8px 12px;border-bottom:1px solid #eee;font-size:14px;color:#1a1a2e;text-align:right;font-weight:600;">
+      <td style="padding:10px 14px;border-bottom:1px solid ${COLOR_BORDER};font-family:${FONT_HEADING};font-size:14px;font-weight:700;color:${COLOR_DARK};text-align:right;">
         ${new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0 }).format(item.line_total)}
       </td>
     </tr>
   `).join('');
 
   return `
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:8px;">
       <thead>
-        <tr style="background:#f8f6f0;">
-          <th style="padding:8px 12px;text-align:left;font-size:12px;color:#666;text-transform:uppercase;">Product</th>
-          <th style="padding:8px 12px;text-align:center;font-size:12px;color:#666;text-transform:uppercase;">Qty</th>
-          <th style="padding:8px 12px;text-align:right;font-size:12px;color:#666;text-transform:uppercase;">Amount</th>
+        <tr>
+          <th style="padding:10px 14px;text-align:left;font-family:${FONT_BODY};font-size:11px;font-weight:600;color:${COLOR_MUTED};text-transform:uppercase;letter-spacing:0.08em;border-bottom:2px solid ${COLOR_DARK};">Product</th>
+          <th style="padding:10px 14px;text-align:center;font-family:${FONT_BODY};font-size:11px;font-weight:600;color:${COLOR_MUTED};text-transform:uppercase;letter-spacing:0.08em;border-bottom:2px solid ${COLOR_DARK};">Qty</th>
+          <th style="padding:10px 14px;text-align:right;font-family:${FONT_BODY};font-size:11px;font-weight:600;color:${COLOR_MUTED};text-transform:uppercase;letter-spacing:0.08em;border-bottom:2px solid ${COLOR_DARK};">Amount</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -256,12 +342,21 @@ function buildFulfillmentDetails(results: FulfillmentResult[]): string {
   const sections = results.map(r => {
     if (!r.success) {
       return `
-        <div style="background:#fff3f3;border:1px solid #e74c3c;border-radius:6px;padding:12px;margin-bottom:8px;">
-          <strong style="color:#e74c3c;">Fulfillment issue</strong>
-          <p style="margin:4px 0 0;font-size:13px;color:#666;">
-            Product #${r.product_id}: ${r.error || 'Unknown error'}
-          </p>
-        </div>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:12px;">
+          <tr><td style="background-color:#FEF2F2;border:2px solid #EF4444;border-radius:12px;padding:16px 20px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+              <tr>
+                <td style="padding-right:12px;vertical-align:top;font-size:20px;">&#9888;&#65039;</td>
+                <td>
+                  <span style="font-family:${FONT_HEADING};font-size:14px;font-weight:700;color:#DC2626;">Fulfillment Issue</span>
+                  <p style="font-family:${FONT_BODY};font-size:13px;color:${COLOR_MUTED};line-height:1.5;margin:4px 0 0;">
+                    Product #${r.product_id}: ${r.error || 'Unknown error'}. Please contact support.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>
       `;
     }
 
@@ -269,47 +364,145 @@ function buildFulfillmentDetails(results: FulfillmentResult[]): string {
       case 'vps_droplet': {
         const d = r.details;
         return `
-          <div style="background:#f0f4ff;border:1px solid #6c5ce7;border-radius:6px;padding:12px;margin-bottom:8px;">
-            <strong style="color:#6c5ce7;">VPS Droplet Provisioned</strong>
-            <table style="margin-top:8px;font-size:13px;color:#333;" cellpadding="4" cellspacing="0">
-              <tr><td style="color:#666;">Name:</td><td><strong>${d.droplet_name || '-'}</strong></td></tr>
-              <tr><td style="color:#666;">Size:</td><td>${d.size_slug || '-'}</td></tr>
-              <tr><td style="color:#666;">Region:</td><td>${d.region || '-'}</td></tr>
-              <tr><td style="color:#666;">Image:</td><td>${d.image || '-'}</td></tr>
-              <tr><td style="color:#666;">Status:</td><td>${d.status || 'provisioning'}</td></tr>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:12px;">
+          <tr><td style="background-color:${COLOR_LIGHT_PURPLE};border:2px solid #C4B5FD;border-radius:12px;padding:16px 20px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+              <tr>
+                <td style="padding-right:12px;vertical-align:top;font-size:20px;">&#9889;</td>
+                <td>
+                  <span style="font-family:${FONT_HEADING};font-size:14px;font-weight:700;color:${COLOR_PURPLE};">VPS Droplet Provisioned</span>
+                  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:10px;">
+                    <tr>
+                      <td style="padding:3px 0;font-family:${FONT_BODY};font-size:12px;font-weight:600;color:${COLOR_MUTED};width:70px;">Name</td>
+                      <td style="padding:3px 0;font-family:${FONT_BODY};font-size:13px;font-weight:600;color:${COLOR_DARK};">${d.droplet_name || '-'}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:3px 0;font-family:${FONT_BODY};font-size:12px;font-weight:600;color:${COLOR_MUTED};">Size</td>
+                      <td style="padding:3px 0;font-family:${FONT_BODY};font-size:13px;color:${COLOR_DARK};">${d.size_slug || '-'}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:3px 0;font-family:${FONT_BODY};font-size:12px;font-weight:600;color:${COLOR_MUTED};">Region</td>
+                      <td style="padding:3px 0;font-family:${FONT_BODY};font-size:13px;color:${COLOR_DARK};">${d.region || '-'}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:3px 0;font-family:${FONT_BODY};font-size:12px;font-weight:600;color:${COLOR_MUTED};">Image</td>
+                      <td style="padding:3px 0;font-family:${FONT_BODY};font-size:13px;color:${COLOR_DARK};">${d.image || '-'}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:3px 0;font-family:${FONT_BODY};font-size:12px;font-weight:600;color:${COLOR_MUTED};">Status</td>
+                      <td style="padding:3px 0;">
+                        <span style="display:inline-block;background-color:${COLOR_YELLOW};border:2px solid ${COLOR_DARK};border-radius:9999px;padding:2px 10px;font-family:${FONT_HEADING};font-size:11px;font-weight:700;color:${COLOR_DARK};">
+                          ${(d.status || 'provisioning').toUpperCase()}
+                        </span>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="font-family:${FONT_BODY};font-size:12px;color:${COLOR_MUTED};line-height:1.5;margin:10px 0 0;">
+                    Your VPS is being provisioned. Access details will be available in your dashboard shortly.
+                  </p>
+                </td>
+              </tr>
             </table>
-            <p style="margin:8px 0 0;font-size:12px;color:#888;">
-              Your VPS is being provisioned. Access details will be available in your dashboard shortly.
-            </p>
-          </div>
+          </td></tr>
+        </table>
         `;
       }
       case 'digital':
       case 'template':
       case 'course':
         return `
-          <div style="background:#f0fff0;border:1px solid #2d8a4e;border-radius:6px;padding:12px;margin-bottom:8px;">
-            <strong style="color:#2d8a4e;">Digital Product Ready</strong>
-            <p style="margin:4px 0 0;font-size:13px;color:#666;">
-              Your product has been assigned and is ready to access from your dashboard.
-            </p>
-          </div>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:12px;">
+          <tr><td style="background-color:#ECFDF5;border:2px solid ${COLOR_GREEN};border-radius:12px;padding:16px 20px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+              <tr>
+                <td style="padding-right:12px;vertical-align:top;font-size:20px;">&#10024;</td>
+                <td>
+                  <span style="font-family:${FONT_HEADING};font-size:14px;font-weight:700;color:#059669;">Digital Product Ready</span>
+                  <p style="font-family:${FONT_BODY};font-size:13px;color:${COLOR_MUTED};line-height:1.5;margin:4px 0 0;">
+                    Your product has been assigned and is ready to access from your dashboard.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>
         `;
       default:
         return `
-          <div style="background:#f8f6f0;border:1px solid #ddd;border-radius:6px;padding:12px;margin-bottom:8px;">
-            <strong>Product Fulfilled</strong>
-          </div>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:12px;">
+          <tr><td style="background-color:${COLOR_LIGHT_PURPLE};border:2px solid ${COLOR_BORDER};border-radius:12px;padding:16px 20px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+              <tr>
+                <td style="padding-right:12px;vertical-align:top;font-size:20px;">&#128230;</td>
+                <td>
+                  <span style="font-family:${FONT_HEADING};font-size:14px;font-weight:700;color:${COLOR_DARK};">Product Fulfilled</span>
+                  <p style="font-family:${FONT_BODY};font-size:13px;color:${COLOR_MUTED};line-height:1.5;margin:4px 0 0;">
+                    Your product is ready. Check your dashboard for details.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>
         `;
     }
   }).join('');
 
   return `
-    <h2 style="margin:24px 0 12px;font-size:18px;color:#1a1a2e;border-bottom:2px solid #1a1a2e;padding-bottom:8px;">
-      Delivery Details
-    </h2>
-    ${sections}
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:24px 0 0;">
+      <tr>
+        <td style="border-top:2px dashed ${COLOR_BORDER};"></td>
+        <td style="padding:0 12px;white-space:nowrap;font-family:${FONT_BODY};font-size:11px;font-weight:600;color:${COLOR_MUTED};text-transform:uppercase;letter-spacing:0.08em;">delivery details</td>
+        <td style="border-top:2px dashed ${COLOR_BORDER};"></td>
+      </tr>
+    </table>
+    <div style="padding-top:16px;">
+      ${sections}
+    </div>
   `;
+}
+
+export function buildTestEmailHtml(): string {
+  const content = `
+    ${heroSection('&#9889;', 'SMTP test<br/>successful! &#127881;')}
+
+    <tr><td class="card-body" style="padding:36px 40px 32px;">
+
+      <p style="font-family:${FONT_BODY};font-size:16px;color:${COLOR_DARK};line-height:1.7;margin:0 0 6px;">
+        Hey there &#128075;
+      </p>
+      <p style="font-family:${FONT_BODY};font-size:16px;color:${COLOR_MUTED};line-height:1.7;margin:0 0 28px;">
+        Your SMTP settings are configured correctly. Emails will be sent from this server going forward.
+      </p>
+
+      <!-- SUCCESS BOX -->
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:20px;">
+        <tr><td style="background-color:#ECFDF5;border:2px solid ${COLOR_GREEN};border-radius:12px;padding:16px 20px;text-align:center;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;">
+            <tr>
+              <td style="padding-right:10px;font-size:20px;vertical-align:middle;">&#9989;</td>
+              <td style="font-family:${FONT_HEADING};font-size:15px;font-weight:700;color:#059669;vertical-align:middle;">
+                All systems operational
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+
+      <!-- INFO BOX -->
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr><td style="background-color:#FFFBEB;border:2px solid ${COLOR_YELLOW};border-radius:12px;padding:14px 18px;">
+          <p style="font-family:${FONT_BODY};font-size:13px;font-weight:500;color:#92400E;line-height:1.6;margin:0;">
+            &#128161; &nbsp;This is a test email sent from your <strong style="color:${COLOR_DARK};">DigitalLoka</strong> admin panel to verify SMTP configuration.
+          </p>
+        </td></tr>
+      </table>
+
+    </td></tr>
+
+    ${cardFooter('Sent by <strong style="color:' + COLOR_DARK + ';">DigitalLoka</strong> &middot; SMTP configuration test email.')}`;
+
+  return emailShell('SMTP Test', content);
 }
 
 async function dispatchEmail(email: EmailPayload): Promise<boolean> {
