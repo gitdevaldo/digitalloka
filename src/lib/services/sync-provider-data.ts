@@ -26,7 +26,7 @@ export async function syncDigitalOceanProviderData(): Promise<SyncResult> {
     .from('vps_provider_data')
     .select('id, slug')
     .eq('provider', provider)
-    .eq('data_type', 'region');
+    .eq('resource_type', 'region');
 
   if (regFetchErr) {
     result.errors.push(`Failed to fetch existing regions: ${regFetchErr.message}`);
@@ -44,7 +44,7 @@ export async function syncDigitalOceanProviderData(): Promise<SyncResult> {
     const existingId = existingRegionMap.get(region.slug);
     const row = {
       provider,
-      data_type: 'region' as const,
+      resource_type: 'region' as const,
       slug: region.slug,
       name: region.name,
       available: region.available,
@@ -92,7 +92,7 @@ export async function syncDigitalOceanProviderData(): Promise<SyncResult> {
     .from('vps_provider_data')
     .select('id, slug')
     .eq('provider', provider)
-    .eq('data_type', 'image');
+    .eq('resource_type', 'image');
 
   if (imgFetchErr) {
     result.errors.push(`Failed to fetch existing images: ${imgFetchErr.message}`);
@@ -112,7 +112,7 @@ export async function syncDigitalOceanProviderData(): Promise<SyncResult> {
     const existingId = existingImageMap.get(image.slug);
     const row = {
       provider,
-      data_type: 'image' as const,
+      resource_type: 'image' as const,
       slug: image.slug,
       name: `${image.distribution} ${image.name}`,
       available: image.status === 'available',

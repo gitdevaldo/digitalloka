@@ -23,7 +23,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     .from('vps_provider_data')
     .select('slug, name, available, data')
     .eq('provider', productProvider)
-    .eq('data_type', 'image')
+    .eq('resource_type', 'image')
     .eq('available', true)
     .order('name', { ascending: true });
 

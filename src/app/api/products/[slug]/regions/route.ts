@@ -23,11 +23,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     .from('vps_provider_data')
     .select('slug, name, available, data')
     .eq('provider', productProvider)
-    .eq('data_type', 'region')
+    .eq('resource_type', 'region')
     .eq('available', true)
     .order('name', { ascending: true });
 
   if (error) {
+    console.error('[regions API] Error:', error.message, 'provider:', productProvider);
     return NextResponse.json({ error: 'Failed to load regions' }, { status: 500 });
   }
 

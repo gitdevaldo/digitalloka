@@ -590,6 +590,42 @@ export interface Database {
         };
         Relationships: [];
       };
+      vps_provider_data: {
+        Row: {
+          id: number;
+          provider: string;
+          resource_type: string;
+          slug: string;
+          name: string;
+          data: Json;
+          available: boolean;
+          synced_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          provider: string;
+          resource_type: string;
+          slug: string;
+          name: string;
+          data?: Json;
+          available?: boolean;
+          synced_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: number;
+          provider?: string;
+          resource_type?: string;
+          slug?: string;
+          name?: string;
+          data?: Json;
+          available?: boolean;
+          synced_at?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

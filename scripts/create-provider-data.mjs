@@ -9,23 +9,22 @@ await client.query(`
   CREATE TABLE IF NOT EXISTS vps_provider_data (
     id SERIAL PRIMARY KEY,
     provider VARCHAR(100) NOT NULL,
-    data_type VARCHAR(50) NOT NULL,
+    resource_type VARCHAR(50) NOT NULL,
     slug VARCHAR(200) NOT NULL,
     name VARCHAR(200) NOT NULL,
     data JSONB NOT NULL DEFAULT '{}',
     available BOOLEAN NOT NULL DEFAULT true,
     synced_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE (provider, data_type, slug)
+    UNIQUE (provider, resource_type, slug)
   );
 `);
 console.log('vps_provider_data table created');
 
-await client.query(`CREATE INDEX IF NOT EXISTS idx_vpd_provider_type ON vps_provider_data(provider, data_type);`);
+await client.query(`CREATE INDEX IF NOT EXISTS idx_vpd_provider_type ON vps_provider_data(provider, resource_type);`);
 await client.query(`CREATE INDEX IF NOT EXISTS idx_vpd_available ON vps_provider_data(available);`);
 console.log('Indexes created');
 
-// RLS: allow public read
 await client.query(`ALTER TABLE vps_provider_data ENABLE ROW LEVEL SECURITY;`);
 try {
   await client.query(`CREATE POLICY "Public can read provider data" ON vps_provider_data FOR SELECT USING (true);`);

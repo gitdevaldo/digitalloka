@@ -43,7 +43,7 @@ The application is built with Next.js 14 (App Router) using TypeScript and style
 - **Rate Limiting:** A sliding window rate limiter protects authentication, webhooks, and checkout endpoints, supporting in-memory or Supabase-backed storage.
 - **Post-Payment Fulfillment:** Automates provisioning for VPS droplets (via DigitalOcean API) and digital products (assigning stock items).
 - **VPS Size Synchronization:** Admin functionality to sync DigitalOcean sizes as stock items.
-- **VPS Provider Data Sync:** Regions and OS images are fetched from DigitalOcean API (`/regions` + `/images?type=distribution`) and stored in `vps_provider_data` table. Synced automatically alongside sizes during manual sync and cron sync.
+- **VPS Provider Data Sync:** Regions and OS images are fetched from DigitalOcean API (`/regions` + `/images?type=distribution`) and stored in `vps_provider_data` table (column `resource_type` distinguishes 'region' vs 'image'). Synced automatically alongside sizes during manual sync and cron sync.
 - **Email Notifications:** Neo-Brutalist styled HTML email confirmations are sent after fulfillment, queued asynchronously.
 
 **UI/UX Design:**
