@@ -1,5 +1,47 @@
+import nodemailer from 'nodemailer';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import type { FulfillmentResult } from './fulfillment';
+
+interface SmtpConfig {
+  host: string;
+  port: number;
+  secure: boolean;
+  user: string;
+  pass: string;
+  from_name: string;
+  from_email: string;
+}
+
+async function getSmtpConfig(): Promise<SmtpConfig | null> {
+  const admin = createSupabaseAdminClient();
+  const { data } = await admin
+    .from('site_settings')
+    .select('setting_key, setting_value')
+    .like('setting_key', 'smtp.%');
+
+  if (!data || data.length === 0) return null;
+
+  const settings: Record<string, string> = {};
+  for (const row of data) {
+    const key = row.setting_key.replace('smtp.', '');
+    const val = row.setting_value && typeof row.setting_value === 'object' && 'value' in (row.setting_value as Record<string, unknown>)
+      ? String((row.setting_value as Record<string, unknown>).value)
+      : String(row.setting_value);
+    settings[key] = val;
+  }
+
+  if (!settings.host || !settings.user || !settings.pass) return null;
+
+  return {
+    host: settings.host,
+    port: Number(settings.port) || 587,
+    secure: settings.secure === 'true',
+    user: settings.user,
+    pass: settings.pass,
+    from_name: settings.from_name || 'DigitalLoka',
+    from_email: settings.from_email || settings.user,
+  };
+}
 
 interface OrderEmailData {
   orderId: number;
@@ -61,6 +103,10 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
   };
 
   await dispatchEmail(email);
+}
+
+export async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
+  return dispatchEmail({ to, subject, html });
 }
 
 interface OrderEmailParams {
@@ -148,7 +194,7 @@ function buildOrderEmail(params: OrderEmailParams): string {
                 <tr>
                   <td style="text-align:center;">
                     <p style="margin:0;font-size:14px;color:#2d6a2e;">
-                      ✅ Your digital products are ready. Visit your dashboard to access them.
+                      Your digital products are ready. Visit your dashboard to access them.
                     </p>
                   </td>
                 </tr>
@@ -217,7 +263,7 @@ function buildFulfillmentDetails(results: FulfillmentResult[]): string {
     if (!r.success) {
       return `
         <div style="background:#fff3f3;border:1px solid #e74c3c;border-radius:6px;padding:12px;margin-bottom:8px;">
-          <strong style="color:#e74c3c;">⚠️ Fulfillment issue</strong>
+          <strong style="color:#e74c3c;">Fulfillment issue</strong>
           <p style="margin:4px 0 0;font-size:13px;color:#666;">
             Product #${r.product_id}: ${r.error || 'Unknown error'}
           </p>
@@ -230,7 +276,7 @@ function buildFulfillmentDetails(results: FulfillmentResult[]): string {
         const d = r.details;
         return `
           <div style="background:#f0f4ff;border:1px solid #6c5ce7;border-radius:6px;padding:12px;margin-bottom:8px;">
-            <strong style="color:#6c5ce7;">🖥️ VPS Droplet Provisioned</strong>
+            <strong style="color:#6c5ce7;">VPS Droplet Provisioned</strong>
             <table style="margin-top:8px;font-size:13px;color:#333;" cellpadding="4" cellspacing="0">
               <tr><td style="color:#666;">Name:</td><td><strong>${d.droplet_name || '-'}</strong></td></tr>
               <tr><td style="color:#666;">Size:</td><td>${d.size_slug || '-'}</td></tr>
@@ -249,7 +295,7 @@ function buildFulfillmentDetails(results: FulfillmentResult[]): string {
       case 'course':
         return `
           <div style="background:#f0fff0;border:1px solid #2d8a4e;border-radius:6px;padding:12px;margin-bottom:8px;">
-            <strong style="color:#2d8a4e;">📦 Digital Product Ready</strong>
+            <strong style="color:#2d8a4e;">Digital Product Ready</strong>
             <p style="margin:4px 0 0;font-size:13px;color:#666;">
               Your product has been assigned and is ready to access from your dashboard.
             </p>
@@ -258,7 +304,7 @@ function buildFulfillmentDetails(results: FulfillmentResult[]): string {
       default:
         return `
           <div style="background:#f8f6f0;border:1px solid #ddd;border-radius:6px;padding:12px;margin-bottom:8px;">
-            <strong>✅ Product Fulfilled</strong>
+            <strong>Product Fulfilled</strong>
           </div>
         `;
     }
@@ -272,18 +318,38 @@ function buildFulfillmentDetails(results: FulfillmentResult[]): string {
   `;
 }
 
-async function dispatchEmail(email: EmailPayload): Promise<void> {
-  console.log(`[email] Sending order confirmation to ${email.to}: ${email.subject}`);
-  console.log(`[email] HTML length: ${email.html.length} chars`);
+async function dispatchEmail(email: EmailPayload): Promise<boolean> {
+  console.log(`[email] Preparing to send to ${email.to}: ${email.subject}`);
 
-  const admin = createSupabaseAdminClient();
-  await admin.from('email_queue' as never).insert({
-    to_email: email.to,
-    subject: email.subject,
-    html_body: email.html,
-    status: 'pending',
-    created_at: new Date().toISOString(),
-  } as never);
+  try {
+    const config = await getSmtpConfig();
 
-  console.log(`[email] Queued email for ${email.to}`);
+    if (!config) {
+      console.warn('[email] SMTP not configured. Email not sent. Configure SMTP in Admin > Settings.');
+      return false;
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: config.host,
+      port: config.port,
+      secure: config.secure,
+      auth: {
+        user: config.user,
+        pass: config.pass,
+      },
+    });
+
+    const result = await transporter.sendMail({
+      from: `"${config.from_name}" <${config.from_email}>`,
+      to: email.to,
+      subject: email.subject,
+      html: email.html,
+    });
+
+    console.log(`[email] Sent successfully to ${email.to}, messageId: ${result.messageId}`);
+    return true;
+  } catch (err) {
+    console.error('[email] Failed to send:', err);
+    return false;
+  }
 }

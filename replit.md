@@ -44,7 +44,7 @@ The application is built with Next.js 14 (App Router) using TypeScript and style
 - **Post-Payment Fulfillment:** Automates provisioning for VPS droplets (via DigitalOcean API) and digital products (assigning stock items).
 - **VPS Size Synchronization:** Admin functionality to sync DigitalOcean sizes as stock items.
 - **VPS Provider Data Sync:** Regions and OS images are fetched from DigitalOcean API (`/regions` + `/images?type=distribution`) and stored in `vps_provider_data` table (column `resource_type` distinguishes 'region' vs 'image'). Synced automatically alongside sizes during manual sync and cron sync.
-- **Email Notifications:** Neo-Brutalist styled HTML email confirmations are sent after fulfillment, queued asynchronously.
+- **Email Notifications:** SMTP-based email via nodemailer. SMTP settings stored in `site_settings` table (keys: `smtp.host`, `smtp.port`, `smtp.secure`, `smtp.user`, `smtp.pass`, `smtp.from_name`, `smtp.from_email`). Admin settings page has SMTP panel with test email button. Order confirmation emails sent after fulfillment.
 
 **UI/UX Design:**
 The Neo-Brutalist design system is characterized by:

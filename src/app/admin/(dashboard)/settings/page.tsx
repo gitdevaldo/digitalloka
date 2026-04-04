@@ -97,6 +97,13 @@ const DEFAULT_SETTINGS: SettingsState = {
   'contact.ops_alert_email': 'ops@digitalloka.dev',
   'contact.support_email': 'support@digitalloka.dev',
   'contact.audit_webhooks': false,
+  'smtp.host': '',
+  'smtp.port': '587',
+  'smtp.secure': false,
+  'smtp.user': '',
+  'smtp.pass': '',
+  'smtp.from_name': 'DigitalLoka',
+  'smtp.from_email': '',
 };
 
 export default function AdminSettingsPage() {
@@ -104,6 +111,8 @@ export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<SettingsState>({ ...DEFAULT_SETTINGS });
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [testEmail, setTestEmail] = useState('');
+  const [sendingTest, setSendingTest] = useState(false);
 
   useEffect(() => { loadSettings(); }, []);
 
@@ -246,6 +255,80 @@ export default function AdminSettingsPage() {
             </SettingRow>
           </SettingsPanel>
         </div>
+      </div>
+
+      <div className="mt-4">
+        <SettingsPanel title="SMTP / Email">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8">
+            <div>
+              <SettingRow label="SMTP Host" desc="e.g. smtp.gmail.com, smtp.zoho.com">
+                <SettingInput value={settings['smtp.host'] as string} onChange={(v) => update('smtp.host', v)} width="200px" settingGroup="smtp" settingKey="smtp.host" />
+              </SettingRow>
+              <SettingRow label="SMTP Port" desc="587 (TLS) or 465 (SSL)">
+                <SettingInput value={settings['smtp.port'] as string} onChange={(v) => update('smtp.port', v)} type="number" width="80px" settingGroup="smtp" settingKey="smtp.port" />
+              </SettingRow>
+              <SettingRow label="Use SSL" desc="Enable for port 465">
+                <Toggle checked={settings['smtp.secure'] as boolean} onChange={(v) => update('smtp.secure', v)} settingGroup="smtp" settingKey="smtp.secure" />
+              </SettingRow>
+              <SettingRow label="Username" desc="SMTP login username / email">
+                <SettingInput value={settings['smtp.user'] as string} onChange={(v) => update('smtp.user', v)} width="200px" settingGroup="smtp" settingKey="smtp.user" />
+              </SettingRow>
+            </div>
+            <div>
+              <SettingRow label="Password" desc="SMTP password or app password">
+                <SettingInput value={settings['smtp.pass'] as string} onChange={(v) => update('smtp.pass', v)} type="password" width="200px" settingGroup="smtp" settingKey="smtp.pass" />
+              </SettingRow>
+              <SettingRow label="From Name" desc="Sender display name">
+                <SettingInput value={settings['smtp.from_name'] as string} onChange={(v) => update('smtp.from_name', v)} width="160px" settingGroup="smtp" settingKey="smtp.from_name" />
+              </SettingRow>
+              <SettingRow label="From Email" desc="Sender email address">
+                <SettingInput value={settings['smtp.from_email'] as string} onChange={(v) => update('smtp.from_email', v)} width="200px" settingGroup="smtp" settingKey="smtp.from_email" />
+              </SettingRow>
+              <div className="flex items-center justify-between py-3 border-b border-border last:border-b-0 gap-4">
+                <div>
+                  <div className="text-[0.82rem] font-bold">Send Test Email</div>
+                  <div className="text-[0.72rem] text-muted-foreground">Save settings first, then test</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    className="border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1 font-body text-[0.78rem] font-semibold bg-input text-foreground focus:outline-none focus:border-accent"
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                    placeholder="test@example.com"
+                    style={{ width: '160px' }}
+                  />
+                  <Button
+                    size="sm"
+                    variant="accent"
+                    disabled={sendingTest || !testEmail}
+                    onClick={async () => {
+                      setSendingTest(true);
+                      try {
+                        const res = await fetch('/api/admin/settings/test-email', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ to: testEmail }),
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                          showToast('Test email sent successfully!');
+                        } else {
+                          showToast(data.error || 'Failed to send test email');
+                        }
+                      } catch {
+                        showToast('Failed to send test email');
+                      } finally {
+                        setSendingTest(false);
+                      }
+                    }}
+                  >
+                    {sendingTest ? 'Sending...' : 'Send Test'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </SettingsPanel>
       </div>
     </div>
   );
