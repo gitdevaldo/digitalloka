@@ -28,6 +28,11 @@ export default function ProductStocksPage() {
   const [stockFilter, setStockFilter] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [editingPrice, setEditingPrice] = useState<{ id: number; value: string } | null>(null);
+  const [savingPrice, setSavingPrice] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState({ provider: 'DigitalOcean', slug: '', vcpus: '', memory: '', disk: '', transfer: '', price_monthly: '', selling_price: '' });
+  const [addingSave, setAddingSave] = useState(false);
   const { showToast } = useToast();
 
   const isVpsProduct = selectedProduct?.product_type === 'vps_droplet';
@@ -112,6 +117,62 @@ export default function ProductStocksPage() {
     finally { setTogglingId(null); }
   }
 
+  async function saveSellingPrice(stockId: number, price: string) {
+    if (!selectedProduct) return;
+    setSavingPrice(true);
+    try {
+      const res = await fetch(`/api/admin/products/${selectedProduct.id}/stock/sync-sizes`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stock_item_id: stockId, selling_price: Number(price) }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || 'Failed to save price'); return; }
+      setStocks(prev => prev.map(s => {
+        if ((s.id as number) !== stockId) return s;
+        const existingMeta = (s.meta as Record<string, unknown>) || {};
+        return { ...s, meta: { ...existingMeta, selling_price: Number(price) } };
+      }));
+      setEditingPrice(null);
+      showToast('Selling price saved');
+    } catch { showToast('Failed to save price'); }
+    finally { setSavingPrice(false); }
+  }
+
+  async function addManualSize() {
+    if (!selectedProduct) return;
+    setAddingSave(true);
+    try {
+      const res = await fetch(`/api/admin/products/${selectedProduct.id}/stock/sync-sizes`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(addForm),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || 'Failed to add size'); return; }
+      showToast(`Size "${addForm.slug}" added for ${addForm.provider}`);
+      setShowAddModal(false);
+      setAddForm({ provider: 'DigitalOcean', slug: '', vcpus: '', memory: '', disk: '', transfer: '', price_monthly: '', selling_price: '' });
+      await refreshStocks();
+    } catch { showToast('Failed to add size'); }
+    finally { setAddingSave(false); }
+  }
+
+  function getProvider(row: Record<string, unknown>): string {
+    const meta = row.meta as Record<string, unknown> | undefined;
+    if (meta?.provider) return meta.provider as string;
+    if (meta?.type === 'manual_size') return (meta?.provider as string) || 'Manual';
+    const cred = row.credential_data as Record<string, unknown> | undefined;
+    if (cred?.slug && typeof cred.slug === 'string' && cred.slug.startsWith('s-')) return 'DigitalOcean';
+    return 'Unknown';
+  }
+
+  function getSellingPrice(row: Record<string, unknown>): number | null {
+    const meta = row.meta as Record<string, unknown> | undefined;
+    if (meta?.selling_price !== undefined) return Number(meta.selling_price);
+    return null;
+  }
+
   const filtered = products.filter(p => {
     if (!search) return true;
     const s = search.toLowerCase();
@@ -179,7 +240,30 @@ export default function ProductStocksPage() {
     },
   ];
 
+  const providerColors: Record<string, string> = {
+    DigitalOcean: '#0080FF',
+    AWS: '#FF9900',
+    'Google Cloud': '#4285F4',
+    Azure: '#0078D4',
+    Linode: '#00A95C',
+    Vultr: '#007BFC',
+    Hetzner: '#D50C2D',
+  };
+
   const vpsStockColumns = [
+    {
+      key: 'provider',
+      label: 'Provider',
+      render: (row: Record<string, unknown>) => {
+        const provider = getProvider(row);
+        const color = providerColors[provider] || 'var(--muted-foreground)';
+        return (
+          <span style={{ fontSize: '0.68rem', fontWeight: 800, color, textTransform: 'uppercase' as const, letterSpacing: '0.03em' }}>
+            {provider}
+          </span>
+        );
+      },
+    },
     {
       key: 'slug',
       label: 'Size Slug',
@@ -217,21 +301,64 @@ export default function ProductStocksPage() {
       },
     },
     {
-      key: 'price',
-      label: 'Price',
+      key: 'cost_price',
+      label: 'Cost',
       render: (row: Record<string, unknown>) => {
         const cred = row.credential_data as Record<string, unknown> | undefined;
         if (!cred) return <span>—</span>;
         return (
-          <span style={{ fontWeight: 700, fontSize: '0.75rem' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)' }}>
             ${(cred.price_monthly as number)?.toFixed(0)}/mo
           </span>
         );
       },
     },
     {
+      key: 'selling_price',
+      label: 'Sell Price',
+      render: (row: Record<string, unknown>) => {
+        const id = row.id as number;
+        const sellingPrice = getSellingPrice(row);
+        const cred = row.credential_data as Record<string, unknown> | undefined;
+        const costPrice = (cred?.price_monthly as number) || 0;
+
+        if (editingPrice?.id === id) {
+          return (
+            <div className="flex items-center gap-1">
+              <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>$</span>
+              <input
+                type="number"
+                className="border-2 border-accent rounded px-1.5 py-0.5 text-[0.75rem] font-bold w-[70px] bg-input text-foreground focus:outline-none"
+                value={editingPrice.value}
+                onChange={e => setEditingPrice({ id, value: e.target.value })}
+                onKeyDown={e => { if (e.key === 'Enter') saveSellingPrice(id, editingPrice.value); if (e.key === 'Escape') setEditingPrice(null); }}
+                autoFocus
+              />
+              <Button size="sm" onClick={() => saveSellingPrice(id, editingPrice.value)} disabled={savingPrice}>
+                {savingPrice ? '...' : 'Save'}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditingPrice(null)}>X</Button>
+            </div>
+          );
+        }
+
+        return (
+          <button
+            onClick={() => setEditingPrice({ id, value: String(sellingPrice ?? costPrice) })}
+            className="flex items-center gap-1 cursor-pointer hover:bg-muted px-1.5 py-0.5 rounded transition-colors"
+            title="Click to edit selling price"
+          >
+            <span style={{ fontWeight: 700, fontSize: '0.75rem', color: sellingPrice !== null ? 'var(--foreground)' : 'var(--muted-foreground)' }}>
+              {sellingPrice !== null ? `$${sellingPrice}/mo` : `$${costPrice}/mo`}
+            </span>
+            <span style={{ fontSize: '0.6rem', color: 'var(--accent)' }}>✎</span>
+          </button>
+        );
+      },
+    },
+    {
       key: 'available',
-      label: 'DO Available',
+      label: 'Available',
       render: (row: Record<string, unknown>) => {
         const cred = row.credential_data as Record<string, unknown> | undefined;
         const available = cred?.available as boolean;
@@ -252,15 +379,6 @@ export default function ProductStocksPage() {
           />
         );
       },
-    },
-    {
-      key: 'unlimited',
-      label: 'Unlimited',
-      render: (row: Record<string, unknown>) => (
-        <span style={{ fontSize: '0.72rem', color: row.is_unlimited ? 'var(--quaternary)' : 'var(--muted-foreground)' }}>
-          {row.is_unlimited ? 'Yes' : 'No'}
-        </span>
-      ),
     },
     {
       key: 'actions',
@@ -376,7 +494,7 @@ export default function ProductStocksPage() {
         <PageHeader
           title={isVpsProduct ? 'VPS Size Management' : 'Manage Product Stocks'}
           subtitle={isVpsProduct
-            ? `Sync and manage DigitalOcean sizes for ${selectedProduct.name}`
+            ? `Manage VPS sizes & pricing for ${selectedProduct.name} — supports multiple providers`
             : `/admin/products/${selectedProduct.id}/stocks — stock entries for ${selectedProduct.name}`
           }
           actions={
@@ -384,9 +502,14 @@ export default function ProductStocksPage() {
               <Button size="sm" onClick={() => { setSelectedProduct(null); setStocks([]); }}>Back</Button>
               <Button size="sm" onClick={refreshStocks}>Refresh</Button>
               {isVpsProduct && (
-                <Button variant="accent" onClick={syncDoSizes} disabled={syncing}>
-                  {syncing ? 'Syncing...' : 'Sync DO Sizes'}
-                </Button>
+                <>
+                  <Button variant="accent" onClick={() => setShowAddModal(true)}>
+                    + Add Size
+                  </Button>
+                  <Button variant="accent" onClick={syncDoSizes} disabled={syncing}>
+                    {syncing ? 'Syncing...' : 'Sync DO Sizes'}
+                  </Button>
+                </>
               )}
               {!isVpsProduct && (
                 <Button variant="accent" onClick={() => router.push(`/admin/product-stocks/add?product=${selectedProduct.id}&name=${encodeURIComponent(selectedProduct.name as string)}`)}>Add Stock</Button>
@@ -395,7 +518,7 @@ export default function ProductStocksPage() {
           }
         />
 
-        <Panel title={isVpsProduct ? `DigitalOcean Sizes: ${selectedProduct.name}` : `Stock Management: ${selectedProduct.name}`} actions={
+        <Panel title={isVpsProduct ? `VPS Sizes: ${selectedProduct.name}` : `Stock Management: ${selectedProduct.name}`} actions={
           <div className="flex gap-3 items-center">
             <span className="text-[0.72rem] font-bold text-muted-foreground">{stocks.length} total</span>
             <span className="text-[0.68rem] text-green-600 font-bold">{enabledCount} enabled</span>
@@ -419,12 +542,91 @@ export default function ProductStocksPage() {
             <div className="h-20 bg-muted rounded-lg animate-pulse" />
           ) : filteredStocks.length === 0 ? (
             <div className="text-center text-muted-foreground text-[0.8rem] py-6">
-              {isVpsProduct ? 'No sizes found. Click "Sync DO Sizes" to fetch from DigitalOcean.' : 'No stock items found.'}
+              {isVpsProduct ? 'No sizes found. Click "+ Add Size" to add manually, or "Sync DO Sizes" to fetch from DigitalOcean.' : 'No stock items found.'}
             </div>
           ) : (
             <AdminTable columns={isVpsProduct ? vpsStockColumns : stockColumns} rows={filteredStocks} />
           )}
         </Panel>
+
+        {showAddModal && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} onClick={() => setShowAddModal(false)} />
+            <div style={{ position: 'relative', background: 'var(--card)', border: '3px solid var(--border)', borderRadius: 'var(--r-md)', padding: 24, width: 480, maxHeight: '90vh', overflow: 'auto', boxShadow: '6px 6px 0 var(--shadow)' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, marginBottom: 16 }}>Add VPS Size</h3>
+
+              <div style={{ display: 'grid', gap: 12 }}>
+                <div>
+                  <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">Provider *</label>
+                  <select
+                    className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 font-body text-[0.8rem] font-semibold bg-input text-foreground"
+                    value={addForm.provider}
+                    onChange={e => setAddForm(f => ({ ...f, provider: e.target.value }))}
+                  >
+                    <option value="DigitalOcean">DigitalOcean</option>
+                    <option value="AWS">AWS</option>
+                    <option value="Google Cloud">Google Cloud</option>
+                    <option value="Azure">Azure</option>
+                    <option value="Linode">Linode</option>
+                    <option value="Vultr">Vultr</option>
+                    <option value="Hetzner">Hetzner</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">Size Slug *</label>
+                  <input
+                    className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 text-[0.8rem] bg-input text-foreground font-mono"
+                    placeholder="e.g. t3.micro, e2-micro, cx11"
+                    value={addForm.slug}
+                    onChange={e => setAddForm(f => ({ ...f, slug: e.target.value }))}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <div>
+                    <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">vCPUs *</label>
+                    <input type="number" className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 text-[0.8rem] bg-input text-foreground" placeholder="1" value={addForm.vcpus} onChange={e => setAddForm(f => ({ ...f, vcpus: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">Memory (MB) *</label>
+                    <input type="number" className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 text-[0.8rem] bg-input text-foreground" placeholder="1024" value={addForm.memory} onChange={e => setAddForm(f => ({ ...f, memory: e.target.value }))} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <div>
+                    <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">Disk (GB) *</label>
+                    <input type="number" className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 text-[0.8rem] bg-input text-foreground" placeholder="25" value={addForm.disk} onChange={e => setAddForm(f => ({ ...f, disk: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">Transfer (TB)</label>
+                    <input type="number" className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 text-[0.8rem] bg-input text-foreground" placeholder="1" value={addForm.transfer} onChange={e => setAddForm(f => ({ ...f, transfer: e.target.value }))} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <div>
+                    <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">Cost Price ($/mo)</label>
+                    <input type="number" className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 text-[0.8rem] bg-input text-foreground" placeholder="5" value={addForm.price_monthly} onChange={e => setAddForm(f => ({ ...f, price_monthly: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">Selling Price ($/mo) *</label>
+                    <input type="number" className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 text-[0.8rem] bg-input text-foreground font-bold" placeholder="10" value={addForm.selling_price} onChange={e => setAddForm(f => ({ ...f, selling_price: e.target.value }))} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-4 justify-end">
+                <Button variant="ghost" onClick={() => setShowAddModal(false)}>Cancel</Button>
+                <Button variant="accent" onClick={addManualSize} disabled={addingSave || !addForm.slug || !addForm.vcpus || !addForm.memory || !addForm.disk}>
+                  {addingSave ? 'Adding...' : 'Add Size'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

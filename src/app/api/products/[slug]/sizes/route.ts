@@ -17,7 +17,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const { data: stocks, error } = await admin
     .from('product_stock_items')
-    .select('id, credential_data, is_unlimited')
+    .select('id, credential_data, is_unlimited, meta')
     .eq('product_id', product.id)
     .eq('status', 'enabled')
     .order('credential_data->price_monthly', { ascending: true });
@@ -28,6 +28,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const sizes = (stocks || []).map(s => {
     const cred = s.credential_data as Record<string, unknown>;
+    const meta = (s.meta as Record<string, unknown>) || {};
+    const costPrice = (cred.price_monthly as number) || 0;
+    const sellingPrice = meta.selling_price !== undefined ? Number(meta.selling_price) : costPrice;
+    const provider = (meta.provider as string) || (typeof cred.slug === 'string' && (cred.slug as string).startsWith('s-') ? 'DigitalOcean' : 'Unknown');
     return {
       stock_id: s.id,
       slug: cred.slug,
@@ -36,10 +40,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       vcpus: cred.vcpus,
       disk: cred.disk,
       transfer: cred.transfer,
-      price_monthly: cred.price_monthly,
+      price_monthly: sellingPrice,
+      cost_price: costPrice,
       price_hourly: cred.price_hourly,
       available: cred.available,
       regions: cred.regions,
+      provider,
     };
   }).filter(s => s.available);
 

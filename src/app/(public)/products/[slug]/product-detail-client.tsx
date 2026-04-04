@@ -37,9 +37,11 @@ interface VpsSize {
   disk: number;
   transfer: number;
   price_monthly: number;
+  cost_price: number;
   price_hourly: number;
   available: boolean;
   regions: string[];
+  provider: string;
 }
 
 function formatMemory(mb: number): string {
@@ -250,7 +252,10 @@ export default function ProductDetailClient({ product }: { product: ProductData 
                         }}
                       >
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 700, fontFamily: 'monospace' }}>{size.slug}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 700, fontFamily: 'monospace' }}>{size.slug}</span>
+                            <span style={{ fontSize: '0.58rem', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.04em', background: 'rgba(139,92,246,0.1)', padding: '1px 5px', borderRadius: '3px' }}>{size.provider}</span>
+                          </div>
                           <div style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)' }}>
                             {size.vcpus} vCPU · {formatMemory(size.memory)} · {size.disk} GB · {size.transfer} TB
                           </div>
