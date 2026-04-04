@@ -1203,6 +1203,32 @@ input[type="range"] {
   font-size: 1.2rem;
 }
 
+.vps-config-card {
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  border: 2px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  transition: all 0.15s var(--ease);
+  text-align: center;
+}
+.vps-config-card:hover {
+  border-color: var(--accent);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--shadow);
+}
+.vps-config-card[data-selected="true"] {
+  border-color: var(--accent);
+  background: rgba(139,92,246,0.06);
+  box-shadow: 3px 3px 0 rgba(139,92,246,0.2);
+}
+.vps-spec-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+}
+
 .divider { height: 2px; background: var(--border); margin: 56px 40px 0; max-width: 1120px; }
 
 .features-section, .setup-section, .reviews-section { padding: 56px 40px 0; max-width: 1400px; margin: 0 auto; }

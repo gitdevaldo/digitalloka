@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/utils';
 import { useWishlist } from '@/context/wishlist-context';
@@ -8,6 +8,7 @@ import { useCart } from '@/context/cart-context';
 import { LoginDialog } from '@/components/ui/login-dialog';
 import { FloatingBar } from '@/components/layout/floating-bar';
 import { Heart, ShoppingCart } from 'lucide-react';
+import type { VpsConfig } from '@/context/cart-context';
 
 export interface ProductData {
   id: number;
@@ -44,15 +45,324 @@ interface VpsSize {
   provider: string;
 }
 
+const REGION_MAP: Record<string, { name: string; country: string; flag: string }> = {
+  sgp1: { name: 'Singapore', country: 'SG', flag: '🇸🇬' },
+  nyc1: { name: 'New York 1', country: 'US', flag: '🇺🇸' },
+  nyc2: { name: 'New York 2', country: 'US', flag: '🇺🇸' },
+  nyc3: { name: 'New York 3', country: 'US', flag: '🇺🇸' },
+  sfo2: { name: 'San Francisco 2', country: 'US', flag: '🇺🇸' },
+  sfo3: { name: 'San Francisco 3', country: 'US', flag: '🇺🇸' },
+  lon1: { name: 'London', country: 'UK', flag: '🇬🇧' },
+  ams3: { name: 'Amsterdam', country: 'NL', flag: '🇳🇱' },
+  fra1: { name: 'Frankfurt', country: 'DE', flag: '🇩🇪' },
+  tor1: { name: 'Toronto', country: 'CA', flag: '🇨🇦' },
+  blr1: { name: 'Bangalore', country: 'IN', flag: '🇮🇳' },
+  syd1: { name: 'Sydney', country: 'AU', flag: '🇦🇺' },
+};
+
+const OS_OPTIONS = [
+  { id: 'ubuntu-24', name: 'Ubuntu 24.04', sub: 'Recommended', icon: '🐧' },
+  { id: 'debian-12', name: 'Debian 12', sub: 'Stable LTS', icon: '🌀' },
+  { id: 'rocky-9', name: 'Rocky Linux 9', sub: 'Enterprise', icon: '🏔️' },
+];
+
 function formatMemory(mb: number): string {
   if (mb >= 1024) return `${(mb / 1024).toFixed(mb % 1024 === 0 ? 0 : 1)} GB`;
   return `${mb} MB`;
 }
 
+function getRegionInfo(slug: string) {
+  return REGION_MAP[slug] || { name: slug.toUpperCase(), country: '??', flag: '🌍' };
+}
+
+function VpsConfigurator({
+  sizes,
+  loading,
+  currency,
+  onConfigChange,
+}: {
+  sizes: VpsSize[];
+  loading: boolean;
+  currency: string;
+  onConfigChange: (config: { provider: string; region: string; regionName: string; size: VpsSize; os: string } | null) => void;
+}) {
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const [selectedSizeId, setSelectedSizeId] = useState<number | null>(null);
+  const [selectedOs, setSelectedOs] = useState<string>('ubuntu-24');
+
+  const providers = useMemo(() => {
+    const providerSet = new Set<string>();
+    sizes.forEach(s => providerSet.add(s.provider));
+    return Array.from(providerSet);
+  }, [sizes]);
+
+  useEffect(() => {
+    if (providers.length === 1 && !selectedProvider) {
+      setSelectedProvider(providers[0]);
+    }
+  }, [providers, selectedProvider]);
+
+  const sizesForProvider = useMemo(() => {
+    if (!selectedProvider) return [];
+    return sizes.filter(s => s.provider === selectedProvider);
+  }, [sizes, selectedProvider]);
+
+  const regions = useMemo(() => {
+    const regionSet = new Set<string>();
+    sizesForProvider.forEach(s => s.regions.forEach(r => regionSet.add(r)));
+    return Array.from(regionSet).sort((a, b) => {
+      const aInfo = getRegionInfo(a);
+      const bInfo = getRegionInfo(b);
+      return aInfo.name.localeCompare(bInfo.name);
+    });
+  }, [sizesForProvider]);
+
+  const sizesForRegion = useMemo(() => {
+    if (!selectedRegion) return [];
+    return sizesForProvider.filter(s => s.regions.includes(selectedRegion));
+  }, [sizesForProvider, selectedRegion]);
+
+  const selectedSize = useMemo(() => {
+    return sizesForRegion.find(s => s.stock_id === selectedSizeId) || null;
+  }, [sizesForRegion, selectedSizeId]);
+
+  useEffect(() => {
+    if (selectedProvider && selectedRegion && selectedSize) {
+      const regionInfo = getRegionInfo(selectedRegion);
+      onConfigChange({
+        provider: selectedProvider,
+        region: selectedRegion,
+        regionName: `${regionInfo.name}, ${regionInfo.country}`,
+        size: selectedSize,
+        os: selectedOs,
+      });
+    } else {
+      onConfigChange(null);
+    }
+  }, [selectedProvider, selectedRegion, selectedSize, selectedOs]);
+
+  const handleProviderSelect = (p: string) => {
+    setSelectedProvider(p);
+    setSelectedRegion(null);
+    setSelectedSizeId(null);
+  };
+
+  const handleRegionSelect = (r: string) => {
+    setSelectedRegion(r);
+    setSelectedSizeId(null);
+  };
+
+  if (loading) {
+    return (
+      <section className="features-section">
+        <div className="section-hd">
+          <div className="section-title">Configure your server</div>
+          <div className="section-sub">Loading available options...</div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {[1, 2, 3].map(i => (
+            <div key={i} className="details-card" style={{ height: '100px' }}>
+              <div className="h-full bg-muted rounded-lg animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (sizes.length === 0) {
+    return (
+      <section className="features-section">
+        <div className="section-hd">
+          <div className="section-title">Configure your server</div>
+          <div className="section-sub">No sizes available at the moment</div>
+        </div>
+      </section>
+    );
+  }
+
+  const currentStep = !selectedProvider ? 1 : !selectedRegion ? 2 : !selectedSize ? 3 : 4;
+
+  return (
+    <section className="features-section">
+      <div className="section-hd">
+        <div className="section-title">Configure your server</div>
+        <div className="section-sub">Choose your provider, region, and server specifications</div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="details-card" style={{ padding: '20px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+            <div style={{
+              width: '28px', height: '28px', borderRadius: '50%',
+              background: selectedProvider ? 'var(--accent)' : 'var(--muted)',
+              color: selectedProvider ? '#fff' : 'var(--muted-foreground)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.72rem', fontWeight: 800, border: '2px solid var(--border)',
+            }}>1</div>
+            <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Provider
+            </div>
+            {selectedProvider && (
+              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--accent)', marginLeft: 'auto' }}>
+                {selectedProvider}
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px' }}>
+            {providers.map(p => (
+              <div
+                key={p}
+                onClick={() => handleProviderSelect(p)}
+                className="vps-config-card"
+                data-selected={selectedProvider === p}
+              >
+                <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>{p}</div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)' }}>
+                  {sizes.filter(s => s.provider === p).length} sizes available
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {selectedProvider && (
+          <div className="details-card" style={{ padding: '20px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+              <div style={{
+                width: '28px', height: '28px', borderRadius: '50%',
+                background: selectedRegion ? 'var(--accent)' : 'var(--muted)',
+                color: selectedRegion ? '#fff' : 'var(--muted-foreground)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.72rem', fontWeight: 800, border: '2px solid var(--border)',
+              }}>2</div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Region
+              </div>
+              {selectedRegion && (
+                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--accent)', marginLeft: 'auto' }}>
+                  {getRegionInfo(selectedRegion).flag} {getRegionInfo(selectedRegion).name}
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
+              {regions.map(r => {
+                const info = getRegionInfo(r);
+                return (
+                  <div
+                    key={r}
+                    onClick={() => handleRegionSelect(r)}
+                    className="vps-config-card"
+                    data-selected={selectedRegion === r}
+                  >
+                    <div style={{ fontSize: '1rem', marginBottom: '2px' }}>{info.flag}</div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700 }}>{info.country}</div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)' }}>{info.name}</div>
+                    <div style={{ fontSize: '0.6rem', color: 'var(--muted-foreground)', fontFamily: 'monospace' }}>{r.toUpperCase()}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {selectedRegion && (
+          <div className="details-card" style={{ padding: '20px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+              <div style={{
+                width: '28px', height: '28px', borderRadius: '50%',
+                background: selectedSize ? 'var(--accent)' : 'var(--muted)',
+                color: selectedSize ? '#fff' : 'var(--muted-foreground)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.72rem', fontWeight: 800, border: '2px solid var(--border)',
+              }}>3</div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Server Spec
+              </div>
+              {selectedSize && (
+                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--accent)', marginLeft: 'auto' }}>
+                  {selectedSize.vcpus} vCPU · {formatMemory(selectedSize.memory)} · {selectedSize.disk} GB
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {sizesForRegion.map(size => (
+                <div
+                  key={size.stock_id}
+                  onClick={() => setSelectedSizeId(size.stock_id)}
+                  className="vps-config-card vps-spec-row"
+                  data-selected={selectedSizeId === size.stock_id}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1 }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 700, fontFamily: 'monospace' }}>{size.slug}</div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--muted-foreground)' }}>
+                      {size.vcpus} vCPU · {formatMemory(size.memory)} RAM · {size.disk} GB SSD · {size.transfer} TB Transfer
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                    {formatCurrency(size.price_monthly, currency)}
+                    <span style={{ fontSize: '0.65rem', fontWeight: 500, opacity: 0.7 }}>/mo</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {selectedSize && (
+          <div className="details-card" style={{ padding: '20px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+              <div style={{
+                width: '28px', height: '28px', borderRadius: '50%',
+                background: 'var(--accent)', color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.72rem', fontWeight: 800, border: '2px solid var(--border)',
+              }}>4</div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Operating System
+              </div>
+              {selectedOs && (
+                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--accent)', marginLeft: 'auto' }}>
+                  {OS_OPTIONS.find(o => o.id === selectedOs)?.name}
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
+              {OS_OPTIONS.map(os => (
+                <div
+                  key={os.id}
+                  onClick={() => setSelectedOs(os.id)}
+                  className="vps-config-card"
+                  data-selected={selectedOs === os.id}
+                >
+                  <div style={{ fontSize: '1.1rem', marginBottom: '2px' }}>{os.icon}</div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700 }}>{os.name}</div>
+                  <div style={{ fontSize: '0.62rem', color: selectedOs === os.id ? 'var(--accent)' : 'var(--muted-foreground)', fontWeight: 600 }}>{os.sub}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {currentStep < 4 && (
+          <div style={{
+            textAlign: 'center', padding: '16px', fontSize: '0.78rem',
+            color: 'var(--muted-foreground)', fontWeight: 600,
+          }}>
+            {currentStep === 1 && 'Select a provider to continue'}
+            {currentStep === 2 && 'Select a region to continue'}
+            {currentStep === 3 && 'Select a server spec to continue'}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function ProductDetailClient({ product }: { product: ProductData }) {
   const router = useRouter();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { addItem: addToCart, isInCart: checkInCart } = useCart();
@@ -60,8 +370,8 @@ export default function ProductDetailClient({ product }: { product: ProductData 
   const isInCart = checkInCart(product.id);
 
   const [vpsSizes, setVpsSizes] = useState<VpsSize[]>([]);
-  const [selectedSize, setSelectedSize] = useState<VpsSize | null>(null);
   const [sizesLoading, setSizesLoading] = useState(false);
+  const [vpsConfig, setVpsConfig] = useState<{ provider: string; region: string; regionName: string; size: VpsSize; os: string } | null>(null);
 
   const isDroplet = product.product_type === 'vps_droplet';
 
@@ -73,11 +383,10 @@ export default function ProductDetailClient({ product }: { product: ProductData 
       .then(d => {
         const sizes = d.data || [];
         setVpsSizes(sizes);
-        if (sizes.length > 0) setSelectedSize(sizes[0]);
       })
       .catch(() => {})
       .finally(() => setSizesLoading(false));
-  }, [isDroplet, product.id]);
+  }, [isDroplet, product.slug]);
 
   const handleWishlist = async () => {
     const result = await toggleWishlist(product.id);
@@ -86,9 +395,46 @@ export default function ProductDetailClient({ product }: { product: ProductData 
     }
   };
 
+  const buildVpsCartConfig = (): VpsConfig | undefined => {
+    if (!vpsConfig) return undefined;
+    return {
+      provider: vpsConfig.provider,
+      region: vpsConfig.region,
+      regionName: vpsConfig.regionName,
+      sizeSlug: vpsConfig.size.slug,
+      stockId: vpsConfig.size.stock_id,
+      vcpus: vpsConfig.size.vcpus,
+      memory: vpsConfig.size.memory,
+      disk: vpsConfig.size.disk,
+      transfer: vpsConfig.size.transfer,
+      priceMonthly: vpsConfig.size.price_monthly,
+      os: vpsConfig.os,
+    };
+  };
+
+  const handleAddToCart = () => {
+    if (isDroplet) {
+      if (!vpsConfig) return;
+      const config = buildVpsCartConfig()!;
+      addToCart(product.id, 1, {
+        selectedStockId: vpsConfig.size.stock_id,
+        selectedRegion: vpsConfig.region,
+        vpsConfig: config,
+      });
+    } else {
+      if (!isInCart) addToCart(product.id);
+    }
+  };
+
   const handleBuyNow = () => {
-    if (isDroplet && selectedSize) {
-      addToCart(product.id, 1, { selectedStockId: selectedSize.stock_id });
+    if (isDroplet) {
+      if (!vpsConfig) return;
+      const config = buildVpsCartConfig()!;
+      addToCart(product.id, 1, {
+        selectedStockId: vpsConfig.size.stock_id,
+        selectedRegion: vpsConfig.region,
+        vpsConfig: config,
+      });
     } else {
       addToCart(product.id);
     }
@@ -99,24 +445,11 @@ export default function ProductDetailClient({ product }: { product: ProductData 
   const faqItems = product.faq_items || [];
   const categoryName = product.category?.name || product.product_type || 'Product';
   const currency = product.price_currency || 'IDR';
-  const amount = isDroplet && selectedSize ? selectedSize.price_monthly : (product.price_amount || 0);
-  const formattedAmount = isDroplet && selectedSize ? formatCurrency(selectedSize.price_monthly, currency) : formatCurrency(product.price_amount || 0, currency);
-  const billingPeriod = product.price_billing_period || 'one-time';
-  const specs = selectedSize ? {
-    vcpu: String(selectedSize.vcpus),
-    ram: formatMemory(selectedSize.memory),
-    storage: `${selectedSize.disk} GB`,
-    bandwidth: `${selectedSize.transfer} TB`,
-    region: 'Singapore',
-    datacenter: 'SGP1',
-  } : {
-    vcpu: featured.find(f => f.label.toLowerCase().includes('cpu'))?.value || '2',
-    ram: featured.find(f => f.label.toLowerCase().includes('ram'))?.value || '4',
-    storage: featured.find(f => f.label.toLowerCase().includes('ssd') || f.label.toLowerCase().includes('storage'))?.value || '80',
-    bandwidth: featured.find(f => f.label.toLowerCase().includes('bandwidth'))?.value || '4',
-    region: 'Singapore',
-    datacenter: 'SGP1',
-  };
+  const amount = isDroplet && vpsConfig ? vpsConfig.size.price_monthly : (product.price_amount || 0);
+  const formattedAmount = formatCurrency(amount, currency);
+  const billingPeriod = isDroplet ? 'monthly' : (product.price_billing_period || 'one-time');
+
+  const vpsConfigComplete = isDroplet && vpsConfig !== null;
 
   function toggleFaq(index: number) {
     setOpenFaq(openFaq === index ? null : index);
@@ -196,96 +529,59 @@ export default function ProductDetailClient({ product }: { product: ProductData 
 
         <div className="purchase-card">
           {isDroplet && (
-            <>
-              <div className="card-visual">
-                <div className="visual-region-chip">🇸🇬 {specs.datacenter} · {specs.region}</div>
-                <div className="server-stack">
-                  <div className="server-rack">
-                    <div className="rack-led led-pulse" style={{ background: 'var(--quaternary)' }}></div>
-                    <div className="rack-bars">
-                      <div className="rack-bar" style={{ flex: 3, background: 'var(--accent)' }}></div>
-                      <div className="rack-bar" style={{ flex: 2, background: 'var(--quaternary)' }}></div>
-                      <div className="rack-bar" style={{ flex: 1 }}></div>
-                    </div>
-                    <div className="rack-label">cpu</div>
-                    <div className="rack-status-chip" style={{ background: 'var(--quaternary)' }}>Active</div>
+            <div className="card-visual">
+              <div className="server-stack">
+                <div className="server-rack">
+                  <div className="rack-led led-pulse" style={{ background: 'var(--quaternary)' }}></div>
+                  <div className="rack-bars">
+                    <div className="rack-bar" style={{ flex: 3, background: 'var(--accent)' }}></div>
+                    <div className="rack-bar" style={{ flex: 2, background: 'var(--quaternary)' }}></div>
+                    <div className="rack-bar" style={{ flex: 1 }}></div>
                   </div>
-                  <div className="server-rack">
-                    <div className="rack-led" style={{ background: 'var(--tertiary)' }}></div>
-                    <div className="rack-bars">
-                      <div className="rack-bar" style={{ flex: 2, background: 'var(--tertiary)' }}></div>
-                      <div className="rack-bar" style={{ flex: 4 }}></div>
-                    </div>
-                    <div className="rack-label">mem</div>
-                    <div className="rack-status-chip" style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}>48%</div>
+                  <div className="rack-label">cpu</div>
+                  <div className="rack-status-chip" style={{ background: 'var(--quaternary)' }}>Active</div>
+                </div>
+                <div className="server-rack">
+                  <div className="rack-led" style={{ background: 'var(--tertiary)' }}></div>
+                  <div className="rack-bars">
+                    <div className="rack-bar" style={{ flex: 2, background: 'var(--tertiary)' }}></div>
+                    <div className="rack-bar" style={{ flex: 4 }}></div>
                   </div>
-                  <div className="server-rack">
-                    <div className="rack-led" style={{ background: 'var(--accent)' }}></div>
-                    <div className="rack-bars">
-                      <div className="rack-bar" style={{ flex: 1, background: 'var(--accent)' }}></div>
-                      <div className="rack-bar" style={{ flex: 5 }}></div>
-                    </div>
-                    <div className="rack-label">disk</div>
-                    <div className="rack-status-chip" style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}>12%</div>
+                  <div className="rack-label">mem</div>
+                  <div className="rack-status-chip" style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}>48%</div>
+                </div>
+                <div className="server-rack">
+                  <div className="rack-led" style={{ background: 'var(--accent)' }}></div>
+                  <div className="rack-bars">
+                    <div className="rack-bar" style={{ flex: 1, background: 'var(--accent)' }}></div>
+                    <div className="rack-bar" style={{ flex: 5 }}></div>
                   </div>
+                  <div className="rack-label">disk</div>
+                  <div className="rack-status-chip" style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}>12%</div>
                 </div>
               </div>
-
-              {vpsSizes.length > 0 && (
-                <div style={{ padding: '14px 18px 0' }}>
-                  <div style={{ fontSize: '0.72rem', fontWeight: 800, marginBottom: '8px', color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Choose your plan</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '220px', overflowY: 'auto' }}>
-                    {vpsSizes.map(size => (
-                      <div
-                        key={size.stock_id}
-                        onClick={() => setSelectedSize(size)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '10px 12px',
-                          borderRadius: 'var(--r-md)',
-                          border: `2px solid ${selectedSize?.stock_id === size.stock_id ? 'var(--accent)' : 'var(--border)'}`,
-                          background: selectedSize?.stock_id === size.stock_id ? 'rgba(139,92,246,0.06)' : 'var(--card)',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 700, fontFamily: 'monospace' }}>{size.slug}</span>
-                            <span style={{ fontSize: '0.58rem', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.04em', background: 'rgba(139,92,246,0.1)', padding: '1px 5px', borderRadius: '3px' }}>{size.provider}</span>
-                          </div>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)' }}>
-                            {size.vcpus} vCPU · {formatMemory(size.memory)} · {size.disk} GB · {size.transfer} TB
-                          </div>
-                        </div>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 800, whiteSpace: 'nowrap' }}>{formatCurrency(size.price_monthly, currency)}/mo</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {sizesLoading && (
-                <div style={{ padding: '14px 18px', textAlign: 'center', fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>
-                  Loading available sizes...
-                </div>
-              )}
-
-              <div style={{ padding: '18px 22px 0' }}>
-                <div className="billing-toggle">
-                  <div className={`billing-option ${billing === 'monthly' ? 'active' : ''}`} onClick={() => setBilling('monthly')}>Monthly</div>
-                  <div className={`billing-option ${billing === 'annual' ? 'active' : ''}`} onClick={() => setBilling('annual')}>
-                    Annual <span className="billing-save">–20%</span>
-                  </div>
-                </div>
-              </div>
-            </>
+            </div>
           )}
 
           <div className="card-body-pdp">
+            {isDroplet && vpsConfig && (
+              <div style={{
+                padding: '10px 14px', marginBottom: '12px',
+                background: 'rgba(139,92,246,0.06)', borderRadius: 'var(--r-md)',
+                border: '2px solid var(--accent)', fontSize: '0.72rem',
+              }}>
+                <div style={{ fontWeight: 800, marginBottom: '6px', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: '0.65rem' }}>Your configuration</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', color: 'var(--foreground)' }}>
+                  <div><span style={{ fontWeight: 600, color: 'var(--muted-foreground)' }}>Provider:</span> {vpsConfig.provider}</div>
+                  <div><span style={{ fontWeight: 600, color: 'var(--muted-foreground)' }}>Region:</span> {vpsConfig.regionName}</div>
+                  <div><span style={{ fontWeight: 600, color: 'var(--muted-foreground)' }}>Spec:</span> {vpsConfig.size.vcpus} vCPU · {formatMemory(vpsConfig.size.memory)} · {vpsConfig.size.disk} GB</div>
+                  <div><span style={{ fontWeight: 600, color: 'var(--muted-foreground)' }}>OS:</span> {OS_OPTIONS.find(o => o.id === vpsConfig.os)?.name}</div>
+                </div>
+              </div>
+            )}
+
             <div className="price-area">
-              <div className="price-from">{isDroplet ? 'Starting from' : 'Price'}</div>
+              <div className="price-from">{isDroplet ? (vpsConfig ? 'Your price' : 'Starting from') : 'Price'}</div>
               <div className="price-row-pdp">
                 <div className="price-main-pdp">{formattedAmount}</div>
                 <div className="price-period">/ {billingPeriod}</div>
@@ -295,8 +591,25 @@ export default function ProductDetailClient({ product }: { product: ProductData 
             <div className="card-cta-stack">
               {isDroplet ? (
                 <>
-                  <button className="btn btn-accent btn-lg btn-full" onClick={handleBuyNow} disabled={!selectedSize && vpsSizes.length > 0}>🖥️ Deploy my server</button>
-                  <button className="btn btn-ghost btn-full">💻 Try demo console</button>
+                  <button
+                    className="btn btn-accent btn-lg btn-full"
+                    onClick={handleBuyNow}
+                    disabled={!vpsConfigComplete}
+                    style={!vpsConfigComplete ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                  >
+                    Buy Now
+                  </button>
+                  <button
+                    className={`btn btn-full${isInCart ? ' btn-ghost' : ''}`}
+                    onClick={handleAddToCart}
+                    disabled={!vpsConfigComplete || isInCart}
+                    style={(!vpsConfigComplete || isInCart) ? { opacity: isInCart ? 0.6 : 0.5, cursor: isInCart ? 'default' : 'not-allowed' } : {}}
+                  >
+                    {isInCart ? 'Already in Cart' : 'Add to Cart'}
+                  </button>
+                  <button className="btn btn-ghost btn-full" onClick={handleWishlist}>
+                    {wishlisted ? '❤️ In Wishlist' : 'Add to wishlist'}
+                  </button>
                 </>
               ) : (
                 <>
@@ -307,7 +620,6 @@ export default function ProductDetailClient({ product }: { product: ProductData 
                     disabled={isInCart}
                     style={isInCart ? { opacity: 0.6, cursor: 'default' } : {}}
                   >
-                    <ShoppingCart size={16} />
                     {isInCart ? 'Already in Cart' : 'Add to Cart'}
                   </button>
                   <button className="btn btn-ghost btn-full" onClick={handleWishlist}>
@@ -318,16 +630,8 @@ export default function ProductDetailClient({ product }: { product: ProductData 
               )}
             </div>
 
-            {isDroplet && (
-              <div className="guarantee-strip">
-                <span style={{ fontSize: '1.1rem' }}>🛡️</span>
-                <span>7-day full refund if you&apos;re not satisfied.</span>
-              </div>
-            )}
-
             <div className="card-specs">
               <div className="card-spec-row"><span className="cs-key">Setup time</span><span className="cs-val">{isDroplet ? '~60 seconds' : 'Instant'}</span></div>
-              {isDroplet && <div className="card-spec-row"><span className="cs-key">Region</span><span className="cs-val">{specs.region} ({specs.datacenter})</span></div>}
               <div className="card-spec-row"><span className="cs-key">Contract</span><span className="cs-val">No lock-in</span></div>
               {isDroplet && <div className="card-spec-row"><span className="cs-key">Access</span><span className="cs-val mono">root SSH + dashboard</span></div>}
               <div className="card-spec-row"><span className="cs-key">Renewal</span><span className="cs-val">{isDroplet ? 'Auto-renews, cancel anytime' : 'Auto-renews'}</span></div>
@@ -350,6 +654,18 @@ export default function ProductDetailClient({ product }: { product: ProductData 
           </div>
         </div>
       </section>
+
+      {isDroplet && (
+        <>
+          <div className="divider"></div>
+          <VpsConfigurator
+            sizes={vpsSizes}
+            loading={sizesLoading}
+            currency={currency}
+            onConfigChange={setVpsConfig}
+          />
+        </>
+      )}
 
       {product.description && (
         <>
@@ -400,7 +716,7 @@ export default function ProductDetailClient({ product }: { product: ProductData 
             </div>
             <div className="timeline">
               {[
-                { n: '1', title: 'Choose your plan', desc: 'Pick a plan and region. Monthly or annual billing, cancel any time.', bg: 'rgba(139,92,246,0.1)' },
+                { n: '1', title: 'Configure your server', desc: 'Pick provider, region, spec, and OS right here on the product page.', bg: 'rgba(139,92,246,0.1)' },
                 { n: '2', title: 'Complete checkout', desc: 'Pay securely. Your account and server entitlement is created instantly.', bg: 'rgba(251,191,36,0.15)' },
                 { n: '3', title: 'Server provisioned', desc: 'Your VPS spins up in ~60s. OS, IP, and SSH credentials ready in your dashboard.', bg: 'rgba(52,211,153,0.12)' },
                 { n: '4', title: 'Start building', desc: 'SSH in or use the web terminal. Full root access from the moment you log in.', bg: 'rgba(244,114,182,0.12)' },
@@ -480,7 +796,12 @@ export default function ProductDetailClient({ product }: { product: ProductData 
           <Heart size={16} fill={wishlisted ? 'var(--secondary)' : 'none'} color={wishlisted ? 'var(--secondary)' : 'currentColor'} />
           <span>{wishlisted ? 'Saved' : 'Wishlist'}</span>
         </button>
-        <button className="floating-bar-btn accent" onClick={handleBuyNow}>
+        <button
+          className="floating-bar-btn accent"
+          onClick={handleBuyNow}
+          disabled={isDroplet && !vpsConfigComplete}
+          style={isDroplet && !vpsConfigComplete ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+        >
           <ShoppingCart size={16} />
           <span>Buy Now</span>
         </button>

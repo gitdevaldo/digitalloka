@@ -3,19 +3,34 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
+export interface VpsConfig {
+  provider: string;
+  region: string;
+  regionName: string;
+  sizeSlug: string;
+  stockId: number;
+  vcpus: number;
+  memory: number;
+  disk: number;
+  transfer: number;
+  priceMonthly: number;
+  os?: string;
+}
+
 export interface CartItem {
   productId: number;
   quantity: number;
   selectedStockId?: number;
   selectedRegion?: string;
   selectedImage?: string;
+  vpsConfig?: VpsConfig;
 }
 
 interface CartContextType {
   items: CartItem[];
   count: number;
   hydrated: boolean;
-  addItem: (productId: number, qty?: number, options?: { selectedStockId?: number; selectedRegion?: string; selectedImage?: string }) => void;
+  addItem: (productId: number, qty?: number, options?: { selectedStockId?: number; selectedRegion?: string; selectedImage?: string; vpsConfig?: VpsConfig }) => void;
   removeItem: (productId: number) => void;
   updateQuantity: (productId: number, qty: number) => void;
   clearCart: () => void;
@@ -52,19 +67,26 @@ function saveCart(items: CartItem[]) {
 }
 
 function mergeCartItems(local: CartItem[], server: CartItem[]): CartItem[] {
-  const merged = new Map<number, number>();
+  const merged = new Map<number, CartItem>();
   for (const item of server) {
-    merged.set(item.productId, item.quantity);
+    merged.set(item.productId, { ...item });
   }
   for (const item of local) {
     const existing = merged.get(item.productId);
-    if (existing !== undefined) {
-      merged.set(item.productId, Math.max(existing, item.quantity));
+    if (existing) {
+      merged.set(item.productId, {
+        ...existing,
+        quantity: Math.max(existing.quantity, item.quantity),
+        ...(item.selectedStockId !== undefined && { selectedStockId: item.selectedStockId }),
+        ...(item.selectedRegion !== undefined && { selectedRegion: item.selectedRegion }),
+        ...(item.selectedImage !== undefined && { selectedImage: item.selectedImage }),
+        ...(item.vpsConfig !== undefined && { vpsConfig: item.vpsConfig }),
+      });
     } else {
-      merged.set(item.productId, item.quantity);
+      merged.set(item.productId, { ...item });
     }
   }
-  return Array.from(merged.entries()).map(([productId, quantity]) => ({ productId, quantity }));
+  return Array.from(merged.values());
 }
 
 async function fetchAndMergeServerCart(localItems: CartItem[]): Promise<{ items: CartItem[]; synced: boolean }> {
@@ -166,7 +188,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [items, loaded, syncToServer]);
 
-  const addItem = useCallback((productId: number, qty = 1, options?: { selectedStockId?: number; selectedRegion?: string; selectedImage?: string }) => {
+  const addItem = useCallback((productId: number, qty = 1, options?: { selectedStockId?: number; selectedRegion?: string; selectedImage?: string; vpsConfig?: VpsConfig }) => {
     setItems(prev => {
       const existing = prev.find(i => i.productId === productId);
       if (existing) {
@@ -176,6 +198,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           ...(options?.selectedStockId !== undefined && { selectedStockId: options.selectedStockId }),
           ...(options?.selectedRegion !== undefined && { selectedRegion: options.selectedRegion }),
           ...(options?.selectedImage !== undefined && { selectedImage: options.selectedImage }),
+          ...(options?.vpsConfig !== undefined && { vpsConfig: options.vpsConfig }),
         } : i);
       }
       return [...prev, {
@@ -184,6 +207,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ...(options?.selectedStockId !== undefined && { selectedStockId: options.selectedStockId }),
         ...(options?.selectedRegion !== undefined && { selectedRegion: options.selectedRegion }),
         ...(options?.selectedImage !== undefined && { selectedImage: options.selectedImage }),
+        ...(options?.vpsConfig !== undefined && { vpsConfig: options.vpsConfig }),
       }];
     });
   }, []);
