@@ -13,6 +13,12 @@ function formatMemory(mb: number): string {
   return `${mb} MB`;
 }
 
+interface ProviderDataOption {
+  slug: string;
+  name: string;
+  available: boolean;
+}
+
 export default function AddVpsStockPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -32,6 +38,13 @@ export default function AddVpsStockPage() {
   const [transfer, setTransfer] = useState('');
   const [sellingPrice, setSellingPrice] = useState('');
 
+  const [region, setRegion] = useState('');
+  const [os, setOs] = useState('');
+  const [regions, setRegions] = useState<ProviderDataOption[]>([]);
+  const [images, setImages] = useState<ProviderDataOption[]>([]);
+  const [loadingRegions, setLoadingRegions] = useState(false);
+  const [loadingImages, setLoadingImages] = useState(false);
+
   useEffect(() => {
     setLoadingType(true);
     fetch('/api/admin/product-types')
@@ -49,6 +62,37 @@ export default function AddVpsStockPage() {
       .catch(() => {})
       .finally(() => setLoadingType(false));
   }, []);
+
+  useEffect(() => {
+    setRegion('');
+    setOs('');
+    if (!provider) {
+      setRegions([]);
+      setImages([]);
+      return;
+    }
+
+    setLoadingRegions(true);
+    setLoadingImages(true);
+
+    fetch(`/api/admin/provider-data?provider=${encodeURIComponent(provider)}&type=region`)
+      .then(r => r.json())
+      .then(d => {
+        const available = (d.data || []).filter((r: ProviderDataOption) => r.available);
+        setRegions(available);
+      })
+      .catch(() => setRegions([]))
+      .finally(() => setLoadingRegions(false));
+
+    fetch(`/api/admin/provider-data?provider=${encodeURIComponent(provider)}&type=image`)
+      .then(r => r.json())
+      .then(d => {
+        const available = (d.data || []).filter((i: ProviderDataOption) => i.available);
+        setImages(available);
+      })
+      .catch(() => setImages([]))
+      .finally(() => setLoadingImages(false));
+  }, [provider]);
 
   async function handleSave() {
     if (!slug || !vcpus || !memory || !disk) {
@@ -77,6 +121,10 @@ export default function AddVpsStockPage() {
           disk: Number(disk),
           transfer: Number(transfer || 0),
           selling_price: Number(sellingPrice),
+          region: region || undefined,
+          os: os || undefined,
+          region_name: regions.find(r => r.slug === region)?.name || undefined,
+          os_name: images.find(i => i.slug === os)?.name || undefined,
         }),
       });
       const data = await res.json();
@@ -96,6 +144,9 @@ export default function AddVpsStockPage() {
   if (!productId) {
     return <div className="p-8 text-center text-muted-foreground">No product specified</div>;
   }
+
+  const selectedRegionName = regions.find(r => r.slug === region)?.name || '';
+  const selectedOsName = images.find(i => i.slug === os)?.name || '';
 
   return (
     <div style={{ animation: 'fadeUp 0.28s var(--ease)' }}>
@@ -171,6 +222,60 @@ export default function AddVpsStockPage() {
         </Panel>
 
         <div style={{ display: 'grid', gap: 20, alignContent: 'start' }}>
+          <Panel title="Region & OS">
+            <div style={{ display: 'grid', gap: 16 }}>
+              <div>
+                <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1.5">Region / Datacenter</label>
+                {!provider ? (
+                  <div className="text-[0.78rem] text-muted-foreground italic">Select a provider first</div>
+                ) : loadingRegions ? (
+                  <div className="border-2 border-border rounded-[var(--r-sm)] px-3 py-2 text-[0.85rem] bg-muted text-muted-foreground">Loading regions...</div>
+                ) : regions.length > 0 ? (
+                  <select
+                    className="w-full border-2 border-border rounded-[var(--r-sm)] px-3 py-2 text-[0.85rem] font-bold bg-input text-foreground focus:outline-none focus:border-accent"
+                    value={region}
+                    onChange={e => setRegion(e.target.value)}
+                  >
+                    <option value="">— select region —</option>
+                    {regions.map(r => (
+                      <option key={r.slug} value={r.slug}>{r.name} ({r.slug})</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="border-2 border-border rounded-[var(--r-sm)] px-3 py-2 bg-muted/50">
+                    <div className="text-[0.78rem] text-muted-foreground">No regions synced for {provider}</div>
+                    <div className="text-[0.65rem] text-muted-foreground mt-0.5">Sync provider data or add regions manually.</div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1.5">Operating System</label>
+                {!provider ? (
+                  <div className="text-[0.78rem] text-muted-foreground italic">Select a provider first</div>
+                ) : loadingImages ? (
+                  <div className="border-2 border-border rounded-[var(--r-sm)] px-3 py-2 text-[0.85rem] bg-muted text-muted-foreground">Loading OS images...</div>
+                ) : images.length > 0 ? (
+                  <select
+                    className="w-full border-2 border-border rounded-[var(--r-sm)] px-3 py-2 text-[0.85rem] font-bold bg-input text-foreground focus:outline-none focus:border-accent"
+                    value={os}
+                    onChange={e => setOs(e.target.value)}
+                  >
+                    <option value="">— select OS —</option>
+                    {images.map(i => (
+                      <option key={i.slug} value={i.slug}>{i.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="border-2 border-border rounded-[var(--r-sm)] px-3 py-2 bg-muted/50">
+                    <div className="text-[0.78rem] text-muted-foreground">No OS images synced for {provider}</div>
+                    <div className="text-[0.65rem] text-muted-foreground mt-0.5">Sync provider data or add images manually.</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Panel>
+
           <Panel title="Pricing">
             <div style={{ display: 'grid', gap: 16 }}>
               <div>
@@ -206,6 +311,16 @@ export default function AddVpsStockPage() {
                 <span className="inline-flex bg-card rounded text-[0.68rem] font-mono px-2 py-0.5 border border-border">{disk || '0'} GB disk</span>
                 <span className="inline-flex bg-card rounded text-[0.68rem] font-mono px-2 py-0.5 border border-border">{transfer || '0'} TB transfer</span>
               </div>
+              {(selectedRegionName || selectedOsName) && (
+                <div className="flex gap-1.5 flex-wrap mb-3">
+                  {selectedRegionName && (
+                    <span className="inline-flex bg-accent/10 text-accent rounded text-[0.68rem] font-bold px-2 py-0.5 border border-accent/30">{selectedRegionName}</span>
+                  )}
+                  {selectedOsName && (
+                    <span className="inline-flex bg-quaternary/10 text-foreground rounded text-[0.68rem] font-bold px-2 py-0.5 border border-quaternary/30">{selectedOsName}</span>
+                  )}
+                </div>
+              )}
               <div style={{ fontSize: '1.1rem', fontWeight: 900 }}>
                 {sellingPrice && Number(sellingPrice) > 0 ? `${formatCurrency(Number(sellingPrice), 'IDR')}/mo` : 'No price set'}
               </div>

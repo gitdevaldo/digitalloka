@@ -155,7 +155,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
   const productId = Number(id);
   const body = await request.json();
-  const { provider, slug, vcpus, memory, disk, transfer, price_monthly, selling_price, regions } = body;
+  const { provider, slug, vcpus, memory, disk, transfer, price_monthly, selling_price, regions, region, os, region_name, os_name } = body;
 
   if (!provider || !slug || !vcpus || !memory || !disk) {
     return NextResponse.json({ error: 'provider, slug, vcpus, memory, disk are required' }, { status: 422 });
@@ -192,13 +192,23 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: 'Size with this slug and provider already exists' }, { status: 409 });
   }
 
+  const meta: Record<string, unknown> = {
+    type: 'manual_size',
+    provider,
+    selling_price: Number(selling_price || price_monthly || 0),
+    added_by: userId,
+    added_at: new Date().toISOString(),
+  };
+  if (region) { meta.region = region; meta.region_name = region_name || region; }
+  if (os) { meta.os = os; meta.os_name = os_name || os; }
+
   const { error } = await admin.from('product_stock_items').insert({
     product_id: productId,
     credential_data: credentialData,
     credential_hash: hash,
     status: 'disabled',
     is_unlimited: true,
-    meta: { type: 'manual_size', provider, selling_price: Number(selling_price || price_monthly || 0), added_by: userId, added_at: new Date().toISOString() },
+    meta,
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
