@@ -15,6 +15,9 @@ interface FieldDef {
   options?: string[];
   help_text?: string;
   scope?: 'product' | 'stock';
+  options_source?: string;
+  provider_data_type?: string;
+  depends_on?: string;
 }
 
 const emptyField: FieldDef = { key: '', label: '', type: 'text', required: false, help_text: '', scope: 'product' };
@@ -250,6 +253,45 @@ export default function EditProductTypePage() {
                         className="w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent"
                         placeholder="Option1, Option2, Option3"
                       />
+                      <div className="mt-2 grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Options Source</label>
+                          <select
+                            value={f.options_source || ''}
+                            onChange={(e) => updateField(idx, { options_source: e.target.value || undefined })}
+                            className="w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent"
+                          >
+                            <option value="">Static only</option>
+                            <option value="provider_data">Also from Provider Data</option>
+                          </select>
+                        </div>
+                        {f.options_source === 'provider_data' && (
+                          <div>
+                            <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Provider Data Type</label>
+                            <select
+                              value={f.provider_data_type || ''}
+                              onChange={(e) => updateField(idx, { provider_data_type: e.target.value || undefined })}
+                              className="w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent"
+                            >
+                              <option value="">— select —</option>
+                              <option value="region">Region</option>
+                              <option value="image">OS Image</option>
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                      {f.options_source === 'provider_data' && (
+                        <div className="mt-2">
+                          <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Depends On Field</label>
+                          <input
+                            value={f.depends_on || ''}
+                            onChange={(e) => updateField(idx, { depends_on: e.target.value.replace(/[^a-z0-9_]/g, '') || undefined })}
+                            className="w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent"
+                            placeholder="e.g. provider"
+                          />
+                          <div className="text-[0.6rem] text-muted-foreground mt-0.5">Options will re-load when this field changes</div>
+                        </div>
+                      )}
                     </div>
                   )}
                   <div className="mb-1">

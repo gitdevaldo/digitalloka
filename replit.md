@@ -82,7 +82,7 @@ Tables: `users`, `products`, `product_categories`, `product_types`, `product_sto
 Pricing is stored directly on the `products` table (`price_amount`, `price_currency`, `price_billing_period`) — no separate pricing table.
 
 Key design decisions:
-- **Product types** are stored in `product_types` table (type_key, label, description, is_active, fields JSONB). Legacy copy also in `site_settings`
+- **Product types** are stored in `product_types` table (type_key, label, description, is_active, fields JSONB). Legacy copy also in `site_settings`. Fields support `scope: 'stock'` for stock-level fields rendered dynamically in add/edit stock forms. Select fields support `options_source: 'provider_data'` to also load options from `vps_provider_data`, `provider_data_type: 'region'|'image'`, and `depends_on: 'provider'` for field dependencies.
 - **Droplets** are NOT stored in DB; they come from DigitalOcean API. Users have `droplet_ids` JSONB column
 - **Product stocks** use `product_stock_items` table with `credential_data` JSONB and `credential_hash` for dedup
 - **All JSON columns use JSONB** (migrated from json→jsonb in migration 003)

@@ -155,7 +155,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
   const productId = Number(id);
   const body = await request.json();
-  const { provider, slug, vcpus, memory, disk, transfer, price_monthly, selling_price, regions, region, os, region_name, os_name } = body;
+
+  const { provider, slug, vcpus, memory, disk } = body;
 
   if (!provider || !slug || !vcpus || !memory || !disk) {
     return NextResponse.json({ error: 'provider, slug, vcpus, memory, disk are required' }, { status: 422 });
@@ -163,18 +164,36 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   const admin = createSupabaseAdminClient();
 
-  const credentialData = {
+  const CREDENTIAL_KEYS = ['slug', 'vcpus', 'memory', 'disk', 'transfer'];
+  const credentialData: Record<string, unknown> = {
     slug,
     description: `${slug} (${provider})`,
     vcpus: Number(vcpus),
     memory: Number(memory),
     disk: Number(disk),
-    transfer: Number(transfer || 0),
-    price_monthly: Number(price_monthly || 0),
-    price_hourly: Number(((price_monthly || 0) / 730).toFixed(5)),
+    transfer: Number(body.transfer || 0),
+    price_monthly: Number(body.price_monthly || 0),
+    price_hourly: Number(((body.price_monthly || 0) / 730).toFixed(5)),
     available: true,
-    regions: regions || [],
+    regions: body.regions || [],
   };
+
+  const meta: Record<string, unknown> = {
+    type: 'manual_size',
+    provider,
+    selling_price: Number(body.selling_price || body.price_monthly || 0),
+    added_by: userId,
+    added_at: new Date().toISOString(),
+  };
+
+  for (const [key, value] of Object.entries(body)) {
+    if (['selling_price', 'price_monthly', 'regions'].includes(key)) continue;
+    if (CREDENTIAL_KEYS.includes(key)) continue;
+    if (key === 'provider') continue;
+    if (value !== undefined && value !== null && value !== '') {
+      meta[key] = value;
+    }
+  }
 
   const encoder = new TextEncoder();
   const buffer = encoder.encode(JSON.stringify({ slug, provider }));
@@ -191,16 +210,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   if (existing) {
     return NextResponse.json({ error: 'Size with this slug and provider already exists' }, { status: 409 });
   }
-
-  const meta: Record<string, unknown> = {
-    type: 'manual_size',
-    provider,
-    selling_price: Number(selling_price || price_monthly || 0),
-    added_by: userId,
-    added_at: new Date().toISOString(),
-  };
-  if (region) { meta.region = region; meta.region_name = region_name || region; }
-  if (os) { meta.os = os; meta.os_name = os_name || os; }
 
   const { error } = await admin.from('product_stock_items').insert({
     product_id: productId,
