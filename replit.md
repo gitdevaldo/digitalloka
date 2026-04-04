@@ -104,8 +104,11 @@ Pricing is stored directly on the `products` table (`price_amount`, `price_curre
 
 Key design decisions:
 - **Product types** are stored in `product_types` table (type_key, label, description, is_active, fields JSONB). Legacy copy also in `site_settings`
-- **Droplets** are NOT stored in DB; they come from DigitalOcean API. Users have `droplet_ids` JSON column
-- **Product stocks** use `product_stock_items` table with `credential_data` JSON and `credential_hash` for dedup
+- **Droplets** are NOT stored in DB; they come from DigitalOcean API. Users have `droplet_ids` JSONB column
+- **Product stocks** use `product_stock_items` table with `credential_data` JSONB and `credential_hash` for dedup
+- **All JSON columns use JSONB** (migrated from json→jsonb in migration 003)
+- **updated_at triggers** bound to all tables with `updated_at` via `update_updated_at_column()` function
+- **created_at/updated_at defaults** all set to `DEFAULT now()`
 
 ### Database Indexes (docs/sql/2026-04-03-database-indexes.sql)
 Run against Supabase to apply performance indexes:

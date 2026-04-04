@@ -28,7 +28,8 @@ create index if not exists idx_transactions_order_id
 --    duplicate payment processing and speed up lookups.
 -- ============================================================
 create unique index if not exists idx_payment_events_idempotency_key
-  on public.payment_events (idempotency_key);
+  on public.payment_events (idempotency_key)
+  where idempotency_key is not null;
 
 -- ============================================================
 -- 4. Composite catalog indexes (audit #24)
