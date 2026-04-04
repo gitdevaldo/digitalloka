@@ -251,7 +251,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (configId) {
         return prev.filter(i => i.configId !== configId);
       }
-      return prev.filter(i => i.productId !== productId);
+      return prev.filter(i => !(i.productId === productId && !i.configId));
     });
   }, []);
 
