@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/toast';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatCurrency } from '@/lib/utils';
 
 function formatMemory(mb: number): string {
   if (mb >= 1024) return `${(mb / 1024).toFixed(mb % 1024 === 0 ? 0 : 1)} GB`;
@@ -28,8 +28,6 @@ export default function ProductStocksPage() {
   const [stockFilter, setStockFilter] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
-  const [editingPrice, setEditingPrice] = useState<{ id: number; value: string } | null>(null);
-  const [savingPrice, setSavingPrice] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({ provider: 'DigitalOcean', slug: '', vcpus: '', memory: '', disk: '', transfer: '', price_monthly: '', selling_price: '' });
   const [addingSave, setAddingSave] = useState(false);
@@ -115,28 +113,6 @@ export default function ProductStocksPage() {
       ));
     } catch { showToast('Toggle failed'); }
     finally { setTogglingId(null); }
-  }
-
-  async function saveSellingPrice(stockId: number, price: string) {
-    if (!selectedProduct) return;
-    setSavingPrice(true);
-    try {
-      const res = await fetch(`/api/admin/products/${selectedProduct.id}/stock/sync-sizes`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stock_item_id: stockId, selling_price: Number(price) }),
-      });
-      const data = await res.json();
-      if (!res.ok) { showToast(data.error || 'Failed to save price'); return; }
-      setStocks(prev => prev.map(s => {
-        if ((s.id as number) !== stockId) return s;
-        const existingMeta = (s.meta as Record<string, unknown>) || {};
-        return { ...s, meta: { ...existingMeta, selling_price: Number(price) } };
-      }));
-      setEditingPrice(null);
-      showToast('Selling price saved');
-    } catch { showToast('Failed to save price'); }
-    finally { setSavingPrice(false); }
   }
 
   async function addManualSize() {
@@ -301,75 +277,19 @@ export default function ProductStocksPage() {
       },
     },
     {
-      key: 'cost_price',
-      label: 'Cost',
-      render: (row: Record<string, unknown>) => {
-        const cred = row.credential_data as Record<string, unknown> | undefined;
-        if (!cred) return <span>—</span>;
-        return (
-          <span style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)' }}>
-            ${(cred.price_monthly as number)?.toFixed(0)}/mo
-          </span>
-        );
-      },
-    },
-    {
       key: 'selling_price',
-      label: 'Sell Price',
+      label: 'Price',
       render: (row: Record<string, unknown>) => {
-        const id = row.id as number;
-        const sellingPrice = getSellingPrice(row);
-        const cred = row.credential_data as Record<string, unknown> | undefined;
-        const costPrice = (cred?.price_monthly as number) || 0;
-
-        if (editingPrice?.id === id) {
-          return (
-            <div className="flex items-center gap-1">
-              <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>$</span>
-              <input
-                type="number"
-                className="border-2 border-accent rounded px-1.5 py-0.5 text-[0.75rem] font-bold w-[70px] bg-input text-foreground focus:outline-none"
-                value={editingPrice.value}
-                onChange={e => setEditingPrice({ id, value: e.target.value })}
-                onKeyDown={e => { if (e.key === 'Enter') saveSellingPrice(id, editingPrice.value); if (e.key === 'Escape') setEditingPrice(null); }}
-                autoFocus
-              />
-              <Button size="sm" onClick={() => saveSellingPrice(id, editingPrice.value)} disabled={savingPrice}>
-                {savingPrice ? '...' : 'Save'}
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setEditingPrice(null)}>X</Button>
-            </div>
-          );
+        const sp = getSellingPrice(row);
+        if (sp !== null && sp > 0) {
+          return <span style={{ fontWeight: 700, fontSize: '0.75rem' }}>{formatCurrency(sp, 'IDR')}/mo</span>;
         }
-
-        return (
-          <button
-            onClick={() => setEditingPrice({ id, value: String(sellingPrice ?? costPrice) })}
-            className="flex items-center gap-1 cursor-pointer hover:bg-muted px-1.5 py-0.5 rounded transition-colors"
-            title="Click to edit selling price"
-          >
-            <span style={{ fontWeight: 700, fontSize: '0.75rem', color: sellingPrice !== null ? 'var(--foreground)' : 'var(--muted-foreground)' }}>
-              {sellingPrice !== null ? `$${sellingPrice}/mo` : `$${costPrice}/mo`}
-            </span>
-            <span style={{ fontSize: '0.6rem', color: 'var(--accent)' }}>✎</span>
-          </button>
-        );
-      },
-    },
-    {
-      key: 'available',
-      label: 'Available',
-      render: (row: Record<string, unknown>) => {
-        const cred = row.credential_data as Record<string, unknown> | undefined;
-        const available = cred?.available as boolean;
-        return (
-          <StatusBadge variant={available ? 'active' : 'stopped'} label={available ? 'Available' : 'Unavailable'} />
-        );
+        return <span style={{ fontSize: '0.72rem', color: 'var(--secondary)', fontWeight: 600 }}>Not set</span>;
       },
     },
     {
       key: 'status',
-      label: 'Enabled',
+      label: 'Status',
       render: (row: Record<string, unknown>) => {
         const status = row.status as string;
         return (
@@ -385,16 +305,26 @@ export default function ProductStocksPage() {
       label: 'Actions',
       render: (row: Record<string, unknown>) => {
         const status = row.status as string;
-        if (status === 'sold' && !(row.is_unlimited as boolean)) return <span className="text-[0.68rem] text-muted-foreground">Sold</span>;
+        const isSold = status === 'sold' && !(row.is_unlimited as boolean);
         return (
-          <Button
-            size="sm"
-            variant={status === 'enabled' ? 'ghost' : 'default'}
-            disabled={togglingId === (row.id as number)}
-            onClick={() => toggleStockStatus(row.id as number, status)}
-          >
-            {togglingId === (row.id as number) ? '...' : status === 'enabled' ? 'Disable' : 'Enable'}
-          </Button>
+          <div className="flex gap-1">
+            <Button
+              size="sm"
+              onClick={() => router.push(`/admin/product-stocks/${row.id}/edit-vps?product=${selectedProduct?.id}`)}
+            >
+              Edit
+            </Button>
+            {!isSold && (
+              <Button
+                size="sm"
+                variant={status === 'enabled' ? 'ghost' : 'default'}
+                disabled={togglingId === (row.id as number)}
+                onClick={() => toggleStockStatus(row.id as number, status)}
+              >
+                {togglingId === (row.id as number) ? '...' : status === 'enabled' ? 'Disable' : 'Enable'}
+              </Button>
+            )}
+          </div>
         );
       },
     },
@@ -607,13 +537,15 @@ export default function ProductStocksPage() {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  <div>
-                    <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">Cost Price ($/mo)</label>
-                    <input type="number" className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 text-[0.8rem] bg-input text-foreground" placeholder="5" value={addForm.price_monthly} onChange={e => setAddForm(f => ({ ...f, price_monthly: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">Selling Price ($/mo) *</label>
-                    <input type="number" className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 text-[0.8rem] bg-input text-foreground font-bold" placeholder="10" value={addForm.selling_price} onChange={e => setAddForm(f => ({ ...f, selling_price: e.target.value }))} />
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">Selling Price (IDR/mo) *</label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[0.8rem] font-bold text-muted-foreground">Rp</span>
+                      <input type="number" className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 text-[0.8rem] bg-input text-foreground font-bold" placeholder="50000" value={addForm.selling_price} onChange={e => setAddForm(f => ({ ...f, selling_price: e.target.value }))} />
+                    </div>
+                    {addForm.selling_price && Number(addForm.selling_price) > 0 && (
+                      <div className="text-[0.65rem] text-muted-foreground mt-1">Displays as: {formatCurrency(Number(addForm.selling_price), 'IDR')}/mo</div>
+                    )}
                   </div>
                 </div>
               </div>

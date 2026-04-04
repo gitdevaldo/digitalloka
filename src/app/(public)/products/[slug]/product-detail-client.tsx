@@ -100,7 +100,7 @@ export default function ProductDetailClient({ product }: { product: ProductData 
   const categoryName = product.category?.name || product.product_type || 'Product';
   const currency = product.price_currency || 'IDR';
   const amount = isDroplet && selectedSize ? selectedSize.price_monthly : (product.price_amount || 0);
-  const formattedAmount = isDroplet && selectedSize ? `$${selectedSize.price_monthly.toFixed(0)}` : formatCurrency(product.price_amount || 0, currency);
+  const formattedAmount = isDroplet && selectedSize ? formatCurrency(selectedSize.price_monthly, currency) : formatCurrency(product.price_amount || 0, currency);
   const billingPeriod = product.price_billing_period || 'one-time';
   const specs = selectedSize ? {
     vcpu: String(selectedSize.vcpus),
@@ -260,7 +260,7 @@ export default function ProductDetailClient({ product }: { product: ProductData 
                             {size.vcpus} vCPU · {formatMemory(size.memory)} · {size.disk} GB · {size.transfer} TB
                           </div>
                         </div>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 800, whiteSpace: 'nowrap' }}>${size.price_monthly}/mo</div>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 800, whiteSpace: 'nowrap' }}>{formatCurrency(size.price_monthly, currency)}/mo</div>
                       </div>
                     ))}
                   </div>

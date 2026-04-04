@@ -58,6 +58,8 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: { p
     }
   }
   if (body.status) updates.status = body.status;
+  if (body.meta && typeof body.meta === 'object') updates.meta = body.meta;
+  if (body.is_unlimited !== undefined) updates.is_unlimited = body.is_unlimited;
 
   if (Object.keys(updates).length === 0) {
     return apiError('No valid fields to update', 422);
