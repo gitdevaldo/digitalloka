@@ -26,9 +26,11 @@ export default function ProductStocksPage() {
   const [stocks, setStocks] = useState<Record<string, unknown>[]>([]);
   const [stocksLoading, setStocksLoading] = useState(false);
   const [stockFilter, setStockFilter] = useState('');
+  const [stockPage, setStockPage] = useState(1);
   const [syncing, setSyncing] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const { showToast } = useToast();
+  const STOCKS_PER_PAGE = 20;
 
   const isVpsProduct = selectedProduct?.product_type === 'vps_droplet';
 
@@ -141,6 +143,8 @@ export default function ProductStocksPage() {
     if (stockFilter && s.status !== stockFilter) return false;
     return true;
   });
+  const totalStockPages = Math.max(1, Math.ceil(filteredStocks.length / STOCKS_PER_PAGE));
+  const paginatedStocks = filteredStocks.slice((stockPage - 1) * STOCKS_PER_PAGE, stockPage * STOCKS_PER_PAGE);
 
   const productColumns = [
     {
@@ -452,7 +456,7 @@ export default function ProductStocksPage() {
             <select
               className="border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 font-body text-[0.75rem] font-semibold bg-input text-foreground cursor-pointer focus:outline-none focus:border-accent"
               value={stockFilter}
-              onChange={(e) => setStockFilter(e.target.value)}
+              onChange={(e) => { setStockFilter(e.target.value); setStockPage(1); }}
             >
               <option value="">All Status</option>
               <option value="enabled">Enabled</option>
@@ -467,7 +471,23 @@ export default function ProductStocksPage() {
               {isVpsProduct ? 'No sizes found. Click "+ Add Size" to add manually, or "Sync DO Sizes" to fetch from DigitalOcean.' : 'No stock items found.'}
             </div>
           ) : (
-            <AdminTable columns={isVpsProduct ? vpsStockColumns : stockColumns} rows={filteredStocks} />
+            <>
+              <AdminTable columns={isVpsProduct ? vpsStockColumns : stockColumns} rows={paginatedStocks} />
+              {totalStockPages > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+                  <span className="text-[0.72rem] text-muted-foreground font-medium">
+                    Showing {(stockPage - 1) * STOCKS_PER_PAGE + 1}–{Math.min(stockPage * STOCKS_PER_PAGE, filteredStocks.length)} of {filteredStocks.length}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <Button size="sm" variant="ghost" disabled={stockPage === 1} onClick={() => setStockPage(1)}>«</Button>
+                    <Button size="sm" variant="ghost" disabled={stockPage === 1} onClick={() => setStockPage(p => p - 1)}>‹ Prev</Button>
+                    <span className="text-[0.72rem] font-bold px-2">Page {stockPage} of {totalStockPages}</span>
+                    <Button size="sm" variant="ghost" disabled={stockPage === totalStockPages} onClick={() => setStockPage(p => p + 1)}>Next ›</Button>
+                    <Button size="sm" variant="ghost" disabled={stockPage === totalStockPages} onClick={() => setStockPage(totalStockPages)}>»</Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </Panel>
 
