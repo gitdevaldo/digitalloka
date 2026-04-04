@@ -167,8 +167,19 @@ async function fulfillVpsDroplet(
 
   const productMeta = (product.meta || {}) as Record<string, unknown>;
   const typeFields = (productMeta.type_fields || {}) as Record<string, string>;
+  const provider = typeFields.server_provider || 'DigitalOcean';
   const region = (itemMeta.selected_region as string) || typeFields.datacenter || 'sgp1';
   const image = (itemMeta.selected_image as string) || typeFields.operating_system || 'ubuntu-24-04-x64';
+
+  if (provider !== 'DigitalOcean') {
+    return {
+      success: false,
+      product_type: 'vps_droplet',
+      product_id: product.id,
+      details: { provider },
+      error: `provider_not_supported: ${provider}`,
+    };
+  }
 
   const dropletName = `digitalloka-${orderId}-${userId.slice(0, 8)}`;
 
