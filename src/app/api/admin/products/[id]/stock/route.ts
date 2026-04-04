@@ -16,8 +16,8 @@ export const GET = withErrorHandler(async (_request: NextRequest, { params }: { 
     .from('product_stock_items')
     .select('*')
     .eq('product_id', Number(id))
-    .order('created_at', { ascending: false })
-    .limit(100);
+    .order('status', { ascending: false })
+    .order('created_at', { ascending: false });
 
   if (error) {
     if (error.message.includes('product_stock_items')) {
