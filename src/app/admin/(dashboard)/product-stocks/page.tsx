@@ -345,75 +345,123 @@ export default function ProductStocksPage() {
     },
   ];
 
-  function StockCard({ row }: { row: Record<string, unknown> }) {
-    const status = row.status as string;
-    const rowId = row.id as number;
-    const revealed = revealedIds.has(rowId);
-    const cred = row.credential_data as Record<string, string> | undefined;
-    const entries = cred ? Object.entries(cred) : [];
-    const hasSecret = entries.some(([, v]) => !isLinkValue(String(v)));
-    const soldUser = row.sold_user as { id: string; email: string } | null;
-
-    return (
-      <div style={{ border: '2px solid var(--border)', borderRadius: 'var(--r-md, 14px)', background: 'var(--card, #fff)', overflow: 'hidden' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid var(--border)', background: 'var(--muted)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontFamily: 'monospace', fontSize: '0.68rem', color: 'var(--muted-foreground)' }}>#{String(row.id)}</span>
-            <StatusBadge variant={status === 'enabled' ? 'active' : 'stopped'} label={status} />
-            {row.is_unlimited && <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--quaternary)', textTransform: 'uppercase' }}>Unlimited</span>}
-          </div>
-          <div style={{ display: 'flex', gap: '4px' }}>
-            {status !== 'sold' && (
-              <Button size="sm" variant={status === 'enabled' ? 'ghost' : 'default'} disabled={togglingId === rowId} onClick={() => toggleStockStatus(rowId, status)}>
-                {togglingId === rowId ? '...' : status === 'enabled' ? 'Disable' : 'Enable'}
-              </Button>
-            )}
-            <Button size="sm" onClick={() => router.push(`/admin/product-stocks/${rowId}/edit?product=${selectedProduct?.id}`)}>Edit</Button>
-            <Button size="sm" variant="ghost" style={{ color: 'var(--secondary)' }} onClick={() => router.push(`/admin/product-stocks/${rowId}/delete?product=${selectedProduct?.id}`)}>Delete</Button>
-          </div>
-        </div>
-
-        {entries.length > 0 && (
-          <div style={{ padding: '0' }}>
-            {entries.map(([k, v], i) => {
+  const stockColumns = [
+    {
+      key: 'id',
+      label: 'ID',
+      render: (row: Record<string, unknown>) => (
+        <span style={{ fontFamily: 'monospace', fontSize: '0.68rem', color: 'var(--muted-foreground)' }}>{String(row.id).slice(0, 8)}</span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row: Record<string, unknown>) => {
+        const status = row.status as string;
+        return (
+          <StatusBadge
+            variant={status === 'enabled' ? 'active' : status === 'disabled' ? 'stopped' : 'stopped'}
+            label={status}
+          />
+        );
+      },
+    },
+    {
+      key: 'unlimited',
+      label: 'Unlimited',
+      render: (row: Record<string, unknown>) => (
+        <span style={{ fontSize: '0.72rem', color: row.is_unlimited ? 'var(--quaternary)' : 'var(--muted-foreground)' }}>
+          {row.is_unlimited ? 'Yes' : 'No'}
+        </span>
+      ),
+    },
+    {
+      key: 'credential_data',
+      label: 'Credentials',
+      render: (row: Record<string, unknown>) => {
+        const cred = row.credential_data as Record<string, string> | undefined;
+        if (!cred) return <span>—</span>;
+        const entries = Object.entries(cred);
+        if (entries.length === 0) return <span style={{ color: 'var(--muted-foreground)', fontSize: '0.72rem' }}>Empty</span>;
+        const rowId = row.id as number;
+        const revealed = revealedIds.has(rowId);
+        const hasSecret = entries.some(([, v]) => !isLinkValue(String(v)));
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            {entries.map(([k, v]) => {
               const val = String(v);
               const display = revealed ? val : maskValue(val);
               return (
-                <div key={k} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 14px', borderBottom: i < entries.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                  <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.04em', minWidth: '80px', flexShrink: 0 }}>{k}</span>
-                  <span className="font-mono" style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--foreground)', wordBreak: 'break-all', flex: 1 }}>{display}</span>
+                <div key={k} style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                  <span style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.03em', minWidth: '60px', flexShrink: 0 }}>
+                    {k}
+                  </span>
+                  <span className="font-mono" style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--foreground)', wordBreak: 'break-all' }}>
+                    {display.slice(0, 30)}{display.length > 30 ? '…' : ''}
+                  </span>
                 </div>
               );
             })}
             {hasSecret && (
-              <div style={{ padding: '4px 14px 8px' }}>
-                <button onClick={() => toggleReveal(rowId)} style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0' }}>
-                  {revealed ? 'Hide credentials' : 'Reveal credentials'}
-                </button>
-              </div>
+              <button
+                onClick={() => toggleReveal(rowId)}
+                style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', textAlign: 'left' }}
+              >
+                {revealed ? 'Hide' : 'Reveal'}
+              </button>
             )}
           </div>
-        )}
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', padding: '8px 14px 10px', borderTop: entries.length > 0 ? '1px solid var(--border)' : 'none', background: 'var(--muted)' }}>
-          <div>
-            <span style={{ display: 'block', fontSize: '0.56rem', fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Added</span>
-            <span style={{ fontSize: '0.68rem', color: 'var(--foreground)' }}>{row.created_at ? formatDate(row.created_at as string) : '—'}</span>
+        );
+      },
+    },
+    {
+      key: 'created_at',
+      label: 'Added',
+      style: { fontSize: '0.72rem', color: 'var(--muted-foreground)' } as React.CSSProperties,
+      render: (row: Record<string, unknown>) => <span>{row.created_at ? formatDate(row.created_at as string) : '—'}</span>,
+    },
+    {
+      key: 'sold_at',
+      label: 'Sold',
+      style: { fontSize: '0.72rem', color: 'var(--muted-foreground)' } as React.CSSProperties,
+      render: (row: Record<string, unknown>) => <span>{row.sold_at ? formatDate(row.sold_at as string) : '—'}</span>,
+    },
+    {
+      key: 'sold_to',
+      label: 'Sold To',
+      style: { fontSize: '0.72rem', color: 'var(--muted-foreground)' } as React.CSSProperties,
+      render: (row: Record<string, unknown>) => {
+        const soldUser = row.sold_user as { id: string; email: string } | null;
+        if (!soldUser) return <span>—</span>;
+        return (
+          <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--foreground)' }}>{soldUser.email}</span>
+        );
+      },
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (row: Record<string, unknown>) => {
+        const status = row.status as string;
+        return (
+          <div className="flex gap-1">
+            {status !== 'sold' && (
+              <Button
+                size="sm"
+                variant={status === 'enabled' ? 'ghost' : 'default'}
+                disabled={togglingId === (row.id as number)}
+                onClick={() => toggleStockStatus(row.id as number, status)}
+              >
+                {togglingId === (row.id as number) ? '...' : status === 'enabled' ? 'Disable' : 'Enable'}
+              </Button>
+            )}
+            <Button size="sm" onClick={() => router.push(`/admin/product-stocks/${row.id}/edit?product=${selectedProduct?.id}`)}>Edit</Button>
+            <Button size="sm" variant="ghost" style={{ color: 'var(--secondary)' }} onClick={() => router.push(`/admin/product-stocks/${row.id}/delete?product=${selectedProduct?.id}`)}>Delete</Button>
           </div>
-          <div>
-            <span style={{ display: 'block', fontSize: '0.56rem', fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Sold</span>
-            <span style={{ fontSize: '0.68rem', color: 'var(--foreground)' }}>{row.sold_at ? formatDate(row.sold_at as string) : '—'}</span>
-          </div>
-          {soldUser && (
-            <div>
-              <span style={{ display: 'block', fontSize: '0.56rem', fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Sold To</span>
-              <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--foreground)' }}>{soldUser.email}</span>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
+        );
+      },
+    },
+  ];
 
   if (selectedProduct) {
     const enabledCount = stocks.filter(s => s.status === 'enabled').length;
@@ -477,15 +525,7 @@ export default function ProductStocksPage() {
             </div>
           ) : (
             <>
-              {isVpsProduct ? (
-                <AdminTable columns={vpsStockColumns} rows={paginatedStocks} />
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {paginatedStocks.map((row) => (
-                    <StockCard key={row.id as number} row={row} />
-                  ))}
-                </div>
-              )}
+              <AdminTable columns={isVpsProduct ? vpsStockColumns : stockColumns} rows={paginatedStocks} />
               {totalStockPages > 1 && (
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
                   <span className="text-[0.72rem] text-muted-foreground font-medium">
