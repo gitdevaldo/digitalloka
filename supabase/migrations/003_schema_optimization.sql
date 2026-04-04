@@ -25,8 +25,8 @@ ALTER TABLE users             ALTER COLUMN droplet_ids    TYPE jsonb USING dropl
 --    Keep the conditional idx_* variants from migration 002.
 -- ============================================================
 
-DROP INDEX IF EXISTS payment_events_idempotency_key_unique;
-DROP INDEX IF EXISTS transactions_idempotency_key_unique;
+ALTER TABLE payment_events DROP CONSTRAINT IF EXISTS payment_events_idempotency_key_unique;
+ALTER TABLE transactions DROP CONSTRAINT IF EXISTS transactions_idempotency_key_unique;
 
 -- ============================================================
 -- 3. Create or replace the updated_at trigger function
