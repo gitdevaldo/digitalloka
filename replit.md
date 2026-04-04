@@ -134,6 +134,13 @@ API endpoints accept `cursor` (base64url-encoded), `per_page`, and `mode=cursor|
 
 Admin and user dashboard pages use cursor-based "Load More" pattern for audit logs and orders.
 
+## CRITICAL: Git & Replit Rules
+- **Replit only has a SHALLOW copy of the git history.** It does NOT have the full commit history from GitHub.
+- **NEVER run `git filter-branch`, `git rebase`, or any history-rewriting command on Replit.** The local repo only has recent commits, so rewriting + force-pushing will DESTROY the full history on GitHub.
+- **NEVER run `git push --force` from Replit.** Always push from a full local clone on your machine if a force-push is needed.
+- **To remove secrets from git history:** Clone the full repo on your local machine, run the cleanup there, then force-push from there. Never do it from Replit.
+- **To push new commits from Replit:** Use regular `git push` only. If it fails with "non-fast-forward", pull first or push from a local machine.
+
 ## Legacy Archives
 - `.archive/legacy-laravel/` - Previous Laravel implementation (source of truth for UI parity)
 - `.archive/legacy/` - Original Next.js implementation
