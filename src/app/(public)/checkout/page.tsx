@@ -457,20 +457,6 @@ export default function CheckoutPage() {
                     <span className="os-total-value">{formatCurrency(subtotal, currency)}</span>
                   </div>
 
-                  <div className="os-trust">
-                    <div className="trust-line">
-                      <div className="trust-icon">&#9889;</div>
-                      Instant delivery
-                    </div>
-                    <div className="trust-line">
-                      <div className="trust-icon">&#128260;</div>
-                      Cancel anytime
-                    </div>
-                    <div className="trust-line">
-                      <div className="trust-icon">&#128737;&#65039;</div>
-                      7-day refund guarantee
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>

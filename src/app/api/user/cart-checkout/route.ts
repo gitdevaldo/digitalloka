@@ -13,7 +13,8 @@ import { apiError } from '@/lib/api-response';
 const CHECKOUT_LIMIT = { windowMs: 60_000, maxRequests: 10 };
 
 function getAppBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (appUrl && appUrl.startsWith('https://')) return appUrl;
   if (process.env.REPLIT_DEV_DOMAIN) return `https://${process.env.REPLIT_DEV_DOMAIN}`;
   return 'http://localhost:5000';
 }

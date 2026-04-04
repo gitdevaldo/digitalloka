@@ -10,8 +10,9 @@ export async function getSessionUserId(): Promise<string | null> {
 
 export async function startMagicLinkLogin(email: string, nextPath?: string, mode: 'user' | 'admin' = 'user') {
   const supabase = await createSupabaseServerClient();
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL
-    ? process.env.NEXT_PUBLIC_APP_URL
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const baseUrl = (appUrl && appUrl.startsWith('https://'))
+    ? appUrl
     : process.env.REPLIT_DEV_DOMAIN
       ? `https://${process.env.REPLIT_DEV_DOMAIN}`
       : 'http://localhost:5000';
