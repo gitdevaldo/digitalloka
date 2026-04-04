@@ -15,7 +15,7 @@ export const GET = withErrorHandler(async (_request: NextRequest, { params }: { 
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from('product_stock_items')
-    .select('*')
+    .select('*, sold_user:users!product_stock_items_sold_user_id_fkey(id, email)')
     .eq('product_id', Number(id))
     .order('status', { ascending: false })
     .order('created_at', { ascending: false });

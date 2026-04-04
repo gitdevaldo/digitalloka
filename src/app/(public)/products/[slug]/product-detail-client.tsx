@@ -29,6 +29,7 @@ export interface ProductData {
   featured: { label: string; value: string; sub?: string }[] | null;
   faq_items: { question: string; answer: string }[] | null;
   tags: string[] | null;
+  available_stock: number | null;
 }
 
 interface VpsSize {
@@ -430,6 +431,7 @@ export default function ProductDetailClient({ product }: { product: ProductData 
   const [vpsConfig, setVpsConfig] = useState<{ provider: string; region: string; regionName: string; size: VpsSize; os: string; osName: string } | null>(null);
 
   const isDroplet = product.product_type === 'vps_droplet';
+  const isOutOfStock = !isDroplet && product.available_stock !== null && product.available_stock <= 0;
   const sanitizedDescription = useMemo(() => product.description ? sanitizeHtml(product.description) : '', [product.description]);
 
   useEffect(() => {
@@ -677,14 +679,31 @@ export default function ProductDetailClient({ product }: { product: ProductData 
                 </>
               ) : (
                 <>
-                  <button className="btn btn-accent btn-lg btn-full" onClick={handleBuyNow}>Buy Now</button>
+                  {isOutOfStock && (
+                    <div style={{
+                      padding: '10px 14px', marginBottom: '4px',
+                      background: 'rgba(239,68,68,0.08)', borderRadius: 'var(--r-md)',
+                      border: '2px solid rgba(239,68,68,0.3)', fontSize: '0.75rem',
+                      fontWeight: 700, color: 'var(--secondary)', textAlign: 'center',
+                    }}>
+                      Out of Stock
+                    </div>
+                  )}
+                  <button
+                    className="btn btn-accent btn-lg btn-full"
+                    onClick={handleBuyNow}
+                    disabled={isOutOfStock}
+                    style={isOutOfStock ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
+                  >
+                    {isOutOfStock ? 'Sold Out' : 'Buy Now'}
+                  </button>
                   <button
                     className={`btn btn-full${isInCart ? ' btn-ghost' : ''}`}
-                    onClick={() => { if (!isInCart) addToCart(product.id); }}
-                    disabled={isInCart}
-                    style={isInCart ? { opacity: 0.6, cursor: 'default' } : {}}
+                    onClick={() => { if (!isInCart && !isOutOfStock) addToCart(product.id); }}
+                    disabled={isInCart || isOutOfStock}
+                    style={(isInCart || isOutOfStock) ? { opacity: isOutOfStock ? 0.4 : 0.6, cursor: isOutOfStock ? 'not-allowed' : 'default' } : {}}
                   >
-                    {isInCart ? 'Already in Cart' : 'Add to Cart'}
+                    {isOutOfStock ? 'Unavailable' : isInCart ? 'Already in Cart' : 'Add to Cart'}
                   </button>
                   <button className="btn btn-ghost btn-full" onClick={handleWishlist}>
                     {wishlisted ? '❤️ In Wishlist' : 'Add to wishlist'}
@@ -865,11 +884,11 @@ export default function ProductDetailClient({ product }: { product: ProductData 
         <button
           className="floating-bar-btn accent"
           onClick={handleBuyNow}
-          disabled={isDroplet && !vpsConfigComplete}
-          style={isDroplet && !vpsConfigComplete ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+          disabled={(isDroplet && !vpsConfigComplete) || isOutOfStock}
+          style={(isDroplet && !vpsConfigComplete) || isOutOfStock ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
         >
           <ShoppingCart size={16} />
-          <span>Buy Now</span>
+          <span>{isOutOfStock ? 'Sold Out' : 'Buy Now'}</span>
         </button>
       </FloatingBar>
       <LoginDialog open={showLoginDialog} onClose={() => setShowLoginDialog(false)} />

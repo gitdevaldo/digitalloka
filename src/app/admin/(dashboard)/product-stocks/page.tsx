@@ -16,6 +16,15 @@ function formatMemory(mb: number): string {
   return `${mb} MB`;
 }
 
+function isLinkValue(value: string): boolean {
+  return /^https?:\/\//i.test(value.trim());
+}
+
+function maskValue(value: string): string {
+  if (isLinkValue(value)) return value;
+  return '*'.repeat(Math.min(value.length, 20));
+}
+
 export default function ProductStocksPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -29,8 +38,18 @@ export default function ProductStocksPage() {
   const [stockPage, setStockPage] = useState(1);
   const [syncing, setSyncing] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [revealedIds, setRevealedIds] = useState<Set<number>>(new Set());
   const { showToast } = useToast();
   const STOCKS_PER_PAGE = 20;
+
+  const toggleReveal = (id: number) => {
+    setRevealedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const isVpsProduct = selectedProduct?.product_type === 'vps_droplet';
 
@@ -364,18 +383,33 @@ export default function ProductStocksPage() {
         if (!cred) return <span>—</span>;
         const entries = Object.entries(cred);
         if (entries.length === 0) return <span style={{ color: 'var(--muted-foreground)', fontSize: '0.72rem' }}>Empty</span>;
+        const rowId = row.id as number;
+        const revealed = revealedIds.has(rowId);
+        const hasSecret = entries.some(([, v]) => !isLinkValue(String(v)));
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            {entries.map(([k, v]) => (
-              <div key={k} style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                <span style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.03em', minWidth: '60px', flexShrink: 0 }}>
-                  {k}
-                </span>
-                <span className="font-mono" style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--foreground)', wordBreak: 'break-all' }}>
-                  {String(v).slice(0, 30)}{String(v).length > 30 ? '…' : ''}
-                </span>
-              </div>
-            ))}
+            {entries.map(([k, v]) => {
+              const val = String(v);
+              const display = revealed ? val : maskValue(val);
+              return (
+                <div key={k} style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                  <span style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.03em', minWidth: '60px', flexShrink: 0 }}>
+                    {k}
+                  </span>
+                  <span className="font-mono" style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--foreground)', wordBreak: 'break-all' }}>
+                    {display.slice(0, 30)}{display.length > 30 ? '…' : ''}
+                  </span>
+                </div>
+              );
+            })}
+            {hasSecret && (
+              <button
+                onClick={() => toggleReveal(rowId)}
+                style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', textAlign: 'left' }}
+              >
+                {revealed ? 'Hide' : 'Reveal'}
+              </button>
+            )}
           </div>
         );
       },
@@ -387,10 +421,21 @@ export default function ProductStocksPage() {
       render: (row: Record<string, unknown>) => <span>{row.created_at ? formatDate(row.created_at as string) : '—'}</span>,
     },
     {
-      key: 'sold_at',
-      label: 'Sold',
+      key: 'sold_to',
+      label: 'Sold To',
       style: { fontSize: '0.72rem', color: 'var(--muted-foreground)' } as React.CSSProperties,
-      render: (row: Record<string, unknown>) => <span>{row.sold_at ? formatDate(row.sold_at as string) : '—'}</span>,
+      render: (row: Record<string, unknown>) => {
+        const soldUser = row.sold_user as { id: string; email: string } | null;
+        if (!soldUser) return <span>—</span>;
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+            <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--foreground)' }}>{soldUser.email}</span>
+            {row.sold_at && (
+              <span style={{ fontSize: '0.6rem', color: 'var(--muted-foreground)' }}>{formatDate(row.sold_at as string)}</span>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: 'actions',

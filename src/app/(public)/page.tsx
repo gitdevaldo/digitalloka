@@ -28,6 +28,7 @@ interface Product {
   price_currency: string;
   price_billing_period: string;
   category: { name: string; slug: string } | null;
+  available_stock: number | null;
 }
 
 interface NormalizedProduct {
@@ -48,6 +49,7 @@ interface NormalizedProduct {
   badges: string[];
   isNew: boolean;
   isSale: boolean;
+  isOutOfStock: boolean;
 }
 
 function normalizeProduct(item: Product): NormalizedProduct {
@@ -75,6 +77,7 @@ function normalizeProduct(item: Product): NormalizedProduct {
     badges,
     isNew: badges.includes('new'),
     isSale: badges.includes('sale'),
+    isOutOfStock: item.available_stock !== null && item.available_stock <= 0,
   };
 }
 
@@ -100,16 +103,17 @@ export default function CatalogPage() {
     }
   };
 
-  const handleAddToCart = (e: React.MouseEvent, productId: number) => {
+  const handleAddToCart = (e: React.MouseEvent, product: NormalizedProduct) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isInCart(productId)) addToCart(productId);
+    if (!isInCart(product.id) && !product.isOutOfStock) addToCart(product.id);
   };
 
-  const handleBuy = (e: React.MouseEvent, productId: number) => {
+  const handleBuy = (e: React.MouseEvent, product: NormalizedProduct) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart(productId);
+    if (product.isOutOfStock) return;
+    addToCart(product.id);
     router.push('/cart');
   };
   const [minRating, setMinRating] = useState(0);
@@ -379,14 +383,22 @@ export default function CatalogPage() {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill={isInWishlist(p.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                     </button>
                     <button
-                      className={`add-cart-btn${isInCart(p.id) ? ' in-cart' : ''}`}
-                      onClick={e => handleAddToCart(e, p.id)}
-                      disabled={isInCart(p.id)}
+                      className={`add-cart-btn${isInCart(p.id) ? ' in-cart' : ''}${p.isOutOfStock ? ' out-of-stock' : ''}`}
+                      onClick={e => handleAddToCart(e, p)}
+                      disabled={isInCart(p.id) || p.isOutOfStock}
+                      style={p.isOutOfStock ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
                     >
                       <ShoppingCart size={13} />
-                      <span>{isInCart(p.id) ? 'In Cart' : 'Add to Cart'}</span>
+                      <span>{p.isOutOfStock ? 'Sold Out' : isInCart(p.id) ? 'In Cart' : 'Add to Cart'}</span>
                     </button>
-                    <button className="buy-btn" onClick={e => handleBuy(e, p.id)}>Buy Now</button>
+                    <button
+                      className="buy-btn"
+                      onClick={e => handleBuy(e, p)}
+                      disabled={p.isOutOfStock}
+                      style={p.isOutOfStock ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
+                    >
+                      {p.isOutOfStock ? 'Sold Out' : 'Buy Now'}
+                    </button>
                   </div>
                 </div>
               </Link>
