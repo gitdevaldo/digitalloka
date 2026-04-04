@@ -5,13 +5,16 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 export interface CartItem {
   productId: number;
   quantity: number;
+  selectedStockId?: number;
+  selectedRegion?: string;
+  selectedImage?: string;
 }
 
 interface CartContextType {
   items: CartItem[];
   count: number;
   hydrated: boolean;
-  addItem: (productId: number, qty?: number) => void;
+  addItem: (productId: number, qty?: number, options?: { selectedStockId?: number; selectedRegion?: string; selectedImage?: string }) => void;
   removeItem: (productId: number) => void;
   updateQuantity: (productId: number, qty: number) => void;
   clearCart: () => void;
@@ -60,13 +63,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (loaded) saveCart(items);
   }, [items, loaded]);
 
-  const addItem = useCallback((productId: number, qty = 1) => {
+  const addItem = useCallback((productId: number, qty = 1, options?: { selectedStockId?: number; selectedRegion?: string; selectedImage?: string }) => {
     setItems(prev => {
       const existing = prev.find(i => i.productId === productId);
       if (existing) {
-        return prev.map(i => i.productId === productId ? { ...i, quantity: i.quantity + qty } : i);
+        return prev.map(i => i.productId === productId ? {
+          ...i,
+          quantity: i.quantity + qty,
+          ...(options?.selectedStockId !== undefined && { selectedStockId: options.selectedStockId }),
+          ...(options?.selectedRegion !== undefined && { selectedRegion: options.selectedRegion }),
+          ...(options?.selectedImage !== undefined && { selectedImage: options.selectedImage }),
+        } : i);
       }
-      return [...prev, { productId, quantity: qty }];
+      return [...prev, {
+        productId,
+        quantity: qty,
+        ...(options?.selectedStockId !== undefined && { selectedStockId: options.selectedStockId }),
+        ...(options?.selectedRegion !== undefined && { selectedRegion: options.selectedRegion }),
+        ...(options?.selectedImage !== undefined && { selectedImage: options.selectedImage }),
+      }];
     });
   }, []);
 

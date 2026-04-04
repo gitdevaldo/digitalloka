@@ -11,6 +11,11 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/toast';
 import { formatDate } from '@/lib/utils';
 
+function formatMemory(mb: number): string {
+  if (mb >= 1024) return `${(mb / 1024).toFixed(mb % 1024 === 0 ? 0 : 1)} GB`;
+  return `${mb} MB`;
+}
+
 export default function ProductStocksPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -21,7 +26,11 @@ export default function ProductStocksPage() {
   const [stocks, setStocks] = useState<Record<string, unknown>[]>([]);
   const [stocksLoading, setStocksLoading] = useState(false);
   const [stockFilter, setStockFilter] = useState('');
+  const [syncing, setSyncing] = useState(false);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
   const { showToast } = useToast();
+
+  const isVpsProduct = selectedProduct?.product_type === 'vps_droplet';
 
   useEffect(() => { loadProducts(); }, []);
 
@@ -63,6 +72,44 @@ export default function ProductStocksPage() {
       setStocks(data.data || []);
     } catch { showToast('Failed to refresh stocks'); }
     finally { setStocksLoading(false); }
+  }
+
+  async function syncDoSizes() {
+    if (!selectedProduct) return;
+    setSyncing(true);
+    try {
+      const res = await fetch(`/api/admin/products/${selectedProduct.id}/stock/sync-sizes`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Sync failed');
+        return;
+      }
+      showToast(`Synced ${data.synced} sizes (${data.created} new, ${data.updated} updated)`);
+      await refreshStocks();
+    } catch { showToast('Sync failed'); }
+    finally { setSyncing(false); }
+  }
+
+  async function toggleStockStatus(stockId: number, currentStatus: string) {
+    if (!selectedProduct) return;
+    const newStatus = currentStatus === 'unsold' ? 'disabled' : 'unsold';
+    setTogglingId(stockId);
+    try {
+      const res = await fetch(`/api/admin/products/${selectedProduct.id}/stock/sync-sizes`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stock_item_id: stockId, status: newStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Toggle failed');
+        return;
+      }
+      setStocks(prev => prev.map(s =>
+        (s.id as number) === stockId ? { ...s, status: newStatus } : s
+      ));
+    } catch { showToast('Toggle failed'); }
+    finally { setTogglingId(null); }
   }
 
   const filtered = products.filter(p => {
@@ -132,6 +179,109 @@ export default function ProductStocksPage() {
     },
   ];
 
+  const vpsStockColumns = [
+    {
+      key: 'slug',
+      label: 'Size Slug',
+      render: (row: Record<string, unknown>) => {
+        const cred = row.credential_data as Record<string, unknown> | undefined;
+        return (
+          <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', fontWeight: 700 }}>
+            {(cred?.slug as string) || '—'}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'specs',
+      label: 'Specs',
+      render: (row: Record<string, unknown>) => {
+        const cred = row.credential_data as Record<string, unknown> | undefined;
+        if (!cred) return <span>—</span>;
+        return (
+          <div className="flex gap-1.5 flex-wrap">
+            <span className="inline-flex bg-muted rounded text-[0.62rem] font-mono px-1.5 py-0.5 border border-border">
+              {cred.vcpus as number} vCPU
+            </span>
+            <span className="inline-flex bg-muted rounded text-[0.62rem] font-mono px-1.5 py-0.5 border border-border">
+              {formatMemory(cred.memory as number)}
+            </span>
+            <span className="inline-flex bg-muted rounded text-[0.62rem] font-mono px-1.5 py-0.5 border border-border">
+              {cred.disk as number} GB disk
+            </span>
+            <span className="inline-flex bg-muted rounded text-[0.62rem] font-mono px-1.5 py-0.5 border border-border">
+              {cred.transfer as number} TB transfer
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'price',
+      label: 'Price',
+      render: (row: Record<string, unknown>) => {
+        const cred = row.credential_data as Record<string, unknown> | undefined;
+        if (!cred) return <span>—</span>;
+        return (
+          <span style={{ fontWeight: 700, fontSize: '0.75rem' }}>
+            ${(cred.price_monthly as number)?.toFixed(0)}/mo
+          </span>
+        );
+      },
+    },
+    {
+      key: 'available',
+      label: 'DO Available',
+      render: (row: Record<string, unknown>) => {
+        const cred = row.credential_data as Record<string, unknown> | undefined;
+        const available = cred?.available as boolean;
+        return (
+          <StatusBadge variant={available ? 'active' : 'stopped'} label={available ? 'Available' : 'Unavailable'} />
+        );
+      },
+    },
+    {
+      key: 'status',
+      label: 'Enabled',
+      render: (row: Record<string, unknown>) => {
+        const status = row.status as string;
+        return (
+          <StatusBadge
+            variant={status === 'unsold' ? 'active' : status === 'disabled' ? 'stopped' : 'active'}
+            label={status === 'unsold' ? 'Enabled' : status === 'disabled' ? 'Disabled' : 'Sold'}
+          />
+        );
+      },
+    },
+    {
+      key: 'unlimited',
+      label: 'Unlimited',
+      render: (row: Record<string, unknown>) => (
+        <span style={{ fontSize: '0.72rem', color: row.is_unlimited ? 'var(--quaternary)' : 'var(--muted-foreground)' }}>
+          {row.is_unlimited ? 'Yes' : 'No'}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (row: Record<string, unknown>) => {
+        const status = row.status as string;
+        if (status === 'sold' && !(row.is_unlimited as boolean)) return <span className="text-[0.68rem] text-muted-foreground">Sold</span>;
+        return (
+          <Button
+            size="sm"
+            variant={status === 'unsold' ? 'ghost' : 'default'}
+            disabled={togglingId === (row.id as number)}
+            onClick={() => toggleStockStatus(row.id as number, status)}
+          >
+            {togglingId === (row.id as number) ? '...' : status === 'unsold' ? 'Disable' : 'Enable'}
+          </Button>
+        );
+      },
+    },
+  ];
+
   const stockColumns = [
     {
       key: 'id',
@@ -143,8 +293,23 @@ export default function ProductStocksPage() {
     {
       key: 'status',
       label: 'Status',
+      render: (row: Record<string, unknown>) => {
+        const status = row.status as string;
+        return (
+          <StatusBadge
+            variant={status === 'unsold' ? 'active' : status === 'disabled' ? 'stopped' : 'stopped'}
+            label={status}
+          />
+        );
+      },
+    },
+    {
+      key: 'unlimited',
+      label: 'Unlimited',
       render: (row: Record<string, unknown>) => (
-        <StatusBadge variant={row.status === 'unsold' ? 'active' : 'stopped'} label={row.status as string} />
+        <span style={{ fontSize: '0.72rem', color: row.is_unlimited ? 'var(--quaternary)' : 'var(--muted-foreground)' }}>
+          {row.is_unlimited ? 'Yes' : 'No'}
+        </span>
       ),
     },
     {
@@ -179,32 +344,64 @@ export default function ProductStocksPage() {
     {
       key: 'actions',
       label: 'Actions',
-      render: (row: Record<string, unknown>) => (
-        <div className="flex gap-1">
-          <Button size="sm" onClick={() => router.push(`/admin/product-stocks/${row.id}/edit?product=${selectedProduct?.id}`)}>Edit</Button>
-          <Button size="sm" variant="ghost" style={{ color: 'var(--secondary)' }} onClick={() => router.push(`/admin/product-stocks/${row.id}/delete?product=${selectedProduct?.id}`)}>Delete</Button>
-        </div>
-      ),
+      render: (row: Record<string, unknown>) => {
+        const status = row.status as string;
+        return (
+          <div className="flex gap-1">
+            {status !== 'sold' && (
+              <Button
+                size="sm"
+                variant={status === 'unsold' ? 'ghost' : 'default'}
+                disabled={togglingId === (row.id as number)}
+                onClick={() => toggleStockStatus(row.id as number, status)}
+              >
+                {togglingId === (row.id as number) ? '...' : status === 'unsold' ? 'Disable' : 'Enable'}
+              </Button>
+            )}
+            <Button size="sm" onClick={() => router.push(`/admin/product-stocks/${row.id}/edit?product=${selectedProduct?.id}`)}>Edit</Button>
+            <Button size="sm" variant="ghost" style={{ color: 'var(--secondary)' }} onClick={() => router.push(`/admin/product-stocks/${row.id}/delete?product=${selectedProduct?.id}`)}>Delete</Button>
+          </div>
+        );
+      },
     },
   ];
 
   if (selectedProduct) {
+    const enabledCount = stocks.filter(s => s.status === 'unsold').length;
+    const disabledCount = stocks.filter(s => s.status === 'disabled').length;
+    const soldCount = stocks.filter(s => s.status === 'sold').length;
+
     return (
       <div style={{ animation: 'fadeUp 0.28s var(--ease)' }}>
         <PageHeader
-          title="Manage Product Stocks"
-          subtitle={`/admin/products/${selectedProduct.id}/stocks — stock entries for ${selectedProduct.name}`}
+          title={isVpsProduct ? 'VPS Size Management' : 'Manage Product Stocks'}
+          subtitle={isVpsProduct
+            ? `Sync and manage DigitalOcean sizes for ${selectedProduct.name}`
+            : `/admin/products/${selectedProduct.id}/stocks — stock entries for ${selectedProduct.name}`
+          }
           actions={
             <div className="flex gap-2">
               <Button size="sm" onClick={() => { setSelectedProduct(null); setStocks([]); }}>Back</Button>
               <Button size="sm" onClick={refreshStocks}>Refresh</Button>
-              <Button variant="accent" onClick={() => router.push(`/admin/product-stocks/add?product=${selectedProduct.id}&name=${encodeURIComponent(selectedProduct.name as string)}`)}>Add Stock</Button>
+              {isVpsProduct && (
+                <Button variant="accent" onClick={syncDoSizes} disabled={syncing}>
+                  {syncing ? 'Syncing...' : 'Sync DO Sizes'}
+                </Button>
+              )}
+              {!isVpsProduct && (
+                <Button variant="accent" onClick={() => router.push(`/admin/product-stocks/add?product=${selectedProduct.id}&name=${encodeURIComponent(selectedProduct.name as string)}`)}>Add Stock</Button>
+              )}
             </div>
           }
         />
 
-        <Panel title={`Stock Management: ${selectedProduct.name}`} actions={
-          <span className="text-[0.72rem] font-bold text-muted-foreground">{stocks.length} total items</span>
+        <Panel title={isVpsProduct ? `DigitalOcean Sizes: ${selectedProduct.name}` : `Stock Management: ${selectedProduct.name}`} actions={
+          <div className="flex gap-3 items-center">
+            <span className="text-[0.72rem] font-bold text-muted-foreground">{stocks.length} total</span>
+            <span className="text-[0.68rem] text-green-600 font-bold">{enabledCount} enabled</span>
+            <span className="text-[0.68rem] text-muted-foreground font-bold">{disabledCount} disabled</span>
+            {soldCount > 0 && <span className="text-[0.68rem] text-amber-600 font-bold">{soldCount} sold</span>}
+          </div>
         }>
           <div className="flex items-center gap-2 flex-wrap mb-3">
             <select
@@ -213,16 +410,19 @@ export default function ProductStocksPage() {
               onChange={(e) => setStockFilter(e.target.value)}
             >
               <option value="">All Status</option>
-              <option value="unsold">unsold</option>
-              <option value="sold">sold</option>
+              <option value="unsold">{isVpsProduct ? 'Enabled' : 'Unsold'}</option>
+              <option value="disabled">Disabled</option>
+              <option value="sold">Sold</option>
             </select>
           </div>
           {stocksLoading ? (
             <div className="h-20 bg-muted rounded-lg animate-pulse" />
           ) : filteredStocks.length === 0 ? (
-            <div className="text-center text-muted-foreground text-[0.8rem] py-6">No stock items found.</div>
+            <div className="text-center text-muted-foreground text-[0.8rem] py-6">
+              {isVpsProduct ? 'No sizes found. Click "Sync DO Sizes" to fetch from DigitalOcean.' : 'No stock items found.'}
+            </div>
           ) : (
-            <AdminTable columns={stockColumns} rows={filteredStocks} />
+            <AdminTable columns={isVpsProduct ? vpsStockColumns : stockColumns} rows={filteredStocks} />
           )}
         </Panel>
       </div>

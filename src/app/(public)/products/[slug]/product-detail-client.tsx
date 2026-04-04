@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/utils';
 import { useWishlist } from '@/context/wishlist-context';
@@ -28,6 +28,25 @@ export interface ProductData {
   tags: string[] | null;
 }
 
+interface VpsSize {
+  stock_id: number;
+  slug: string;
+  description: string;
+  memory: number;
+  vcpus: number;
+  disk: number;
+  transfer: number;
+  price_monthly: number;
+  price_hourly: number;
+  available: boolean;
+  regions: string[];
+}
+
+function formatMemory(mb: number): string {
+  if (mb >= 1024) return `${(mb / 1024).toFixed(mb % 1024 === 0 ? 0 : 1)} GB`;
+  return `${mb} MB`;
+}
+
 export default function ProductDetailClient({ product }: { product: ProductData }) {
   const router = useRouter();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -38,6 +57,26 @@ export default function ProductDetailClient({ product }: { product: ProductData 
   const wishlisted = isInWishlist(product.id);
   const isInCart = checkInCart(product.id);
 
+  const [vpsSizes, setVpsSizes] = useState<VpsSize[]>([]);
+  const [selectedSize, setSelectedSize] = useState<VpsSize | null>(null);
+  const [sizesLoading, setSizesLoading] = useState(false);
+
+  const isDroplet = product.product_type === 'vps_droplet';
+
+  useEffect(() => {
+    if (!isDroplet) return;
+    setSizesLoading(true);
+    fetch(`/api/products/${product.slug}/sizes`)
+      .then(r => r.json())
+      .then(d => {
+        const sizes = d.data || [];
+        setVpsSizes(sizes);
+        if (sizes.length > 0) setSelectedSize(sizes[0]);
+      })
+      .catch(() => {})
+      .finally(() => setSizesLoading(false));
+  }, [isDroplet, product.id]);
+
   const handleWishlist = async () => {
     const result = await toggleWishlist(product.id);
     if (result === 'login_required') {
@@ -46,19 +85,29 @@ export default function ProductDetailClient({ product }: { product: ProductData 
   };
 
   const handleBuyNow = () => {
-    addToCart(product.id);
+    if (isDroplet && selectedSize) {
+      addToCart(product.id, 1, { selectedStockId: selectedSize.stock_id });
+    } else {
+      addToCart(product.id);
+    }
     router.push('/cart');
   };
 
-  const isDroplet = product.product_type === 'vps_droplet';
   const featured = product.featured || [];
   const faqItems = product.faq_items || [];
   const categoryName = product.category?.name || product.product_type || 'Product';
   const currency = product.price_currency || 'IDR';
-  const amount = product.price_amount || 0;
-  const formattedAmount = formatCurrency(amount, currency);
+  const amount = isDroplet && selectedSize ? selectedSize.price_monthly : (product.price_amount || 0);
+  const formattedAmount = isDroplet && selectedSize ? `$${selectedSize.price_monthly.toFixed(0)}` : formatCurrency(product.price_amount || 0, currency);
   const billingPeriod = product.price_billing_period || 'one-time';
-  const specs = {
+  const specs = selectedSize ? {
+    vcpu: String(selectedSize.vcpus),
+    ram: formatMemory(selectedSize.memory),
+    storage: `${selectedSize.disk} GB`,
+    bandwidth: `${selectedSize.transfer} TB`,
+    region: 'Singapore',
+    datacenter: 'SGP1',
+  } : {
     vcpu: featured.find(f => f.label.toLowerCase().includes('cpu'))?.value || '2',
     ram: featured.find(f => f.label.toLowerCase().includes('ram'))?.value || '4',
     storage: featured.find(f => f.label.toLowerCase().includes('ssd') || f.label.toLowerCase().includes('storage'))?.value || '80',
@@ -179,6 +228,45 @@ export default function ProductDetailClient({ product }: { product: ProductData 
                   </div>
                 </div>
               </div>
+
+              {vpsSizes.length > 0 && (
+                <div style={{ padding: '14px 18px 0' }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 800, marginBottom: '8px', color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Choose your plan</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '220px', overflowY: 'auto' }}>
+                    {vpsSizes.map(size => (
+                      <div
+                        key={size.stock_id}
+                        onClick={() => setSelectedSize(size)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 12px',
+                          borderRadius: 'var(--r-md)',
+                          border: `2px solid ${selectedSize?.stock_id === size.stock_id ? 'var(--accent)' : 'var(--border)'}`,
+                          background: selectedSize?.stock_id === size.stock_id ? 'rgba(139,92,246,0.06)' : 'var(--card)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 700, fontFamily: 'monospace' }}>{size.slug}</div>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)' }}>
+                            {size.vcpus} vCPU · {formatMemory(size.memory)} · {size.disk} GB · {size.transfer} TB
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 800, whiteSpace: 'nowrap' }}>${size.price_monthly}/mo</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {sizesLoading && (
+                <div style={{ padding: '14px 18px', textAlign: 'center', fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>
+                  Loading available sizes...
+                </div>
+              )}
+
               <div style={{ padding: '18px 22px 0' }}>
                 <div className="billing-toggle">
                   <div className={`billing-option ${billing === 'monthly' ? 'active' : ''}`} onClick={() => setBilling('monthly')}>Monthly</div>
@@ -202,7 +290,7 @@ export default function ProductDetailClient({ product }: { product: ProductData 
             <div className="card-cta-stack">
               {isDroplet ? (
                 <>
-                  <button className="btn btn-accent btn-lg btn-full">🖥️ Deploy my server</button>
+                  <button className="btn btn-accent btn-lg btn-full" onClick={handleBuyNow} disabled={!selectedSize && vpsSizes.length > 0}>🖥️ Deploy my server</button>
                   <button className="btn btn-ghost btn-full">💻 Try demo console</button>
                 </>
               ) : (

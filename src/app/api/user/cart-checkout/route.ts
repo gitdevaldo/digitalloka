@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     let subtotal = 0;
     let currency = 'IDR';
-    const orderItems: { product_id: number; item_name: string; quantity: number; unit_price: number; line_total: number; meta: Record<string, string> }[] = [];
+    const orderItems: { product_id: number; item_name: string; quantity: number; unit_price: number; line_total: number; meta: Record<string, string | number> }[] = [];
     const mayarItems: { quantity: number; rate: number; description: string }[] = [];
 
     for (const item of items) {
@@ -59,13 +59,18 @@ export async function POST(request: NextRequest) {
       subtotal += lineTotal;
       currency = product.price_currency || 'IDR';
 
+      const itemMeta: Record<string, string | number> = { product_slug: product.slug };
+      if (item.selected_stock_id) itemMeta.selected_stock_id = item.selected_stock_id;
+      if (item.selected_region) itemMeta.selected_region = item.selected_region;
+      if (item.selected_image) itemMeta.selected_image = item.selected_image;
+
       orderItems.push({
         product_id: product.id,
         item_name: product.name,
         quantity: qty,
         unit_price: product.price_amount,
         line_total: lineTotal,
-        meta: { product_slug: product.slug },
+        meta: itemMeta,
       });
 
       mayarItems.push({

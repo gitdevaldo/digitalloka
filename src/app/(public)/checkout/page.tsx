@@ -101,7 +101,13 @@ export default function CheckoutPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: items.map(i => ({ product_id: i.productId, quantity: i.quantity })),
+          items: items.map(i => ({
+            product_id: i.productId,
+            quantity: i.quantity,
+            ...(i.selectedStockId && { selected_stock_id: i.selectedStockId }),
+            ...(i.selectedRegion && { selected_region: i.selectedRegion }),
+            ...(i.selectedImage && { selected_image: i.selectedImage }),
+          })),
           customer_name: formData.name,
           customer_email: formData.email,
           customer_mobile: formData.mobile,

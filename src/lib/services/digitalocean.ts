@@ -81,11 +81,49 @@ interface DOListActionsResponse {
   actions: DropletAction[];
 }
 
-interface DOErrorResponse {
-  message?: string;
+interface DOListSizesResponse {
+  sizes: DOSize[];
+  meta: { total: number };
+  links: { pages?: { next?: string; last?: string } };
 }
 
-type DOApiResponse = DOListDropletsResponse | DOGetDropletResponse | DOActionResponse | DOListActionsResponse;
+interface DOCreateDropletResponse {
+  droplet: Droplet;
+  links: { actions: { id: number; rel: string; href: string }[] };
+}
+
+interface DOErrorResponse {
+  message?: string;
+  id?: string;
+}
+
+type DOApiResponse = DOListDropletsResponse | DOGetDropletResponse | DOActionResponse | DOListActionsResponse | DOListSizesResponse | DOCreateDropletResponse;
+
+export interface DOSize {
+  slug: string;
+  available: boolean;
+  description: string;
+  disk: number;
+  memory: number;
+  price_hourly: number;
+  price_monthly: number;
+  regions: string[];
+  transfer: number;
+  vcpus: number;
+  disk_info?: { size: { amount: number; unit: string }; type: string }[];
+}
+
+export interface CreateDropletParams {
+  name: string;
+  region: string;
+  size: string;
+  image: string;
+  ssh_keys?: (number | string)[];
+  tags?: string[];
+  user_data?: string;
+  monitoring?: boolean;
+  ipv6?: boolean;
+}
 
 const DO_BASE_URL = process.env.DIGITALOCEAN_BASE_URL || 'https://api.digitalocean.com/v2';
 const DO_TOKEN = () => process.env.DIGITALOCEAN_TOKEN || '';
@@ -287,4 +325,41 @@ export async function listActions(dropletId: number): Promise<DropletAction[]> {
   const ttl = Number(process.env.DIGITALOCEAN_ACTIONS_CACHE_SECONDS || 10);
   await setCache(cacheKey, actions, ttl);
   return actions;
+}
+
+export async function listSizes(): Promise<DOSize[]> {
+  const cacheKey = 'do:sizes:all';
+  const cached = await getCached<DOSize[]>(cacheKey);
+  if (cached) return cached;
+
+  const allSizes: DOSize[] = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const data = await doRequest<DOListSizesResponse>('GET', `/sizes?per_page=200&page=${page}`);
+    const pageSizes = data.sizes || [];
+    allSizes.push(...pageSizes);
+    hasMore = !!data.links?.pages?.next;
+    page++;
+  }
+
+  const ttl = Number(process.env.DIGITALOCEAN_SIZES_CACHE_SECONDS || 3600);
+  await setCache(cacheKey, allSizes, ttl);
+  return allSizes;
+}
+
+export async function createDroplet(params: CreateDropletParams): Promise<Droplet> {
+  const data = await doRequest<DOCreateDropletResponse>('POST', '/droplets', {
+    name: params.name,
+    region: params.region,
+    size: params.size,
+    image: params.image,
+    ssh_keys: params.ssh_keys || [],
+    tags: params.tags || [],
+    user_data: params.user_data,
+    monitoring: params.monitoring ?? true,
+    ipv6: params.ipv6 ?? true,
+  });
+  return data.droplet;
 }

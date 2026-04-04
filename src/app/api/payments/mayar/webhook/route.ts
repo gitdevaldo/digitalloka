@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { fulfillOrder } from '@/lib/services/fulfillment';
+import { sendOrderConfirmationEmail } from '@/lib/services/email';
 import crypto from 'crypto';
 
 function verifyWebhookSignature(rawBody: string, signatureHeader: string | null): boolean {
@@ -126,6 +128,25 @@ export async function POST(request: NextRequest) {
           mayar_paid_at: new Date().toISOString(),
         },
       }).eq('id', orderId);
+
+      let fulfillmentResults: { success: boolean; product_type: string; product_id: number; details: Record<string, unknown>; error?: string }[] = [];
+      try {
+        fulfillmentResults = await fulfillOrder(orderId, order.user_id);
+        console.log('[mayar-webhook] Fulfillment results:', JSON.stringify(fulfillmentResults));
+      } catch (fulfillErr) {
+        console.error('[mayar-webhook] Fulfillment error (non-blocking):', fulfillErr);
+      }
+
+      try {
+        await sendOrderConfirmationEmail({
+          orderId,
+          userId: order.user_id,
+          fulfillmentResults,
+        });
+        console.log('[mayar-webhook] Order confirmation email sent for order:', orderId);
+      } catch (emailErr) {
+        console.error('[mayar-webhook] Email error (non-blocking):', emailErr);
+      }
 
       return NextResponse.json({ processed: true, order_id: orderId, status: 'paid' });
     }

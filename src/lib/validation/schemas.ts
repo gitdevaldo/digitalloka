@@ -12,6 +12,9 @@ export const cartCheckoutSchema = z.object({
       z.object({
         product_id: z.coerce.number().int().positive('product_id must be a positive integer'),
         quantity: z.coerce.number().int().positive().max(50, 'quantity must be at most 50').default(1),
+        selected_stock_id: z.coerce.number().int().positive().optional(),
+        selected_region: z.string().optional(),
+        selected_image: z.string().optional(),
       }),
     )
     .min(1, 'Cart must contain at least one item'),

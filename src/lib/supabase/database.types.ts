@@ -449,6 +449,7 @@ export interface Database {
           credential_data: Json;
           credential_hash: string;
           status: string;
+          is_unlimited: boolean;
           sold_order_item_id: number | null;
           sold_user_id: string | null;
           sold_at: string | null;
@@ -462,6 +463,7 @@ export interface Database {
           credential_data?: Json;
           credential_hash: string;
           status?: string;
+          is_unlimited?: boolean;
           sold_order_item_id?: number | null;
           sold_user_id?: string | null;
           sold_at?: string | null;
@@ -475,6 +477,7 @@ export interface Database {
           credential_data?: Json;
           credential_hash?: string;
           status?: string;
+          is_unlimited?: boolean;
           sold_order_item_id?: number | null;
           sold_user_id?: string | null;
           sold_at?: string | null;
@@ -621,6 +624,31 @@ export interface Database {
           p_currency: string;
           p_payload: Json;
         };
+        Returns: undefined;
+      };
+      assign_stock_item_atomic: {
+        Args: {
+          p_product_id: number;
+          p_order_item_id: number;
+          p_user_id: string;
+          p_stock_item_id?: number | null;
+        };
+        Returns: Json;
+      };
+      check_rate_limit_atomic: {
+        Args: {
+          p_key: string;
+          p_window_ms: number;
+          p_max_requests: number;
+        };
+        Returns: { allowed: boolean; current_count: number; oldest_ts: string }[];
+      };
+      cleanup_rate_limit_entries: {
+        Args: Record<string, never>;
+        Returns: undefined;
+      };
+      cleanup_expired_cache: {
+        Args: Record<string, never>;
         Returns: undefined;
       };
     };
