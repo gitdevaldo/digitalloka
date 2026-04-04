@@ -413,30 +413,44 @@ function buildFulfillmentDetails(results: FulfillmentResult[]): string {
         const cred = r.details.credential_data as Record<string, string> | undefined;
         const credRows = cred ? Object.entries(cred).map(([k, v]) => `
           <tr>
-            <td style="padding:4px 0;font-family:${FONT_BODY};font-size:12px;font-weight:600;color:${COLOR_MUTED};text-transform:uppercase;letter-spacing:0.04em;width:100px;vertical-align:top;">${k}</td>
-            <td style="padding:4px 0;font-family:${FONT_BODY};font-size:13px;font-weight:600;color:${COLOR_DARK};word-break:break-all;">${String(v)}</td>
+            <td style="padding:10px 16px;border-bottom:1px solid ${COLOR_BORDER};">
+              <span style="display:block;font-family:${FONT_BODY};font-size:10px;font-weight:700;color:${COLOR_MUTED};text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">${k}</span>
+              <span style="display:block;font-family:${FONT_BODY};font-size:14px;font-weight:600;color:${COLOR_DARK};word-break:break-all;line-height:1.4;">${String(v)}</span>
+            </td>
           </tr>
         `).join('') : '';
 
         return `
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:12px;">
-          <tr><td style="background-color:#ECFDF5;border:2px solid ${COLOR_GREEN};border-radius:12px;padding:16px 20px;">
-            <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+          <tr><td style="background-color:#ECFDF5;border:2px solid ${COLOR_GREEN};border-radius:16px;padding:20px 24px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
               <tr>
-                <td style="padding-right:12px;vertical-align:top;font-size:20px;">&#10024;</td>
-                <td>
-                  <span style="font-family:${FONT_HEADING};font-size:14px;font-weight:700;color:#059669;">Digital Product Ready</span>
-                  ${credRows ? `
-                  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:10px;background-color:#FFFFFF;border:2px solid ${COLOR_BORDER};border-radius:8px;padding:12px 16px;width:100%;">
-                    ${credRows}
+                <td style="padding-bottom:14px;">
+                  <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                    <tr>
+                      <td style="padding-right:10px;vertical-align:middle;font-size:20px;">&#10024;</td>
+                      <td style="font-family:${FONT_HEADING};font-size:15px;font-weight:700;color:#059669;vertical-align:middle;">Digital Product Ready</td>
+                    </tr>
                   </table>
-                  ` : `
-                  <p style="font-family:${FONT_BODY};font-size:13px;color:${COLOR_MUTED};line-height:1.5;margin:4px 0 0;">
-                    Your product has been assigned and is ready to access from your dashboard.
-                  </p>
-                  `}
                 </td>
               </tr>
+              ${credRows ? `
+              <tr>
+                <td>
+                  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#FFFFFF;border:2px solid ${COLOR_BORDER};border-radius:10px;overflow:hidden;">
+                    ${credRows}
+                  </table>
+                </td>
+              </tr>
+              ` : `
+              <tr>
+                <td>
+                  <p style="font-family:${FONT_BODY};font-size:13px;color:${COLOR_MUTED};line-height:1.5;margin:0;">
+                    Your product has been assigned and is ready to access from your dashboard.
+                  </p>
+                </td>
+              </tr>
+              `}
             </table>
           </td></tr>
         </table>
