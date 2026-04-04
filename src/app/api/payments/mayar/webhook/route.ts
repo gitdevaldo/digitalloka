@@ -99,7 +99,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       return apiError('Order mismatch', 400);
     }
 
-    if (status === 'paid' || status === 'settled') {
+    const isPaid = status === 'paid' || status === 'settled' || status === 'SUCCESS';
+    if (isPaid) {
       const { error: rpcError } = await admin.rpc('process_payment_atomic', {
         p_order_id: order.id,
         p_user_id: order.user_id,
