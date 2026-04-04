@@ -8,6 +8,7 @@ import { useCart } from '@/context/cart-context';
 import { LoginDialog } from '@/components/ui/login-dialog';
 import { FloatingBar } from '@/components/layout/floating-bar';
 import { Heart, ShoppingCart } from 'lucide-react';
+import { ProviderLogo } from '@/components/ui/provider-logo';
 import type { VpsConfig } from '@/context/cart-context';
 
 export interface ProductData {
@@ -252,9 +253,14 @@ function VpsConfigurator({
                 className="vps-config-card"
                 data-selected={selectedProvider === p}
               >
-                <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>{p}</div>
-                <div style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)' }}>
-                  {sizes.filter(s => s.provider === p).length} sizes available
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ProviderLogo provider={p} size={24} />
+                  <div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>{p}</div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)' }}>
+                      {sizes.filter(s => s.provider === p).length} sizes available
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}

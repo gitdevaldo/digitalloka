@@ -142,7 +142,7 @@ export function VpsStockForm({
             <label className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
             <div className="border-2 border-border rounded-[var(--r-sm)] px-3 py-2 bg-muted/50">
               <div className="text-[0.78rem] text-muted-foreground">
-                No {field.label.toLowerCase()} data available for {currentProvider || 'this provider'}
+                No {field.label.toLowerCase()} data available for {values['provider'] || 'this provider'}
               </div>
               <div className="text-[0.65rem] text-muted-foreground mt-0.5">
                 Sync provider data or add options in the product type definition.

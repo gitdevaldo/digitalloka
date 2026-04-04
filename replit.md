@@ -133,6 +133,7 @@ Run against Supabase to apply performance indexes:
 - `MAYAR_BASE_URL` - Mayar API base URL (in `.env.local`)
 - `PAYMENT_WEBHOOK_SECRET` - HMAC secret for verifying payment webhook signatures
 - `MAYAR_SANDBOX` - Set to "true" for sandbox mode (in `.env.local`)
+- `NEXT_PUBLIC_LOGO_DEV_TOKEN` - Logo.dev publishable key for provider logos
 
 ## Cursor-Based Pagination
 Large tables (audit logs, orders, transactions) support cursor-based pagination using `created_at` + `id` as the composite cursor. The cursor utility is in `src/lib/cursor-pagination.ts` with `encodeCursor`, `decodeCursor`, and `applyCursorPagination` helpers.
