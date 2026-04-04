@@ -410,9 +410,9 @@ export default function ProductStocksPage() {
               onChange={(e) => setStockFilter(e.target.value)}
             >
               <option value="">All Status</option>
-              <option value="unsold">{isVpsProduct ? 'Enabled' : 'Unsold'}</option>
+              <option value="enabled">Enabled</option>
               <option value="disabled">Disabled</option>
-              <option value="sold">Sold</option>
+              {!isVpsProduct && <option value="sold">Sold</option>}
             </select>
           </div>
           {stocksLoading ? (
