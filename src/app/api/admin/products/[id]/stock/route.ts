@@ -15,13 +15,13 @@ export const GET = withErrorHandler(async (_request: NextRequest, { params }: { 
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from('product_stock_items')
-    .select('*, sold_user:users!product_stock_items_sold_user_id_fkey(id, email)')
+    .select('*, sold_user:users!product_stock_items_sold_user_id_foreign(id, email)')
     .eq('product_id', Number(id))
     .order('status', { ascending: false })
     .order('created_at', { ascending: false });
 
   if (error) {
-    if (error.message.includes('product_stock_items')) {
+    if (error.message.includes('relation') && error.message.includes('does not exist')) {
       return apiJson({ data: [], _table_missing: true });
     }
     return apiError(sanitizeDbError(error.message), 500);
