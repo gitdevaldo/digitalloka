@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import type { Json } from '@/lib/supabase/database.types';
 
 export async function listGroupedSettings() {
   const admin = createSupabaseAdminClient();
@@ -19,7 +20,7 @@ export async function listGroupedSettings() {
   return grouped;
 }
 
-export async function upsertSetting(group: string, key: string, value: unknown, updatedBy?: string) {
+export async function upsertSetting(group: string, key: string, value: Json, updatedBy?: string) {
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from('site_settings')

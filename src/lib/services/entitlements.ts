@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { TypedSupabaseClient } from '@/lib/supabase/database.types';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 
 export async function createEntitlementsForOrder(orderId: number, userId: string) {
@@ -17,7 +17,7 @@ const ALLOWED_TRANSITIONS: Record<string, string[]> = {
   revoked: [],
 };
 
-export async function listUserEntitlements(supabase: SupabaseClient, userId: string, page = 1, perPage = 20) {
+export async function listUserEntitlements(supabase: TypedSupabaseClient, userId: string, page = 1, perPage = 20) {
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
 

@@ -1,6 +1,6 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { TypedSupabaseClient } from '@/lib/supabase/database.types';
 
-export async function canAccessDroplet(supabase: SupabaseClient, userId: string, dropletId: number): Promise<boolean> {
+export async function canAccessDroplet(supabase: TypedSupabaseClient, userId: string, dropletId: number): Promise<boolean> {
   if (!userId || dropletId <= 0) return false;
   const { data } = await supabase.from('users').select('droplet_ids').eq('id', userId).single();
   if (!data?.droplet_ids) return false;
@@ -8,7 +8,7 @@ export async function canAccessDroplet(supabase: SupabaseClient, userId: string,
   return ids.includes(dropletId);
 }
 
-export async function listAssignedDropletIds(supabase: SupabaseClient, userId: string): Promise<number[]> {
+export async function listAssignedDropletIds(supabase: TypedSupabaseClient, userId: string): Promise<number[]> {
   if (!userId) return [];
   const { data } = await supabase.from('users').select('droplet_ids').eq('id', userId).single();
   if (!data?.droplet_ids) return [];

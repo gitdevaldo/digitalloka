@@ -2,22 +2,22 @@
 
 import React from 'react';
 
-interface Column {
+export interface Column<T = Record<string, unknown>> {
   key: string;
   label: string;
   className?: string;
   style?: React.CSSProperties;
-  render?: (row: Record<string, unknown>) => React.ReactNode;
+  render?: (row: T) => React.ReactNode;
 }
 
-interface AdminTableProps {
-  columns: Column[];
-  rows: Record<string, unknown>[];
+interface AdminTableProps<T = Record<string, unknown>> {
+  columns: Column<T>[];
+  rows: T[];
   emptyText?: string;
-  onRowClick?: (row: Record<string, unknown>) => void;
+  onRowClick?: (row: T) => void;
 }
 
-export function AdminTable({ columns, rows, emptyText = 'No data found.', onRowClick }: AdminTableProps) {
+export function AdminTable<T extends Record<string, unknown>>({ columns, rows, emptyText = 'No data found.', onRowClick }: AdminTableProps<T>) {
   return (
     <div className="admin-table-shell">
       <table className="admin-tbl">

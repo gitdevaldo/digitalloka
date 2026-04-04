@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import type { Json } from '@/lib/supabase/database.types';
 import crypto from 'crypto';
 
 const webhookSecretChecked = (() => {
@@ -35,7 +36,7 @@ export async function processWebhook(payload: Record<string, unknown>) {
     event_id: String(payload.event_id || ''),
     idempotency_key: idempotencyKey,
     status: 'received',
-    payload,
+    payload: payload as Json,
   });
 
   if (insertError) {
@@ -62,7 +63,7 @@ export async function processWebhook(payload: Record<string, unknown>) {
       p_idempotency_key: idempotencyKey,
       p_amount: Number(payload.amount || order.total_amount),
       p_currency: String(payload.currency || order.currency),
-      p_payload: payload,
+      p_payload: payload as Json,
     });
 
     if (rpcError) throw new Error(rpcError.message);

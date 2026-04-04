@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
+import type { Json } from '@/lib/supabase/database.types';
 import { parseRequestBody } from '@/lib/validation';
 import { stockImportSchema } from '@/lib/validation/schemas';
 
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
     const existingHashes = new Set((existingItems || []).map((e: { credential_hash: string }) => e.credential_hash));
     const seenHashes = new Set<string>();
 
-    const toInsert: { product_id: number; credential_data: Record<string, string>; credential_hash: string; status: string; meta: object }[] = [];
+    const toInsert: { product_id: number; credential_data: Json; credential_hash: string; status: string; meta: Json }[] = [];
 
     for (const row of parsedRows) {
       if (existingHashes.has(row.credentialHash) || seenHashes.has(row.credentialHash)) {
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
 
     const meta = (product?.meta as Record<string, unknown>) || {};
     meta.stock_headers = normalizedHeaders;
-    await admin.from('products').update({ meta }).eq('id', product_id);
+    await admin.from('products').update({ meta: meta as Json }).eq('id', product_id);
   }
 
   return NextResponse.json({

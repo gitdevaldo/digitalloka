@@ -42,15 +42,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Products not found' }, { status: 422 });
     }
 
-    const productMap = new Map(products.map((p: { id: number; name: string; slug: string; price_amount: number; price_currency: string }) => [p.id, p]));
+    const productMap = new Map(products.map((p) => [p.id, p]));
 
     let subtotal = 0;
     let currency = 'IDR';
-    const orderItems: { product_id: number; item_name: string; quantity: number; unit_price: number; line_total: number; meta: object }[] = [];
+    const orderItems: { product_id: number; item_name: string; quantity: number; unit_price: number; line_total: number; meta: Record<string, string> }[] = [];
     const mayarItems: { quantity: number; rate: number; description: string }[] = [];
 
     for (const item of items) {
-      const product = productMap.get(item.product_id) as { id: number; name: string; slug: string; price_amount: number; price_currency: string } | undefined;
+      const product = productMap.get(item.product_id);
       if (!product) continue;
       if (!product.price_amount || product.price_amount <= 0) continue;
 

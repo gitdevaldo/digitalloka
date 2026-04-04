@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { TypedSupabaseClient } from '@/lib/supabase/database.types';
 
 export interface ProductFilters {
   category?: string;
@@ -15,7 +15,7 @@ export interface ProductFilters {
   per_page?: number;
 }
 
-export async function listProducts(supabase: SupabaseClient, filters: ProductFilters) {
+export async function listProducts(supabase: TypedSupabaseClient, filters: ProductFilters) {
   const perPage = filters.per_page || 12;
   const page = filters.page || 1;
   const from = (page - 1) * perPage;
@@ -33,7 +33,7 @@ export async function listProducts(supabase: SupabaseClient, filters: ProductFil
   if (filters.availability) query = query.eq('status', filters.availability);
   if (filters.category) query = query.eq('category_slug', filters.category);
   if (filters.max_price !== undefined && Number.isFinite(filters.max_price)) {
-    query = query.lte('price', filters.max_price);
+    query = query.lte('price_amount', filters.max_price);
   }
   if (filters.rating_min !== undefined && filters.rating_min > 0) {
     query = query.gte('rating', filters.rating_min);
@@ -68,7 +68,7 @@ export async function listProducts(supabase: SupabaseClient, filters: ProductFil
   };
 }
 
-export async function getProductBySlug(supabase: SupabaseClient, slug: string) {
+export async function getProductBySlug(supabase: TypedSupabaseClient, slug: string) {
   const { data, error } = await supabase
     .from('products')
     .select('*, category:product_categories(*)')

@@ -1,6 +1,6 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { TypedSupabaseClient } from '@/lib/supabase/database.types';
 
 export async function getSessionUserId(): Promise<string | null> {
   const supabase = await createSupabaseServerClient();
@@ -46,7 +46,7 @@ export async function isAdmin(userId: string): Promise<boolean> {
   return data.role === 'admin';
 }
 
-export async function getUserDropletIds(supabase: SupabaseClient, userId: string): Promise<number[]> {
+export async function getUserDropletIds(supabase: TypedSupabaseClient, userId: string): Promise<number[]> {
   if (!userId) return [];
   const { data } = await supabase.from('users').select('droplet_ids').eq('id', userId).single();
   if (!data?.droplet_ids) return [];

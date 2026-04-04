@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
+import type { Json } from '@/lib/supabase/database.types';
 import { parseRequestBody } from '@/lib/validation';
 import { productCreateSchema } from '@/lib/validation/schemas';
 
@@ -74,9 +75,9 @@ export async function POST(request: NextRequest) {
     is_visible: data.catalog_visibility !== 'hidden',
     tags: data.tags,
     badges: data.badges,
-    faq_items: data.faq_items,
-    featured: data.featured,
-    meta: data.meta,
+    faq_items: data.faq_items as Json,
+    featured: data.featured as Json,
+    meta: data.meta as Json,
     category_id: categoryId,
     price_amount: data.price_amount,
     price_currency: data.price_currency,

@@ -1,8 +1,94 @@
 import { createClient } from '@supabase/supabase-js';
 
+export interface DropletNetwork {
+  ip_address: string;
+  netmask: string;
+  gateway: string;
+  type: string;
+}
+
+export interface DropletNetworks {
+  v4: DropletNetwork[];
+  v6: DropletNetwork[];
+}
+
+export interface DropletRegion {
+  name: string;
+  slug: string;
+  available: boolean;
+}
+
+export interface DropletSize {
+  slug: string;
+  memory: number;
+  vcpus: number;
+  disk: number;
+  transfer: number;
+  price_monthly: number;
+  price_hourly: number;
+}
+
+export interface DropletImage {
+  id: number;
+  name: string;
+  distribution: string;
+  slug: string | null;
+  type: string;
+}
+
+export interface Droplet {
+  id: number;
+  name: string;
+  memory: number;
+  vcpus: number;
+  disk: number;
+  locked: boolean;
+  status: 'new' | 'active' | 'off' | 'archive';
+  created_at: string;
+  networks: DropletNetworks;
+  region: DropletRegion;
+  size: DropletSize;
+  image: DropletImage;
+  tags: string[];
+  vpc_uuid: string;
+}
+
+export interface DropletAction {
+  id: number;
+  status: 'in-progress' | 'completed' | 'errored';
+  type: string;
+  started_at: string;
+  completed_at: string | null;
+  resource_id: number;
+  resource_type: string;
+  region_slug: string;
+}
+
+interface DOListDropletsResponse {
+  droplets: Droplet[];
+  meta: { total: number };
+}
+
+interface DOGetDropletResponse {
+  droplet: Droplet;
+}
+
+interface DOActionResponse {
+  action: DropletAction;
+}
+
+interface DOListActionsResponse {
+  actions: DropletAction[];
+}
+
+interface DOErrorResponse {
+  message?: string;
+}
+
+type DOApiResponse = DOListDropletsResponse | DOGetDropletResponse | DOActionResponse | DOListActionsResponse;
+
 const DO_BASE_URL = process.env.DIGITALOCEAN_BASE_URL || 'https://api.digitalocean.com/v2';
 const DO_TOKEN = () => process.env.DIGITALOCEAN_TOKEN || '';
-const CONNECT_TIMEOUT = Number(process.env.DIGITALOCEAN_CONNECT_TIMEOUT_SECONDS || 3) * 1000;
 const REQUEST_TIMEOUT = Number(process.env.DIGITALOCEAN_REQUEST_TIMEOUT_SECONDS || 10) * 1000;
 
 const memoryCache = new Map<string, { data: unknown; expires: number }>();
@@ -109,7 +195,7 @@ async function deleteCache(key: string): Promise<void> {
   }
 }
 
-async function doRequest(method: string, endpoint: string, payload?: unknown): Promise<Record<string, unknown>> {
+async function doRequest<T extends DOApiResponse>(method: string, endpoint: string, payload?: unknown): Promise<T> {
   const token = DO_TOKEN();
   if (!token) throw new Error('DigitalOcean service is not configured');
 
@@ -128,38 +214,37 @@ async function doRequest(method: string, endpoint: string, payload?: unknown): P
     });
 
     if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error((body as Record<string, string>).message || 'DigitalOcean API error');
+      const body: DOErrorResponse = await res.json().catch(() => ({}));
+      throw new Error(body.message || 'DigitalOcean API error');
     }
 
-    return (await res.json()) as Record<string, unknown>;
+    return (await res.json()) as T;
   } finally {
     clearTimeout(timeout);
   }
 }
 
-export async function listDroplets(dropletIds: number[]): Promise<unknown[]> {
+export async function listDroplets(dropletIds: number[]): Promise<Droplet[]> {
   if (!dropletIds.length) return [];
   const sorted = [...dropletIds].sort();
   const cacheKey = `droplets:${sorted.join(',')}`;
-  const cached = await getCached<unknown[]>(cacheKey);
+  const cached = await getCached<Droplet[]>(cacheKey);
   if (cached) return cached;
 
-  let droplets: unknown[] = [];
+  let droplets: Droplet[] = [];
   try {
     const idSet = new Set(dropletIds);
-    const found = new Map<number, unknown>();
+    const found = new Map<number, Droplet>();
     let page = 1;
     let hasMore = true;
 
     while (hasMore && found.size < idSet.size) {
-      const data = await doRequest('GET', `/droplets?per_page=200&page=${page}`);
-      const pageDroplets = (data.droplets as { id: number }[]) || [];
+      const data = await doRequest<DOListDropletsResponse>('GET', `/droplets?per_page=200&page=${page}`);
+      const pageDroplets = data.droplets || [];
       for (const d of pageDroplets) {
         if (idSet.has(d.id)) found.set(d.id, d);
       }
-      const meta = data.meta as { total?: number } | undefined;
-      hasMore = pageDroplets.length === 200 && (meta?.total ? found.size < Math.min(idSet.size, meta.total) : true);
+      hasMore = pageDroplets.length === 200 && (data.meta?.total ? found.size < Math.min(idSet.size, data.meta.total) : true);
       page++;
     }
 
@@ -173,32 +258,32 @@ export async function listDroplets(dropletIds: number[]): Promise<unknown[]> {
   return droplets;
 }
 
-export async function getDroplet(dropletId: number): Promise<unknown> {
+export async function getDroplet(dropletId: number): Promise<Droplet> {
   const cacheKey = `droplet:${dropletId}`;
-  const cached = await getCached(cacheKey);
+  const cached = await getCached<Droplet>(cacheKey);
   if (cached) return cached;
 
-  const data = await doRequest('GET', `/droplets/${dropletId}`);
+  const data = await doRequest<DOGetDropletResponse>('GET', `/droplets/${dropletId}`);
   const droplet = data.droplet;
   const ttl = Number(process.env.DIGITALOCEAN_DROPLET_CACHE_SECONDS || 20);
   await setCache(cacheKey, droplet, ttl);
   return droplet;
 }
 
-export async function performAction(dropletId: number, actionType: string): Promise<unknown> {
-  const data = await doRequest('POST', `/droplets/${dropletId}/actions`, { type: actionType });
+export async function performAction(dropletId: number, actionType: string): Promise<DropletAction> {
+  const data = await doRequest<DOActionResponse>('POST', `/droplets/${dropletId}/actions`, { type: actionType });
   await deleteCache(`droplet:${dropletId}`);
   await deleteCache(`droplet-actions:${dropletId}`);
   return data.action;
 }
 
-export async function listActions(dropletId: number): Promise<unknown[]> {
+export async function listActions(dropletId: number): Promise<DropletAction[]> {
   const cacheKey = `droplet-actions:${dropletId}`;
-  const cached = await getCached<unknown[]>(cacheKey);
+  const cached = await getCached<DropletAction[]>(cacheKey);
   if (cached) return cached;
 
-  const data = await doRequest('GET', `/droplets/${dropletId}/actions?per_page=20`);
-  const actions = (data.actions as unknown[]) || [];
+  const data = await doRequest<DOListActionsResponse>('GET', `/droplets/${dropletId}/actions?per_page=20`);
+  const actions = data.actions || [];
   const ttl = Number(process.env.DIGITALOCEAN_ACTIONS_CACHE_SECONDS || 10);
   await setCache(cacheKey, actions, ttl);
   return actions;

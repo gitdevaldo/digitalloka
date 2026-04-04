@@ -1,6 +1,10 @@
 import { createServerClient } from '@supabase/ssr';
+import type { CookieOptions } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
+import type { Database, TypedSupabaseClient } from './database.types';
+
+export type { Database, TypedSupabaseClient };
 
 /**
  * Creates a Supabase client that carries the current user's session (via cookies).
@@ -12,10 +16,10 @@ import { cookies } from 'next/headers';
  *   - Querying public data (product catalog, categories)
  *   - Any route under /api/user/*, /api/wishlist/*, /api/cart/*, /api/products/*
  */
-export async function createSupabaseServerClient() {
+export async function createSupabaseServerClient(): Promise<TypedSupabaseClient> {
   const cookieStore = await cookies();
 
-  return createServerClient(
+  return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -23,10 +27,10 @@ export async function createSupabaseServerClient() {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
+        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options as any)
+              cookieStore.set(name, value, options)
             );
           } catch {
             // ignore in Server Components
@@ -34,7 +38,7 @@ export async function createSupabaseServerClient() {
         },
       },
     }
-  );
+  ) as unknown as TypedSupabaseClient;
 }
 
 /**
@@ -50,7 +54,7 @@ export async function createSupabaseServerClient() {
  * NEVER use this for regular user-facing reads/writes — use createSupabaseServerClient() instead.
  */
 export function createSupabaseAdminClient() {
-  return createClient(
+  return createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }

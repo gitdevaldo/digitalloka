@@ -31,6 +31,7 @@ interface OverviewStats {
 }
 
 interface AuditRow {
+  [key: string]: unknown;
   actor: string;
   action: string;
   result: string;

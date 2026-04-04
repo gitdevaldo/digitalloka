@@ -1,7 +1,8 @@
 import crypto from 'crypto';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { TypedSupabaseClient } from '@/lib/supabase/database.types';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { createEntitlementsForOrder } from '@/lib/services/entitlements';
+import { applyCursorFilter, applyCursorPagination } from '@/lib/cursor-pagination';
 
 const ALLOWED_STATUS_TRANSITIONS: Record<string, string[]> = {
   pending: ['paid', 'cancelled'],
@@ -14,9 +15,7 @@ export function generateOrderNumber(): string {
   return 'ORD-' + crypto.randomUUID().replace(/-/g, '').substring(0, 12).toUpperCase();
 }
 
-export async function listUserOrders(supabase: SupabaseClient, userId: string, page = 1, perPage = 20, cursor?: string | null, mode: 'cursor' | 'offset' = 'cursor') {
-  const { applyCursorFilter, applyCursorPagination } = await import('@/lib/cursor-pagination');
-
+export async function listUserOrders(supabase: TypedSupabaseClient, userId: string, page = 1, perPage = 20, cursor?: string | null, mode: 'cursor' | 'offset' = 'cursor') {
   const useCursorMode = mode === 'cursor';
 
   let query = supabase
@@ -50,7 +49,6 @@ export async function listUserOrders(supabase: SupabaseClient, userId: string, p
 }
 
 export async function listOrders(filters: Record<string, string>, page = 1, perPage = 30, cursor?: string | null, mode: 'cursor' | 'offset' = 'cursor') {
-  const { applyCursorFilter, applyCursorPagination } = await import('@/lib/cursor-pagination');
   const admin = createSupabaseAdminClient();
 
   const useCursorMode = mode === 'cursor';
@@ -132,7 +130,7 @@ export async function updateOrderStatus(orderId: number, newStatus: string) {
   return await getOrderById(orderId);
 }
 
-export async function createCheckoutOrder(supabase: SupabaseClient, userId: string, payload: { product_id: number; quantity?: number; affiliate_code?: string }) {
+export async function createCheckoutOrder(supabase: TypedSupabaseClient, userId: string, payload: { product_id: number; quantity?: number; affiliate_code?: string }) {
   const { data: product } = await supabase
     .from('products')
     .select('*')

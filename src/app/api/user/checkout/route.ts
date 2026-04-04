@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const baseUrl = getAppBaseUrl();
     const expiredAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-    const orderItems = (order as Record<string, unknown>).items as Array<{ item_name: string; quantity: number; unit_price: number }> | undefined;
+    const orderItems = order.items as Array<{ item_name: string; quantity: number; unit_price: number }> | undefined;
     const mayarItems = (orderItems || []).map(item => ({
       quantity: item.quantity,
       rate: item.unit_price,
@@ -51,8 +51,8 @@ export async function POST(request: NextRequest) {
     if (mayarItems.length === 0) {
       mayarItems.push({
         quantity: quantity || 1,
-        rate: (order as Record<string, unknown>).total_amount as number || 0,
-        description: `Order ${(order as Record<string, unknown>).order_number}`,
+        rate: order.total_amount || 0,
+        description: `Order ${order.order_number}`,
       });
     }
 
@@ -60,13 +60,13 @@ export async function POST(request: NextRequest) {
       name: 'Customer',
       email: '',
       mobile: '',
-      description: `Order ${(order as Record<string, unknown>).order_number}`,
-      redirectUrl: `${baseUrl}/checkout/success?order=${(order as Record<string, unknown>).order_number}`,
+      description: `Order ${order.order_number}`,
+      redirectUrl: `${baseUrl}/checkout/success?order=${order.order_number}`,
       expiredAt,
       items: mayarItems,
       extraData: {
-        order_id: String((order as Record<string, unknown>).id),
-        order_number: String((order as Record<string, unknown>).order_number),
+        order_id: String(order.id),
+        order_number: String(order.order_number),
         user_id: userId,
         affiliate_code: affiliate_code || '',
       },
@@ -80,11 +80,11 @@ export async function POST(request: NextRequest) {
         payment_link: mayarResponse.data.link,
         affiliate_code: affiliate_code || null,
       },
-    }).eq('id', (order as Record<string, unknown>).id);
+    }).eq('id', order.id);
 
     return NextResponse.json({
       data: {
-        ...order as Record<string, unknown>,
+        ...order,
         payment_link: mayarResponse.data.link,
       },
     }, { status: 201 });

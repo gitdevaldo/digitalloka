@@ -15,17 +15,17 @@ export interface ProductData {
   slug: string;
   product_type: string;
   status: string;
-  short_description: string;
-  description: string;
-  rating: number;
-  reviews_count: number;
+  short_description: string | null;
+  description: string | null;
+  rating: number | null;
+  reviews_count: number | null;
   category: { name: string; slug: string } | null;
-  price_amount: number;
+  price_amount: number | null;
   price_currency: string;
-  price_billing_period: string;
-  featured: { label: string; value: string; sub?: string }[];
-  faq_items: { question: string; answer: string }[];
-  tags: string[];
+  price_billing_period: string | null;
+  featured: { label: string; value: string; sub?: string }[] | null;
+  faq_items: { question: string; answer: string }[] | null;
+  tags: string[] | null;
 }
 
 export default function ProductDetailClient({ product }: { product: ProductData }) {

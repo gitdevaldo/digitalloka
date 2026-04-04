@@ -8,7 +8,7 @@ Next.js 15 App Router application with Neo-Brutalist UI design, featuring Digita
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS 3.4 with Neo-Brutalist design tokens
 - **Database/Auth:** Supabase (magic link auth via `@supabase/ssr`)
-- **External API:** DigitalOcean API v2 (droplet management)
+- **External API:** DigitalOcean API v2 (droplet management, typed interfaces in `src/lib/services/digitalocean.ts`)
 - **Fonts:** Outfit (headings) + Plus Jakarta Sans (body)
 - **Icons:** Lucide React
 - **Port:** 5000
@@ -96,6 +96,9 @@ src/
 - **NEVER use Replit's built-in Helium/local PostgreSQL database.** It is a completely separate system and has nothing to do with this project.
 - **All application tables live in the `public` schema.** When querying, inspecting columns, or making changes, always target the `public` schema.
 - The `DATABASE_URL` in `.env.local` points directly to the Supabase PostgreSQL instance (session mode, port 5432).
+
+## Database Types
+TypeScript database types are defined in `src/lib/supabase/database.types.ts` (manually crafted from schema analysis — regenerate with `supabase gen types typescript` when Supabase CLI is available). The `Database` type is applied to both `createClient<Database>` (admin) and `createServerClient<Database>` (user session) in `src/lib/supabase/server.ts`. A `TypedSupabaseClient` alias (`SupabaseClient<Database>`) is exported and used across all service functions. Note: `@supabase/ssr` v0.5.2 has a generic parameter mismatch with `@supabase/supabase-js` v2.101.1, so the server client return is cast via `as unknown as TypedSupabaseClient` to bridge the version gap.
 
 ## Database (Supabase PostgreSQL)
 Tables: `users`, `products`, `product_categories`, `product_types`, `product_stock_items`, `orders`, `order_items`, `transactions`, `payment_events`, `entitlements`, `site_settings`, `audit_logs`, `wishlists`, `rate_limit_entries`, `cache_entries`

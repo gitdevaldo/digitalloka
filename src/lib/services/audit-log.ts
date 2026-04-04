@@ -1,4 +1,6 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import type { Json } from '@/lib/supabase/database.types';
+import { applyCursorFilter, applyCursorPagination } from '@/lib/cursor-pagination';
 
 export async function logAudit(params: {
   action: string;
@@ -17,7 +19,7 @@ export async function logAudit(params: {
     action: params.action,
     target_type: params.target_type,
     target_id: params.target_id || null,
-    changes: params.changes || null,
+    changes: (params.changes || null) as Json,
     ip_address: params.ip_address || null,
     user_agent: params.user_agent || null,
   });
@@ -30,7 +32,6 @@ export async function listAuditLogs(
   cursor?: string | null,
   mode: 'cursor' | 'offset' = 'cursor',
 ) {
-  const { applyCursorFilter, applyCursorPagination } = await import('@/lib/cursor-pagination');
   const admin = createSupabaseAdminClient();
 
   const useCursorMode = mode === 'cursor';

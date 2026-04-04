@@ -33,7 +33,7 @@ export async function GET() {
   }
 
   try {
-    const rawDroplets = await listDroplets(dropletIds) as Record<string, unknown>[];
+    const rawDroplets = await listDroplets(dropletIds);
 
     const ownerUserIds = [...new Set(Object.values(ownersByDropletId).map(o => o.id))];
     const { data: entitlements } = await admin
@@ -50,17 +50,14 @@ export async function GET() {
     }
 
     const mapped = rawDroplets.map((droplet) => {
-      const id = Number(droplet.id || 0);
-      const owner = ownersByDropletId[id] || { id: null, email: null };
-      const networks = droplet.networks as Record<string, unknown[]> | undefined;
-      const v4 = (networks?.v4 as Record<string, unknown>[] | undefined) || [];
-      const region = droplet.region as Record<string, unknown> | undefined;
+      const owner = ownersByDropletId[droplet.id] || { id: null, email: null };
+      const v4 = droplet.networks?.v4 || [];
 
       return {
-        id,
-        name: droplet.name || `droplet-${id}`,
-        region: region?.slug || null,
-        size: droplet.size_slug || null,
+        id: droplet.id,
+        name: droplet.name || `droplet-${droplet.id}`,
+        region: droplet.region?.slug || null,
+        size: droplet.size?.slug || null,
         status: droplet.status || 'unknown',
         ip_address: v4[0]?.ip_address || null,
         owner_user_id: owner.id,
