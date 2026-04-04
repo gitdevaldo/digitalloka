@@ -16,30 +16,24 @@ async function getSmtpConfig(): Promise<SmtpConfig | null> {
   const admin = createSupabaseAdminClient();
   const { data } = await admin
     .from('site_settings')
-    .select('setting_key, setting_value')
-    .like('setting_key', 'smtp.%');
+    .select('setting_value')
+    .eq('setting_key', 'smtp')
+    .single();
 
-  if (!data || data.length === 0) return null;
+  if (!data?.setting_value) return null;
 
-  const settings: Record<string, string> = {};
-  for (const row of data) {
-    const key = row.setting_key.replace('smtp.', '');
-    const val = row.setting_value && typeof row.setting_value === 'object' && 'value' in (row.setting_value as Record<string, unknown>)
-      ? String((row.setting_value as Record<string, unknown>).value)
-      : String(row.setting_value);
-    settings[key] = val;
-  }
+  const s = data.setting_value as Record<string, unknown>;
 
-  if (!settings.host || !settings.user || !settings.pass) return null;
+  if (!s.host || !s.user || !s.pass) return null;
 
   return {
-    host: settings.host,
-    port: Number(settings.port) || 587,
-    secure: settings.secure === 'true',
-    user: settings.user,
-    pass: settings.pass,
-    from_name: settings.from_name || 'DigitalLoka',
-    from_email: settings.from_email || settings.user,
+    host: String(s.host),
+    port: Number(s.port) || 587,
+    secure: s.secure === true || s.secure === 'true',
+    user: String(s.user),
+    pass: String(s.pass),
+    from_name: String(s.from_name || 'DigitalLoka'),
+    from_email: String(s.from_email || s.user),
   };
 }
 

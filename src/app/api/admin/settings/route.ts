@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
-import { listGroupedSettings, upsertSetting } from '@/lib/services/site-settings';
+import { listGroupedSettings, upsertGroupSettings } from '@/lib/services/site-settings';
 import { withErrorHandler } from '@/lib/api-handler';
-import { apiSuccess, apiError } from '@/lib/api-response';
+import { apiError } from '@/lib/api-response';
 import { logAudit } from '@/lib/services/audit-log';
 
 export const GET = withErrorHandler(async () => {
@@ -22,21 +22,25 @@ export const PUT = withErrorHandler(async (request: NextRequest) => {
   if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const body = await request.json();
-  if (!body.group || !body.key) return apiError('group and key are required', 422);
+  const { group, values } = body as { group: string; values: Record<string, unknown> };
+
+  if (!group || !values || typeof values !== 'object') {
+    return apiError('group and values object are required', 422);
+  }
 
   try {
-    const result = await upsertSetting(body.group, body.key, body.value, userId);
+    const result = await upsertGroupSettings(group, values, userId);
 
     await logAudit({
       action: 'setting.update',
       target_type: 'setting',
-      target_id: `${body.group}.${body.key}`,
+      target_id: group,
       actor_user_id: userId,
       actor_role: 'admin',
-      changes: { group: body.group, key: body.key, value: body.value },
+      changes: { group, values },
     }).catch(() => {});
 
-    return apiSuccess(result);
+    return NextResponse.json({ success: true, data: result });
   } catch {
     return apiError('Update failed', 422);
   }

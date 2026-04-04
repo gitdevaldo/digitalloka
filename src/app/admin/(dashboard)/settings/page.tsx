@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
@@ -23,23 +23,31 @@ function SettingRow({ label, desc, children }: SettingRowProps) {
   );
 }
 
-function Toggle({ checked, onChange, settingGroup, settingKey }: { checked: boolean; onChange: (v: boolean) => void; settingGroup: string; settingKey: string }) {
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <label className="relative w-[38px] h-[22px] flex-shrink-0">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        data-setting-group={settingGroup}
-        data-setting-key={settingKey}
-        className="opacity-0 w-0 h-0 peer"
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`relative w-[44px] h-[24px] flex-shrink-0 rounded-full border-2 transition-all duration-200 cursor-pointer ${
+        checked
+          ? 'bg-[#22c55e] border-[#16a34a]'
+          : 'bg-[#d1d5db] border-[#9ca3af]'
+      }`}
+    >
+      <span
+        className={`absolute top-[2px] w-[16px] h-[16px] rounded-full transition-all duration-200 shadow-sm ${
+          checked
+            ? 'left-[22px] bg-white'
+            : 'left-[2px] bg-white'
+        }`}
       />
-      <span className="absolute inset-0 bg-border rounded-full cursor-pointer transition-colors border-2 border-foreground peer-checked:bg-quaternary before:content-[''] before:absolute before:w-3.5 before:h-3.5 before:left-0.5 before:top-0.5 before:bg-muted-foreground before:rounded-full before:transition-transform peer-checked:before:translate-x-3.5 peer-checked:before:bg-foreground" />
-    </label>
+    </button>
   );
 }
 
-function SettingInput({ value, onChange, type = 'text', width = '130px', settingGroup, settingKey }: { value: string; onChange: (v: string) => void; type?: string; width?: string; settingGroup: string; settingKey: string }) {
+function SettingInput({ value, onChange, type = 'text', width = '130px' }: { value: string; onChange: (v: string) => void; type?: string; width?: string }) {
   return (
     <input
       className="border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1 font-body text-[0.78rem] font-semibold bg-input text-foreground focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)]"
@@ -47,20 +55,16 @@ function SettingInput({ value, onChange, type = 'text', width = '130px', setting
       onChange={(e) => onChange(e.target.value)}
       type={type}
       style={{ width }}
-      data-setting-group={settingGroup}
-      data-setting-key={settingKey}
     />
   );
 }
 
-function SettingSelect({ options, value, onChange, settingGroup, settingKey }: { options: string[]; value: string; onChange: (v: string) => void; settingGroup: string; settingKey: string }) {
+function SettingSelect({ options, value, onChange }: { options: string[]; value: string; onChange: (v: string) => void }) {
   return (
     <select
       className="border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1 font-body text-[0.78rem] font-semibold bg-input text-foreground cursor-pointer focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)]"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      data-setting-group={settingGroup}
-      data-setting-key={settingKey}
     >
       {options.map(o => <option key={o} value={o}>{o}</option>)}
     </select>
@@ -78,37 +82,81 @@ function SettingsPanel({ title, children }: { title: string; children: React.Rea
   );
 }
 
-type SettingsState = Record<string, string | boolean>;
+interface GroupedSettings {
+  catalog: {
+    default_visibility: string;
+    slug_format: string;
+    max_product_images: string;
+    reviews_enabled: boolean;
+  };
+  entitlement: {
+    default_expiry_days: string;
+    expiry_warning_days: string;
+    auto_suspend_on_expiry: boolean;
+    grace_period_days: string;
+  };
+  order: {
+    auto_fulfill_digital: boolean;
+    currency: string;
+    refund_window_days: string;
+    id_prefix: string;
+  };
+  contact: {
+    billing_email: string;
+    ops_alert_email: string;
+    support_email: string;
+    audit_webhooks: boolean;
+  };
+  smtp: {
+    host: string;
+    port: string;
+    secure: boolean;
+    user: string;
+    pass: string;
+    from_name: string;
+    from_email: string;
+  };
+}
 
-const DEFAULT_SETTINGS: SettingsState = {
-  'catalog.default_visibility': 'draft',
-  'catalog.slug_format': 'kebab-case',
-  'catalog.max_product_images': '8',
-  'catalog.reviews_enabled': true,
-  'entitlement.default_expiry_days': '365',
-  'entitlement.expiry_warning_days': '7',
-  'entitlement.auto_suspend_on_expiry': true,
-  'entitlement.grace_period_days': '3',
-  'order.auto_fulfill_digital': true,
-  'order.currency': 'USD',
-  'order.refund_window_days': '14',
-  'order.id_prefix': 'ORD-',
-  'contact.billing_email': 'billing@digitalloka.dev',
-  'contact.ops_alert_email': 'ops@digitalloka.dev',
-  'contact.support_email': 'support@digitalloka.dev',
-  'contact.audit_webhooks': false,
-  'smtp.host': '',
-  'smtp.port': '587',
-  'smtp.secure': false,
-  'smtp.user': '',
-  'smtp.pass': '',
-  'smtp.from_name': 'DigitalLoka',
-  'smtp.from_email': '',
+const DEFAULTS: GroupedSettings = {
+  catalog: {
+    default_visibility: 'draft',
+    slug_format: 'kebab-case',
+    max_product_images: '8',
+    reviews_enabled: true,
+  },
+  entitlement: {
+    default_expiry_days: '365',
+    expiry_warning_days: '7',
+    auto_suspend_on_expiry: true,
+    grace_period_days: '3',
+  },
+  order: {
+    auto_fulfill_digital: true,
+    currency: 'USD',
+    refund_window_days: '14',
+    id_prefix: 'ORD-',
+  },
+  contact: {
+    billing_email: 'billing@digitalloka.dev',
+    ops_alert_email: 'ops@digitalloka.dev',
+    support_email: 'support@digitalloka.dev',
+    audit_webhooks: false,
+  },
+  smtp: {
+    host: '',
+    port: '587',
+    secure: false,
+    user: '',
+    pass: '',
+    from_name: 'DigitalLoka',
+    from_email: '',
+  },
 };
 
 export default function AdminSettingsPage() {
   const { showToast } = useToast();
-  const [settings, setSettings] = useState<SettingsState>({ ...DEFAULT_SETTINGS });
+  const [settings, setSettings] = useState<GroupedSettings>({ ...DEFAULTS });
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [testEmail, setTestEmail] = useState('');
@@ -122,50 +170,52 @@ export default function AdminSettingsPage() {
       const res = await fetch('/api/admin/settings');
       const data = await res.json();
       if (res.ok && data.settings) {
-        const loaded = { ...DEFAULT_SETTINGS };
-        Object.entries(data.settings as Record<string, Array<{ setting_key: string; setting_value: unknown }>>).forEach(([, items]) => {
-          if (!Array.isArray(items)) return;
-          items.forEach((item) => {
-            const val = item.setting_value && typeof item.setting_value === 'object' && Object.prototype.hasOwnProperty.call(item.setting_value, 'value')
-              ? (item.setting_value as Record<string, unknown>).value
-              : item.setting_value;
-            const key = item.setting_key;
-            if (key in DEFAULT_SETTINGS) {
-              if (typeof DEFAULT_SETTINGS[key] === 'boolean') {
-                loaded[key] = Boolean(val);
-              } else {
-                loaded[key] = val != null ? String(val) : '';
+        const s = data.settings as Record<string, Record<string, unknown>>;
+        const merged = { ...DEFAULTS } as GroupedSettings;
+
+        for (const group of Object.keys(DEFAULTS) as (keyof GroupedSettings)[]) {
+          if (s[group]) {
+            const defaults = DEFAULTS[group] as Record<string, unknown>;
+            const loaded = s[group];
+            const target = { ...defaults } as Record<string, unknown>;
+
+            for (const key of Object.keys(defaults)) {
+              if (key in loaded) {
+                const defaultVal = defaults[key];
+                if (typeof defaultVal === 'boolean') {
+                  target[key] = loaded[key] === true || loaded[key] === 'true';
+                } else {
+                  target[key] = loaded[key] != null ? String(loaded[key]) : '';
+                }
               }
             }
-          });
-        });
-        setSettings(loaded);
+            (merged as Record<string, unknown>)[group] = target;
+          }
+        }
+        setSettings(merged);
       }
     } catch { /* silently fail */ }
     finally { setLoading(false); }
   }
 
-  function update(key: string, value: string | boolean) {
-    setSettings(prev => ({ ...prev, [key]: value }));
+  function updateField<G extends keyof GroupedSettings>(group: G, key: keyof GroupedSettings[G], value: unknown) {
+    setSettings(prev => ({
+      ...prev,
+      [group]: { ...prev[group], [key]: value },
+    }));
   }
 
   async function saveAll() {
     setSaving(true);
     try {
-      const entries = Object.entries(settings);
-      await Promise.all(entries.map(([key, value]) => {
-        const dotIdx = key.indexOf('.');
-        const group = key.substring(0, dotIdx);
-        return fetch('/api/admin/settings', {
+      const groups = Object.keys(settings) as (keyof GroupedSettings)[];
+      await Promise.all(groups.map(group =>
+        fetch('/api/admin/settings', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            group,
-            key,
-            value: { value },
-          }),
-        });
-      }));
+          body: JSON.stringify({ group, values: settings[group] }),
+        })
+      ));
       showToast('Settings saved and audit logged.');
     } catch {
       showToast('Failed to save settings');
@@ -193,65 +243,65 @@ export default function AdminSettingsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div>
-          <SettingsPanel title="📦 Catalog Settings">
+          <SettingsPanel title="Catalog Settings">
             <SettingRow label="Default Product Visibility" desc="New products created as draft or published">
-              <SettingSelect options={['draft', 'published']} value={settings['catalog.default_visibility'] as string} onChange={(v) => update('catalog.default_visibility', v)} settingGroup="catalog" settingKey="catalog.default_visibility" />
+              <SettingSelect options={['draft', 'published']} value={settings.catalog.default_visibility} onChange={(v) => updateField('catalog', 'default_visibility', v)} />
             </SettingRow>
             <SettingRow label="Product Slug Format" desc="Auto-generated slug style">
-              <SettingInput value={settings['catalog.slug_format'] as string} onChange={(v) => update('catalog.slug_format', v)} settingGroup="catalog" settingKey="catalog.slug_format" />
+              <SettingInput value={settings.catalog.slug_format} onChange={(v) => updateField('catalog', 'slug_format', v)} />
             </SettingRow>
             <SettingRow label="Max Product Images" desc="Per product listing">
-              <SettingInput value={settings['catalog.max_product_images'] as string} onChange={(v) => update('catalog.max_product_images', v)} type="number" width="70px" settingGroup="catalog" settingKey="catalog.max_product_images" />
+              <SettingInput value={settings.catalog.max_product_images} onChange={(v) => updateField('catalog', 'max_product_images', v)} type="number" width="70px" />
             </SettingRow>
             <SettingRow label="Reviews Enabled" desc="Allow users to leave product reviews">
-              <Toggle checked={settings['catalog.reviews_enabled'] as boolean} onChange={(v) => update('catalog.reviews_enabled', v)} settingGroup="catalog" settingKey="catalog.reviews_enabled" />
+              <Toggle checked={settings.catalog.reviews_enabled} onChange={(v) => updateField('catalog', 'reviews_enabled', v)} />
             </SettingRow>
           </SettingsPanel>
 
-          <SettingsPanel title="🔑 Entitlement Defaults">
+          <SettingsPanel title="Entitlement Defaults">
             <SettingRow label="Default Expiry (days)" desc="Applied when no custom expiry is set">
-              <SettingInput value={settings['entitlement.default_expiry_days'] as string} onChange={(v) => update('entitlement.default_expiry_days', v)} type="number" width="70px" settingGroup="entitlement" settingKey="entitlement.default_expiry_days" />
+              <SettingInput value={settings.entitlement.default_expiry_days} onChange={(v) => updateField('entitlement', 'default_expiry_days', v)} type="number" width="70px" />
             </SettingRow>
             <SettingRow label="Expiry Warning (days before)" desc="Notify user N days before expiry">
-              <SettingInput value={settings['entitlement.expiry_warning_days'] as string} onChange={(v) => update('entitlement.expiry_warning_days', v)} type="number" width="70px" settingGroup="entitlement" settingKey="entitlement.expiry_warning_days" />
+              <SettingInput value={settings.entitlement.expiry_warning_days} onChange={(v) => updateField('entitlement', 'expiry_warning_days', v)} type="number" width="70px" />
             </SettingRow>
             <SettingRow label="Auto-suspend on Expiry" desc="Automatically suspend expired entitlements">
-              <Toggle checked={settings['entitlement.auto_suspend_on_expiry'] as boolean} onChange={(v) => update('entitlement.auto_suspend_on_expiry', v)} settingGroup="entitlement" settingKey="entitlement.auto_suspend_on_expiry" />
+              <Toggle checked={settings.entitlement.auto_suspend_on_expiry} onChange={(v) => updateField('entitlement', 'auto_suspend_on_expiry', v)} />
             </SettingRow>
             <SettingRow label="Grace Period (days)" desc="Days after expiry before full revocation">
-              <SettingInput value={settings['entitlement.grace_period_days'] as string} onChange={(v) => update('entitlement.grace_period_days', v)} type="number" width="70px" settingGroup="entitlement" settingKey="entitlement.grace_period_days" />
+              <SettingInput value={settings.entitlement.grace_period_days} onChange={(v) => updateField('entitlement', 'grace_period_days', v)} type="number" width="70px" />
             </SettingRow>
           </SettingsPanel>
         </div>
 
         <div>
-          <SettingsPanel title="🛒 Order & Fulfillment">
+          <SettingsPanel title="Order & Fulfillment">
             <SettingRow label="Auto-fulfill Digital Orders" desc="Grant access immediately after payment">
-              <Toggle checked={settings['order.auto_fulfill_digital'] as boolean} onChange={(v) => update('order.auto_fulfill_digital', v)} settingGroup="order" settingKey="order.auto_fulfill_digital" />
+              <Toggle checked={settings.order.auto_fulfill_digital} onChange={(v) => updateField('order', 'auto_fulfill_digital', v)} />
             </SettingRow>
             <SettingRow label="Currency" desc="Default storefront currency">
-              <SettingSelect options={['USD', 'IDR', 'EUR']} value={settings['order.currency'] as string} onChange={(v) => update('order.currency', v)} settingGroup="order" settingKey="order.currency" />
+              <SettingSelect options={['USD', 'IDR', 'EUR']} value={settings.order.currency} onChange={(v) => updateField('order', 'currency', v)} />
             </SettingRow>
             <SettingRow label="Refund Window (days)" desc="Days a customer can request a refund">
-              <SettingInput value={settings['order.refund_window_days'] as string} onChange={(v) => update('order.refund_window_days', v)} type="number" width="70px" settingGroup="order" settingKey="order.refund_window_days" />
+              <SettingInput value={settings.order.refund_window_days} onChange={(v) => updateField('order', 'refund_window_days', v)} type="number" width="70px" />
             </SettingRow>
             <SettingRow label="Order ID Prefix" desc="Prefix for all generated order IDs">
-              <SettingInput value={settings['order.id_prefix'] as string} onChange={(v) => update('order.id_prefix', v)} width="90px" settingGroup="order" settingKey="order.id_prefix" />
+              <SettingInput value={settings.order.id_prefix} onChange={(v) => updateField('order', 'id_prefix', v)} width="90px" />
             </SettingRow>
           </SettingsPanel>
 
-          <SettingsPanel title="📧 Operational Contacts">
+          <SettingsPanel title="Operational Contacts">
             <SettingRow label="Billing Email" desc="Receives billing alerts and invoices">
-              <SettingInput value={settings['contact.billing_email'] as string} onChange={(v) => update('contact.billing_email', v)} width="200px" settingGroup="contact" settingKey="contact.billing_email" />
+              <SettingInput value={settings.contact.billing_email} onChange={(v) => updateField('contact', 'billing_email', v)} width="200px" />
             </SettingRow>
             <SettingRow label="Ops Alert Email" desc="Receives droplet and critical alerts">
-              <SettingInput value={settings['contact.ops_alert_email'] as string} onChange={(v) => update('contact.ops_alert_email', v)} width="200px" settingGroup="contact" settingKey="contact.ops_alert_email" />
+              <SettingInput value={settings.contact.ops_alert_email} onChange={(v) => updateField('contact', 'ops_alert_email', v)} width="200px" />
             </SettingRow>
             <SettingRow label="Support Email" desc="User-facing support contact address">
-              <SettingInput value={settings['contact.support_email'] as string} onChange={(v) => update('contact.support_email', v)} width="200px" settingGroup="contact" settingKey="contact.support_email" />
+              <SettingInput value={settings.contact.support_email} onChange={(v) => updateField('contact', 'support_email', v)} width="200px" />
             </SettingRow>
             <SettingRow label="Audit Webhooks" desc="POST critical events to external endpoint">
-              <Toggle checked={settings['contact.audit_webhooks'] as boolean} onChange={(v) => update('contact.audit_webhooks', v)} settingGroup="contact" settingKey="contact.audit_webhooks" />
+              <Toggle checked={settings.contact.audit_webhooks} onChange={(v) => updateField('contact', 'audit_webhooks', v)} />
             </SettingRow>
           </SettingsPanel>
         </div>
@@ -262,27 +312,27 @@ export default function AdminSettingsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8">
             <div>
               <SettingRow label="SMTP Host" desc="e.g. smtp.gmail.com, smtp.zoho.com">
-                <SettingInput value={settings['smtp.host'] as string} onChange={(v) => update('smtp.host', v)} width="200px" settingGroup="smtp" settingKey="smtp.host" />
+                <SettingInput value={settings.smtp.host} onChange={(v) => updateField('smtp', 'host', v)} width="200px" />
               </SettingRow>
               <SettingRow label="SMTP Port" desc="587 (TLS) or 465 (SSL)">
-                <SettingInput value={settings['smtp.port'] as string} onChange={(v) => update('smtp.port', v)} type="number" width="80px" settingGroup="smtp" settingKey="smtp.port" />
+                <SettingInput value={settings.smtp.port} onChange={(v) => updateField('smtp', 'port', v)} type="number" width="80px" />
               </SettingRow>
               <SettingRow label="Use SSL" desc="Enable for port 465">
-                <Toggle checked={settings['smtp.secure'] as boolean} onChange={(v) => update('smtp.secure', v)} settingGroup="smtp" settingKey="smtp.secure" />
+                <Toggle checked={settings.smtp.secure} onChange={(v) => updateField('smtp', 'secure', v)} />
               </SettingRow>
               <SettingRow label="Username" desc="SMTP login username / email">
-                <SettingInput value={settings['smtp.user'] as string} onChange={(v) => update('smtp.user', v)} width="200px" settingGroup="smtp" settingKey="smtp.user" />
+                <SettingInput value={settings.smtp.user} onChange={(v) => updateField('smtp', 'user', v)} width="200px" />
               </SettingRow>
             </div>
             <div>
               <SettingRow label="Password" desc="SMTP password or app password">
-                <SettingInput value={settings['smtp.pass'] as string} onChange={(v) => update('smtp.pass', v)} type="password" width="200px" settingGroup="smtp" settingKey="smtp.pass" />
+                <SettingInput value={settings.smtp.pass} onChange={(v) => updateField('smtp', 'pass', v)} type="password" width="200px" />
               </SettingRow>
               <SettingRow label="From Name" desc="Sender display name">
-                <SettingInput value={settings['smtp.from_name'] as string} onChange={(v) => update('smtp.from_name', v)} width="160px" settingGroup="smtp" settingKey="smtp.from_name" />
+                <SettingInput value={settings.smtp.from_name} onChange={(v) => updateField('smtp', 'from_name', v)} width="160px" />
               </SettingRow>
               <SettingRow label="From Email" desc="Sender email address">
-                <SettingInput value={settings['smtp.from_email'] as string} onChange={(v) => update('smtp.from_email', v)} width="200px" settingGroup="smtp" settingKey="smtp.from_email" />
+                <SettingInput value={settings.smtp.from_email} onChange={(v) => updateField('smtp', 'from_email', v)} width="200px" />
               </SettingRow>
               <div className="flex items-center justify-between py-3 border-b border-border last:border-b-0 gap-4">
                 <div>
