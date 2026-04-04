@@ -76,6 +76,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       credential_data: credentialData as import('@/lib/supabase/database.types').Json,
       credential_hash: credentialHash,
       status: 'enabled',
+      created_at: new Date().toISOString(),
     })
     .select('*, product:products(id, name, slug, product_type)')
     .single();

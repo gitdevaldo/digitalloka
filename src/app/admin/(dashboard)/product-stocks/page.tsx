@@ -421,6 +421,12 @@ export default function ProductStocksPage() {
       render: (row: Record<string, unknown>) => <span>{row.created_at ? formatDate(row.created_at as string) : '—'}</span>,
     },
     {
+      key: 'sold_at',
+      label: 'Sold',
+      style: { fontSize: '0.72rem', color: 'var(--muted-foreground)' } as React.CSSProperties,
+      render: (row: Record<string, unknown>) => <span>{row.sold_at ? formatDate(row.sold_at as string) : '—'}</span>,
+    },
+    {
       key: 'sold_to',
       label: 'Sold To',
       style: { fontSize: '0.72rem', color: 'var(--muted-foreground)' } as React.CSSProperties,
@@ -428,12 +434,7 @@ export default function ProductStocksPage() {
         const soldUser = row.sold_user as { id: string; email: string } | null;
         if (!soldUser) return <span>—</span>;
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--foreground)' }}>{soldUser.email}</span>
-            {row.sold_at && (
-              <span style={{ fontSize: '0.6rem', color: 'var(--muted-foreground)' }}>{formatDate(row.sold_at as string)}</span>
-            )}
-          </div>
+          <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--foreground)' }}>{soldUser.email}</span>
         );
       },
     },

@@ -64,6 +64,7 @@ export const POST = withErrorHandler(async (request: NextRequest, { params }: { 
       credential_hash: credentialHash,
       status: 'enabled',
       is_unlimited: !!body.is_unlimited,
+      created_at: new Date().toISOString(),
     });
 
     if (!error) inserted++;
