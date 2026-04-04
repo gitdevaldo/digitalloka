@@ -427,15 +427,17 @@ export default function EditProductTypePage() {
 
                   {f.type === 'select' && (
                     <div className="mb-3">
-                      <div className="mb-2">
-                        <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Options (comma-separated)</label>
-                        <input
-                          value={(f.options || []).join(', ')}
-                          onChange={(e) => updateField(idx, { options: e.target.value.split(',').map(o => o.trim()).filter(Boolean) })}
-                          className={fieldInputClass}
-                          placeholder="Option1, Option2, Option3"
-                        />
-                      </div>
+                      {!f.provider_data_type && (
+                        <div className="mb-2">
+                          <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Options (comma-separated)</label>
+                          <input
+                            value={(f.options || []).join(', ')}
+                            onChange={(e) => updateField(idx, { options: e.target.value.split(',').map(o => o.trim()).filter(Boolean) })}
+                            className={fieldInputClass}
+                            placeholder="Option1, Option2, Option3"
+                          />
+                        </div>
+                      )}
 
                       <div className="grid grid-cols-2 gap-3">
                         <div>
