@@ -120,85 +120,122 @@ function ProviderDataManager({ resourceType, providerOptions }: { resourceType: 
     }
   }
 
+  const [expandedProviders, setExpandedProviders] = useState<Record<string, boolean>>({});
+  const [showAddForm, setShowAddForm] = useState(false);
+
   const grouped = entries.reduce<Record<string, ProviderDataEntry[]>>((acc, e) => {
     if (!acc[e.provider]) acc[e.provider] = [];
     acc[e.provider].push(e);
     return acc;
   }, {});
 
+  function toggleProvider(provider: string) {
+    setExpandedProviders(prev => ({ ...prev, [provider]: !prev[provider] }));
+  }
+
+  const totalCount = entries.length;
+  const typeLabel = resourceType === 'region' ? 'Regions' : 'OS Images';
+
   return (
     <div className="mt-3 p-3 bg-background rounded-lg border-2 border-border">
-      <div className="text-[0.7rem] font-bold text-muted-foreground mb-2">
-        {resourceType === 'region' ? 'Regions' : 'OS Images'} in Provider Data Table
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-[0.7rem] font-bold text-muted-foreground">
+          {typeLabel} in Provider Data Table
+          {!loading && <span className="ml-1.5 text-accent">({totalCount})</span>}
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="text-[0.68rem] font-bold text-accent hover:underline"
+        >
+          {showAddForm ? 'Cancel' : '+ Add New'}
+        </button>
       </div>
+
+      {showAddForm && (
+        <div className="border border-border rounded-lg p-2.5 mb-2 bg-muted">
+          <div className="grid grid-cols-4 gap-2">
+            <input
+              list={`provider-options-${resourceType}`}
+              value={newProvider}
+              onChange={(e) => setNewProvider(e.target.value)}
+              className="border-2 border-border rounded-lg px-2 py-1.5 text-[0.75rem] font-medium bg-input focus:outline-none focus:border-accent"
+              placeholder="Provider..."
+            />
+            <datalist id={`provider-options-${resourceType}`}>
+              {providerOptions.map(p => (
+                <option key={p} value={p} />
+              ))}
+            </datalist>
+            <input
+              value={newSlug}
+              onChange={(e) => setNewSlug(e.target.value)}
+              className="border-2 border-border rounded-lg px-2 py-1.5 text-[0.75rem] font-medium bg-input focus:outline-none focus:border-accent"
+              placeholder="slug (e.g. sgp1)"
+            />
+            <input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              className="border-2 border-border rounded-lg px-2 py-1.5 text-[0.75rem] font-medium bg-input focus:outline-none focus:border-accent"
+              placeholder="Display Name"
+            />
+            <Button type="button" size="sm" onClick={handleAdd} disabled={adding}>
+              {adding ? 'Adding...' : '+ Add'}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="text-[0.7rem] text-muted-foreground py-2">Loading...</div>
       ) : entries.length === 0 ? (
-        <div className="text-[0.7rem] text-muted-foreground py-2">No entries yet. Add one below.</div>
+        <div className="text-[0.7rem] text-muted-foreground py-1">No entries yet.</div>
       ) : (
-        <div className="mb-3 max-h-[300px] overflow-y-auto">
-          {Object.entries(grouped).map(([provider, items]) => (
-            <div key={provider} className="mb-2">
-              <div className="text-[0.68rem] font-bold text-accent mb-1">{provider}</div>
-              <div className="grid gap-1">
-                {items.map(entry => (
-                  <div key={entry.id} className="flex items-center gap-2 text-[0.75rem] py-1 px-2 bg-muted rounded">
-                    <button
-                      type="button"
-                      onClick={() => handleToggle(entry)}
-                      className={`w-2 h-2 rounded-full flex-shrink-0 ${entry.available ? 'bg-green-500' : 'bg-red-400'}`}
-                      title={entry.available ? 'Available (click to disable)' : 'Disabled (click to enable)'}
-                    />
-                    <span className="font-medium flex-1">{entry.name}</span>
-                    <span className="text-muted-foreground text-[0.65rem]">{entry.slug}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(entry.id)}
-                      className="text-red-400 hover:text-red-300 text-[0.65rem] font-bold ml-1"
-                    >
-                      ✕
-                    </button>
+        <div className="grid gap-1">
+          {Object.entries(grouped).map(([provider, items]) => {
+            const isExpanded = expandedProviders[provider] || false;
+            const activeCount = items.filter(e => e.available).length;
+            return (
+              <div key={provider} className="border border-border rounded-lg overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggleProvider(provider)}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 bg-muted hover:bg-muted/80 text-left"
+                >
+                  <span className="text-[0.65rem] text-muted-foreground">{isExpanded ? '▼' : '▶'}</span>
+                  <span className="text-[0.72rem] font-bold text-accent flex-1">{provider}</span>
+                  <span className="text-[0.65rem] text-muted-foreground">
+                    {activeCount}/{items.length} active
+                  </span>
+                </button>
+                {isExpanded && (
+                  <div className="px-2 py-1 grid gap-0.5">
+                    {items.map(entry => (
+                      <div key={entry.id} className="flex items-center gap-2 text-[0.75rem] py-1 px-2 rounded hover:bg-muted/50">
+                        <button
+                          type="button"
+                          onClick={() => handleToggle(entry)}
+                          className={`w-2 h-2 rounded-full flex-shrink-0 ${entry.available ? 'bg-green-500' : 'bg-red-400'}`}
+                          title={entry.available ? 'Available (click to disable)' : 'Disabled (click to enable)'}
+                        />
+                        <span className="font-medium flex-1">{entry.name}</span>
+                        <span className="text-muted-foreground text-[0.65rem]">{entry.slug}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(entry.id)}
+                          className="text-red-400 hover:text-red-300 text-[0.65rem] font-bold ml-1"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
-
-      <div className="border-t border-border pt-2 mt-2">
-        <div className="text-[0.68rem] font-bold text-muted-foreground mb-1.5">Add New Entry</div>
-        <div className="grid grid-cols-4 gap-2">
-          <input
-            list={`provider-options-${resourceType}`}
-            value={newProvider}
-            onChange={(e) => setNewProvider(e.target.value)}
-            className="border-2 border-border rounded-lg px-2 py-1.5 text-[0.75rem] font-medium bg-input focus:outline-none focus:border-accent"
-            placeholder="Provider..."
-          />
-          <datalist id={`provider-options-${resourceType}`}>
-            {providerOptions.map(p => (
-              <option key={p} value={p} />
-            ))}
-          </datalist>
-          <input
-            value={newSlug}
-            onChange={(e) => setNewSlug(e.target.value)}
-            className="border-2 border-border rounded-lg px-2 py-1.5 text-[0.75rem] font-medium bg-input focus:outline-none focus:border-accent"
-            placeholder="slug (e.g. sgp1)"
-          />
-          <input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            className="border-2 border-border rounded-lg px-2 py-1.5 text-[0.75rem] font-medium bg-input focus:outline-none focus:border-accent"
-            placeholder="Display Name"
-          />
-          <Button type="button" size="sm" onClick={handleAdd} disabled={adding}>
-            {adding ? 'Adding...' : '+ Add'}
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }
