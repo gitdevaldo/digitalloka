@@ -362,12 +362,19 @@ export default function ProductStocksPage() {
       render: (row: Record<string, unknown>) => {
         const cred = row.credential_data as Record<string, string> | undefined;
         if (!cred) return <span>—</span>;
+        const entries = Object.entries(cred);
+        if (entries.length === 0) return <span style={{ color: 'var(--muted-foreground)', fontSize: '0.72rem' }}>Empty</span>;
         return (
-          <div className="flex gap-1 flex-wrap">
-            {Object.entries(cred).map(([k, v]) => (
-              <span key={k} className="inline-flex bg-muted rounded text-[0.62rem] font-mono px-1.5 py-0.5 border border-border">
-                {k}: {String(v).slice(0, 20)}{String(v).length > 20 ? '...' : ''}
-              </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            {entries.map(([k, v]) => (
+              <div key={k} style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                <span style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.03em', minWidth: '60px', flexShrink: 0 }}>
+                  {k}
+                </span>
+                <span className="font-mono" style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--foreground)', wordBreak: 'break-all' }}>
+                  {String(v).slice(0, 30)}{String(v).length > 30 ? '…' : ''}
+                </span>
+              </div>
             ))}
           </div>
         );

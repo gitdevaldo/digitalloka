@@ -19,6 +19,7 @@ export default function AddStockPage() {
 
   const [headers, setHeaders] = useState('Email|Password|Recovery Code');
   const [rows, setRows] = useState('');
+  const [isUnlimited, setIsUnlimited] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -66,6 +67,7 @@ export default function AddStockPage() {
         body: JSON.stringify({
           headers: headers.split('|').map(h => h.trim()),
           rows: rows,
+          is_unlimited: isUnlimited,
         }),
       });
       const result = await res.json();
@@ -113,17 +115,34 @@ export default function AddStockPage() {
             />
           </label>
 
-          <div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv,.txt,.xls,.xlsx"
-              onChange={handleFileImport}
-              className="hidden"
-            />
-            <Button type="button" size="sm" onClick={() => fileInputRef.current?.click()}>Import File</Button>
-            <span className="text-[0.68rem] text-muted-foreground ml-2">CSV, TXT, XLS, XLSX</span>
+          <div className="flex items-center gap-3">
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.txt,.xls,.xlsx"
+                onChange={handleFileImport}
+                className="hidden"
+              />
+              <Button type="button" size="sm" onClick={() => fileInputRef.current?.click()}>Import File</Button>
+              <span className="text-[0.68rem] text-muted-foreground ml-2">CSV, TXT, XLS, XLSX</span>
+            </div>
           </div>
+
+          <label className="flex items-center gap-3 py-2 px-3 bg-muted/50 rounded-lg border-2 border-border cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isUnlimited}
+              onChange={(e) => setIsUnlimited(e.target.checked)}
+              className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
+            />
+            <div>
+              <span className="text-[0.8rem] font-bold">Unlimited Stock</span>
+              <p className="text-[0.68rem] text-muted-foreground">
+                When enabled, these stock items can be sold multiple times without being marked as sold. Use for digital products with no quantity limit.
+              </p>
+            </div>
+          </label>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
             <Button type="button" variant="ghost" onClick={() => router.push(`/admin/product-stocks?product=${productId}`)}>Cancel</Button>
