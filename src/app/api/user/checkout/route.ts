@@ -90,7 +90,11 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       payment_link: mayarResponse.data.link,
     }, 201);
   } catch (err) {
-    console.error('[checkout] Error:', err);
+    const message = err instanceof Error ? err.message : 'Checkout failed';
+    console.error('[checkout] Error:', message);
+    if (message.includes('Insufficient stock') || message.includes('Unable to verify stock')) {
+      return apiError(message, 422);
+    }
     return apiError('Checkout failed', 422);
   }
 });

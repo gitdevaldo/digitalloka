@@ -142,6 +142,19 @@ export async function createCheckoutOrder(supabase: TypedSupabaseClient, userId:
   if (!product.price_amount || product.price_amount <= 0) throw new Error('No pricing available for product');
 
   const quantity = Math.min(Math.max(payload.quantity || 1, 1), 50);
+
+  if (product.product_type !== 'vps_droplet') {
+    const admin = createSupabaseAdminClient();
+    const { count, error: stockError } = await admin
+      .from('product_stock_items')
+      .select('id', { count: 'exact', head: true })
+      .eq('product_id', product.id)
+      .eq('status', 'enabled')
+      .is('sold_at', null);
+
+    if (stockError) throw new Error('Unable to verify stock availability');
+    if (!count || count < quantity) throw new Error('Insufficient stock available for this product');
+  }
   const lineTotal = product.price_amount * quantity;
   const orderNumber = generateOrderNumber();
 
