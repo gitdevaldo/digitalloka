@@ -13,9 +13,10 @@ interface FieldDef {
   type: string;
   required: boolean;
   options?: string[];
+  help_text?: string;
 }
 
-const emptyField: FieldDef = { key: '', label: '', type: 'text', required: false };
+const emptyField: FieldDef = { key: '', label: '', type: 'text', required: false, help_text: '' };
 
 const inputClass = "w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent";
 
@@ -178,57 +179,89 @@ export default function EditProductTypePage() {
             {fields.length === 0 && (
               <div className="text-[0.75rem] text-muted-foreground py-2">No custom fields defined.</div>
             )}
-            <div className="grid gap-2.5">
+            <div className="grid gap-4">
               {fields.map((f, idx) => (
-                <div key={idx} className="flex gap-2 items-start p-2 bg-muted rounded-lg border border-border">
-                  <input
-                    value={f.key}
-                    onChange={(e) => updateField(idx, { key: e.target.value.replace(/[^a-z0-9_]/g, '') })}
-                    className="flex-1 border-2 border-border rounded px-2 py-1 text-xs font-medium bg-input"
-                    placeholder="key"
-                  />
-                  <input
-                    value={f.label}
-                    onChange={(e) => updateField(idx, { label: e.target.value })}
-                    className="flex-1 border-2 border-border rounded px-2 py-1 text-xs font-medium bg-input"
-                    placeholder="Label"
-                  />
-                  <select
-                    value={f.type}
-                    onChange={(e) => updateField(idx, { type: e.target.value })}
-                    className="border-2 border-border rounded px-2 py-1 text-xs font-medium bg-input w-24"
-                  >
-                    <option value="text">Text</option>
-                    <option value="number">Number</option>
-                    <option value="select">Select</option>
-                    <option value="boolean">Boolean</option>
-                    <option value="textarea">Textarea</option>
-                  </select>
-                  <label className="flex items-center gap-1 text-[0.65rem] font-bold whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={f.required}
-                      onChange={(e) => updateField(idx, { required: e.target.checked })}
-                      className="w-3 h-3"
-                    />
-                    Req
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => removeField(idx)}
-                    className="text-xs font-bold text-secondary px-1.5 py-0.5 hover:bg-secondary/10 rounded"
-                  >
-                    ✕
-                  </button>
+                <div key={idx} className="p-4 bg-muted rounded-lg border-2 border-border relative">
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Key</label>
+                      <input
+                        value={f.key}
+                        onChange={(e) => updateField(idx, { key: e.target.value.replace(/[^a-z0-9_]/g, '') })}
+                        className="w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent"
+                        placeholder="field_key"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Label</label>
+                      <input
+                        value={f.label}
+                        onChange={(e) => updateField(idx, { label: e.target.value })}
+                        className="w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent"
+                        placeholder="Field Label"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Type</label>
+                      <select
+                        value={f.type}
+                        onChange={(e) => updateField(idx, { type: e.target.value })}
+                        className="w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent"
+                      >
+                        <option value="text">text</option>
+                        <option value="number">number</option>
+                        <option value="select">select</option>
+                        <option value="boolean">boolean</option>
+                        <option value="textarea">textarea</option>
+                      </select>
+                    </div>
+                    <div className="flex items-end pb-2">
+                      <label className="flex items-center gap-2 text-sm font-bold cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={f.required}
+                          onChange={(e) => updateField(idx, { required: e.target.checked })}
+                          className="w-4 h-4 accent-accent"
+                        />
+                        Required
+                      </label>
+                    </div>
+                  </div>
                   {f.type === 'select' && (
-                    <input
-                      value={(f.options || []).join(', ')}
-                      onChange={(e) => updateField(idx, { options: e.target.value.split(',').map(o => o.trim()).filter(Boolean) })}
-                      className="flex-1 border-2 border-border rounded px-2 py-1 text-xs font-medium bg-input"
-                      placeholder="Options (comma-separated)"
-                      style={{ minWidth: '180px' }}
-                    />
+                    <div className="mb-3">
+                      <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Options (comma-separated)</label>
+                      <input
+                        value={(f.options || []).join(', ')}
+                        onChange={(e) => updateField(idx, { options: e.target.value.split(',').map(o => o.trim()).filter(Boolean) })}
+                        className="w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent"
+                        placeholder="Option1, Option2, Option3"
+                      />
+                    </div>
                   )}
+                  <div className="mb-1">
+                    <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Help Text</label>
+                    <input
+                      value={f.help_text || ''}
+                      onChange={(e) => updateField(idx, { help_text: e.target.value })}
+                      className="w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent"
+                      placeholder="Optional helper text"
+                    />
+                  </div>
+                  {f.type === 'select' && (
+                    <div className="text-[0.68rem] text-muted-foreground mt-2">Tip: For select fields, enter options separated by commas.</div>
+                  )}
+                  <div className="flex justify-end mt-3">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="danger"
+                      onClick={() => removeField(idx)}
+                    >
+                      Remove Field
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
