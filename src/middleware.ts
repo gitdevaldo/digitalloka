@@ -11,12 +11,12 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname === '/api/auth/login') {
-    const limited = applyRateLimit(request, 'auth', RATE_LIMITS.auth);
+    const limited = await applyRateLimit(request, 'auth', RATE_LIMITS.auth);
     if (limited) return limited;
   }
 
   if (pathname.startsWith('/api/payments/webhook')) {
-    const limited = applyRateLimit(request, 'webhook', RATE_LIMITS.webhook);
+    const limited = await applyRateLimit(request, 'webhook', RATE_LIMITS.webhook);
     if (limited) return limited;
   }
 

@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { allowed, retryAfterMs } = checkRateLimit(`checkout:user:${userId}`, CHECKOUT_LIMIT);
+  const { allowed, retryAfterMs } = await checkRateLimit(`checkout:user:${userId}`, CHECKOUT_LIMIT);
   if (!allowed) return rateLimitResponse(retryAfterMs);
 
   try {

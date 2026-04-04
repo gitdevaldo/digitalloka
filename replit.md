@@ -98,7 +98,7 @@ src/
 - The `DATABASE_URL` in `.env.local` points directly to the Supabase PostgreSQL instance (session mode, port 5432).
 
 ## Database (Supabase PostgreSQL)
-Tables: `users`, `products`, `product_categories`, `product_types`, `product_stock_items`, `orders`, `order_items`, `transactions`, `payment_events`, `entitlements`, `site_settings`, `audit_logs`, `wishlists`
+Tables: `users`, `products`, `product_categories`, `product_types`, `product_stock_items`, `orders`, `order_items`, `transactions`, `payment_events`, `entitlements`, `site_settings`, `audit_logs`, `wishlists`, `rate_limit_entries`, `cache_entries`
 
 Pricing is stored directly on the `products` table (`price_amount`, `price_currency`, `price_billing_period`) — no separate pricing table.
 
@@ -148,6 +148,8 @@ Run against Supabase to apply performance indexes:
 - `MAYAR_BASE_URL` - Mayar API base URL (in `.env.local`)
 - `PAYMENT_WEBHOOK_SECRET` - HMAC secret for verifying payment webhook signatures
 - `MAYAR_SANDBOX` - Set to "true" for sandbox mode (in `.env.local`)
+- `RATE_LIMIT_STORE` - `memory` (default) or `database` for Supabase-backed rate limiting
+- `CACHE_STORE` - `memory` (default) or `database` for Supabase-backed API cache
 
 ## Key Features
 1. **Catalog/Marketplace** - Public product browsing with search, sort, filtering
@@ -156,7 +158,7 @@ Run against Supabase to apply performance indexes:
 4. **Admin Panel** - Product CRUD with dedicated create/edit pages (full-page forms), product types with schema builder (dedicated pages), product stocks with per-item Edit/Delete actions, user management (role/block modals), order fulfillment (status transition modal), entitlement lifecycle (inline Activate/Pending/Revoke/+30d buttons), droplet admin (power action modal), site settings (4 config panels with API load/save and data-setting-key attributes), audit logs with CSV export and payload viewer, overview with live API-fetched stats. ID formatting: PRD-001 (products), ENT-001 (entitlements), ORD-0001 (orders), EVT-0001 (audit). Account edit modal, support ticket modal
 5. **Commerce** - Atomic checkout flow (via PostgreSQL RPC functions), payment webhooks with idempotency + atomic processing, collision-resistant order numbers (crypto.randomUUID), shared entitlement provisioning logic
 6. **Route Protection** - Middleware guards `/dashboard/*`, `/admin/*`, and all API routes (`/api/admin/*`, `/api/user/*`, `/api/auth/*`, `/api/payments/*`); admin role check via Supabase at middleware level for both page and API routes
-7. **Rate Limiting** - In-memory sliding window rate limiter (`src/lib/rate-limit.ts`) applied at middleware level: auth login (5/min/IP), webhooks (30/min/IP), checkout (10/min/IP). Returns 429 with Retry-After header
+7. **Rate Limiting** - Sliding window rate limiter (`src/lib/rate-limit.ts`) applied at middleware level: auth login (5/min/IP), webhooks (30/min/IP), checkout (10/min/IP). Returns 429 with Retry-After header. Supports in-memory (default) or Supabase-backed persistent store via `RATE_LIMIT_STORE=database` env var. DigitalOcean API cache similarly supports `CACHE_STORE=database` for persistence across serverless instances.
 
 ## Cursor-Based Pagination
 Large tables (audit logs, orders, transactions) support cursor-based pagination using `created_at` + `id` as the composite cursor. The cursor utility is in `src/lib/cursor-pagination.ts` with `encodeCursor`, `decodeCursor`, and `applyCursorPagination` helpers.
