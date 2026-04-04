@@ -7,6 +7,9 @@ import { useCart } from '@/context/cart-context';
 import { useWishlist } from '@/context/wishlist-context';
 import { formatCurrency } from '@/lib/utils';
 import { LoginDialog } from '@/components/ui/login-dialog';
+import { cartCheckoutSchema } from '@/lib/validation/schemas';
+import { useFormValidation } from '@/hooks/use-form-validation';
+import { FieldError } from '@/components/ui/field-error';
 
 interface Product {
   id: number;
@@ -51,6 +54,14 @@ export default function CheckoutPage() {
   });
 
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const { getFieldError, validateField, markTouched, validateAll } = useFormValidation(cartCheckoutSchema);
+
+  const getFormValues = () => ({
+    items: items.map(i => ({ product_id: i.productId, quantity: i.quantity })),
+    customer_name: formData.name,
+    customer_email: formData.email,
+    customer_mobile: formData.mobile,
+  });
 
   useEffect(() => {
     if (!hydrated) return;
@@ -88,8 +99,9 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.mobile.trim()) {
-      setError('Please fill in all required fields.');
+    const { success: valid } = validateAll(getFormValues());
+    if (!valid) {
+      setError('Please fix the errors above.');
       return;
     }
 
@@ -200,9 +212,18 @@ export default function CheckoutPage() {
                           type="text"
                           placeholder="Your full name"
                           value={formData.name}
-                          onChange={e => setFormData(d => ({ ...d, name: e.target.value }))}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setFormData(d => ({ ...d, name: val }));
+                            validateField('customer_name', val, { ...getFormValues(), customer_name: val });
+                          }}
+                          onBlur={() => {
+                            markTouched('customer_name');
+                            validateField('customer_name', formData.name, getFormValues());
+                          }}
                           disabled={currentStep > 2}
                         />
+                        <FieldError message={getFieldError('customer_name')} />
                       </div>
                     </div>
                     <div className="field-row single">
@@ -213,9 +234,18 @@ export default function CheckoutPage() {
                           type="email"
                           placeholder="you@example.com"
                           value={formData.email}
-                          onChange={e => setFormData(d => ({ ...d, email: e.target.value }))}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setFormData(d => ({ ...d, email: val }));
+                            validateField('customer_email', val, { ...getFormValues(), customer_email: val });
+                          }}
+                          onBlur={() => {
+                            markTouched('customer_email');
+                            validateField('customer_email', formData.email, getFormValues());
+                          }}
                           disabled={currentStep > 2}
                         />
+                        <FieldError message={getFieldError('customer_email')} />
                       </div>
                     </div>
                     <div className="field-row single">
@@ -226,9 +256,18 @@ export default function CheckoutPage() {
                           type="tel"
                           placeholder="08xxxxxxxxxx"
                           value={formData.mobile}
-                          onChange={e => setFormData(d => ({ ...d, mobile: e.target.value }))}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setFormData(d => ({ ...d, mobile: val }));
+                            validateField('customer_mobile', val, { ...getFormValues(), customer_mobile: val });
+                          }}
+                          onBlur={() => {
+                            markTouched('customer_mobile');
+                            validateField('customer_mobile', formData.mobile, getFormValues());
+                          }}
                           disabled={currentStep > 2}
                         />
+                        <FieldError message={getFieldError('customer_mobile')} />
                       </div>
                     </div>
                     {currentStep === 2 && (
@@ -236,8 +275,9 @@ export default function CheckoutPage() {
                         <button
                           className="btn btn-accent"
                           onClick={() => {
-                            if (!formData.name.trim() || !formData.email.trim() || !formData.mobile.trim()) {
-                              setError('Please fill in all fields.');
+                            const { success } = validateAll(getFormValues());
+                            if (!success) {
+                              setError('Please fix the errors above.');
                               return;
                             }
                             setError(null);

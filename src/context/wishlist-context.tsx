@@ -26,18 +26,48 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
+
     supabase.auth.getSession().then(({ data }) => {
       const loggedIn = !!data.session;
       setIsLoggedIn(loggedIn);
       if (loggedIn) {
         fetch('/api/wishlist')
-          .then(r => r.json())
-          .then(d => { setItems(d.items || []); setLoaded(true); })
+          .then(r => {
+            if (r.status === 401) {
+              setIsLoggedIn(false);
+              setItems([]);
+              setLoaded(true);
+              return null;
+            }
+            return r.json();
+          })
+          .then(d => {
+            if (d) {
+              setItems(d.items || []);
+            }
+            setLoaded(true);
+          })
           .catch(() => setLoaded(true));
       } else {
         setLoaded(true);
       }
+    }).catch(() => {
+      setIsLoggedIn(false);
+      setLoaded(true);
     });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+        if (event === 'SIGNED_OUT') {
+          setIsLoggedIn(false);
+          setItems([]);
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const isInWishlist = useCallback((productId: number) => items.includes(productId), [items]);
@@ -45,20 +75,35 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   const toggleWishlist = useCallback(async (productId: number): Promise<'added' | 'removed' | 'login_required'> => {
     if (!isLoggedIn) return 'login_required';
 
-    const res = await fetch('/api/wishlist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product_id: productId }),
-    });
-    const data = await res.json();
+    try {
+      const res = await fetch('/api/wishlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: productId }),
+      });
 
-    if (data.action === 'added') {
-      setItems(prev => [...prev, productId]);
-    } else if (data.action === 'removed') {
-      setItems(prev => prev.filter(id => id !== productId));
+      if (res.status === 401) {
+        setIsLoggedIn(false);
+        setItems([]);
+        return 'login_required';
+      }
+
+      if (!res.ok) {
+        return 'login_required';
+      }
+
+      const data = await res.json();
+
+      if (data.action === 'added') {
+        setItems(prev => [...prev, productId]);
+      } else if (data.action === 'removed') {
+        setItems(prev => prev.filter(id => id !== productId));
+      }
+
+      return data.action;
+    } catch {
+      return 'login_required';
     }
-
-    return data.action;
   }, [isLoggedIn]);
 
   return (
@@ -71,4 +116,3 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 export function useWishlist() {
   return useContext(WishlistContext);
 }
-

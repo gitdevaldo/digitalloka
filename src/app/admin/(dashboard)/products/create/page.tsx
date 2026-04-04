@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { CategoryComboBox, SelectedItem } from '@/components/ui/category-combobox';
+import { productCreateSchema } from '@/lib/validation/schemas';
+import { useFormValidation } from '@/hooks/use-form-validation';
+import { FieldError } from '@/components/ui/field-error';
 
 interface Category {
   id: number;
@@ -55,6 +58,19 @@ export default function CreateProductPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [productTypes, setProductTypes] = useState<ProductType[]>([]);
   const [saving, setSaving] = useState(false);
+  const { getFieldError, validateField, markTouched, validateAll } = useFormValidation(productCreateSchema);
+
+  const getFormValues = () => ({
+    name,
+    slug,
+    product_type: productType,
+    status,
+    price_amount: priceAmount ? Number(priceAmount) : 0,
+    price_currency: priceCurrency,
+    short_description: shortDescription,
+    description,
+    catalog_visibility: catalogVisibility,
+  });
 
   useEffect(() => {
     Promise.all([
@@ -87,8 +103,9 @@ export default function CreateProductPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !slug.trim()) {
-      showToast('Name and slug are required');
+    const { success } = validateAll(getFormValues());
+    if (!success) {
+      showToast('Please fix the validation errors');
       return;
     }
     setSaving(true);
@@ -140,32 +157,48 @@ export default function CreateProductPage() {
 
       <Panel>
         <form onSubmit={handleSubmit} style={{ padding: '6px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          <label className="flex flex-col gap-1.5" style={{ gridColumn: '1 / span 2' }}>
+          <div className="flex flex-col gap-1.5" style={{ gridColumn: '1 / span 2' }}>
             <span className="text-[0.8rem] font-bold">Product Name</span>
             <input
               value={name}
               onChange={(e) => {
-                setName(e.target.value);
-                setSlug(autoSlug(e.target.value));
+                const val = e.target.value;
+                setName(val);
+                setSlug(autoSlug(val));
+                validateField('name', val, { ...getFormValues(), name: val, slug: autoSlug(val) });
+              }}
+              onBlur={() => {
+                markTouched('name');
+                validateField('name', name, getFormValues());
               }}
               className={inputClass}
               placeholder="NovaDash UI Kit"
               required
               maxLength={150}
             />
-          </label>
+            <FieldError message={getFieldError('name')} />
+          </div>
 
-          <label className="flex flex-col gap-1.5" style={{ gridColumn: '1 / span 2' }}>
+          <div className="flex flex-col gap-1.5" style={{ gridColumn: '1 / span 2' }}>
             <span className="text-[0.8rem] font-bold">Slug</span>
             <input
               value={slug}
-              onChange={(e) => setSlug(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSlug(val);
+                validateField('slug', val, { ...getFormValues(), slug: val });
+              }}
+              onBlur={() => {
+                markTouched('slug');
+                validateField('slug', slug, getFormValues());
+              }}
               className={inputClass}
               placeholder="novadash-ui-kit"
               required
               maxLength={180}
             />
-          </label>
+            <FieldError message={getFieldError('slug')} />
+          </div>
 
           <label className="flex flex-col gap-1.5">
             <span className="text-[0.8rem] font-bold">Type</span>

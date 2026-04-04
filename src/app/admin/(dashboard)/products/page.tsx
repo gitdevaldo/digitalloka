@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Modal } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast';
 import { formatDate } from '@/lib/utils';
+import { useDataFetch } from '@/hooks/use-data-fetch';
 
 function formatProductId(id: number | string): string {
   return `PRD-${String(id).padStart(3, '0')}`;
@@ -27,21 +28,14 @@ function formatPriceCompact(amount: number, currency = 'USD'): string {
 
 export default function AdminProductsPage() {
   const router = useRouter();
-  const [products, setProducts] = useState<Record<string, unknown>[]>([]);
-  const [loading, setLoading] = useState(true);
   const [viewPayload, setViewPayload] = useState<Record<string, unknown> | null>(null);
   const { showToast } = useToast();
 
-  useEffect(() => { loadProducts(); }, []);
-
-  async function loadProducts() {
-    try {
-      const res = await fetch('/api/admin/products');
-      const data = await res.json();
-      setProducts(data.data || []);
-    } catch { showToast('Failed to load products'); }
-    finally { setLoading(false); }
-  }
+  const { data: products, loading, error, isEmpty, refetch: loadProducts } = useDataFetch<Record<string, unknown>[]>({
+    url: '/api/admin/products',
+    transform: (raw) => (raw as { data?: Record<string, unknown>[] }).data || [],
+    onError: (msg) => showToast(msg || 'Failed to load products'),
+  });
 
   async function toggleVisibility(product: Record<string, unknown>) {
     const isVisible = Boolean(product.is_visible);
@@ -174,7 +168,14 @@ export default function AdminProductsPage() {
 
       {loading ? (
         <div className="h-32 bg-card border-2 border-border rounded-xl animate-pulse" />
-      ) : products.length === 0 ? (
+      ) : error ? (
+        <div>
+          <EmptyState icon="⚠️" title="Failed to load" description={error} />
+          <div style={{ textAlign: 'center', marginTop: '12px' }}>
+            <Button size="sm" onClick={loadProducts}>Retry</Button>
+          </div>
+        </div>
+      ) : isEmpty || !products || products.length === 0 ? (
         <EmptyState icon="📦" title="No products" description="Create your first product." />
       ) : (
         <Panel noPad>

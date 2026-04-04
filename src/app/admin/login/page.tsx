@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { loginSchema } from '@/lib/validation/schemas';
+import { useFormValidation } from '@/hooks/use-form-validation';
+import { FieldError } from '@/components/ui/field-error';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -10,6 +13,7 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
   const next = searchParams.get('next') || '/admin';
+  const { getFieldError, validateField, markTouched, validateAll } = useFormValidation(loginSchema);
 
   useEffect(() => {
     const err = searchParams.get('error');
@@ -21,6 +25,10 @@ export default function AdminLoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+
+    const { success } = validateAll({ email, next, mode: 'admin' });
+    if (!success) return;
+
     setLoading(true);
     try {
       const res = await fetch('/api/auth/login', {
@@ -57,11 +65,19 @@ export default function AdminLoginPage() {
               id="email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                validateField('email', e.target.value, { email: e.target.value, next, mode: 'admin' });
+              }}
+              onBlur={() => {
+                markTouched('email');
+                validateField('email', email, { email, next, mode: 'admin' });
+              }}
               placeholder="admin@digitalloka.com"
               required
               className="login-input"
             />
+            <FieldError message={getFieldError('email')} />
             <button type="submit" className="login-btn" disabled={loading}>
               {loading ? 'Sending...' : 'Send Magic Link'}
             </button>
