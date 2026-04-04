@@ -101,33 +101,34 @@ function mergeCartItems(local: CartItem[], server: CartItem[]): CartItem[] {
   return Array.from(serverByKey.values());
 }
 
-async function fetchAndMergeServerCart(localItems: CartItem[]): Promise<{ items: CartItem[]; synced: boolean }> {
+async function fetchServerCart(): Promise<{ items: CartItem[]; ok: boolean }> {
   try {
     const res = await fetch('/api/user/cart');
-    if (!res.ok) return { items: localItems, synced: false };
-
+    if (!res.ok) return { items: [], ok: false };
     const serverData = await res.json();
-    const serverItems: CartItem[] = serverData.items || [];
-    const merged = mergeCartItems(localItems, serverItems);
-
-    const needsSync = merged.length !== serverItems.length || merged.some(m => {
-      const key = m.configId || `pid_${m.productId}`;
-      const s = serverItems.find(si => (si.configId || `pid_${si.productId}`) === key);
-      return !s || s.quantity !== m.quantity;
-    });
-
-    if (needsSync) {
-      fetch('/api/user/cart', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: merged }),
-      }).catch(() => {});
-    }
-
-    return { items: merged, synced: true };
+    return { items: serverData.items || [], ok: true };
   } catch {
-    return { items: localItems, synced: false };
+    return { items: [], ok: false };
   }
+}
+
+async function pushLocalItemsToServer(localItems: CartItem[], serverItems: CartItem[]): Promise<CartItem[]> {
+  const localOnly = localItems.filter(local => {
+    const key = local.configId || `pid_${local.productId}`;
+    return !serverItems.some(s => (s.configId || `pid_${s.productId}`) === key);
+  });
+
+  if (localOnly.length === 0) return serverItems;
+
+  const merged = [...serverItems, ...localOnly];
+  try {
+    await fetch('/api/user/cart', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: merged }),
+    });
+  } catch {}
+  return merged;
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -146,10 +147,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setIsLoggedIn(loggedIn);
 
       if (loggedIn) {
-        const result = await fetchAndMergeServerCart(localItems);
-        setItems(result.items);
-        saveCart(result.items);
-        initialSyncDoneRef.current = result.synced;
+        const result = await fetchServerCart();
+        if (result.ok) {
+          const finalItems = await pushLocalItemsToServer(localItems, result.items);
+          setItems(finalItems);
+          saveCart(finalItems);
+          initialSyncDoneRef.current = true;
+        } else {
+          setItems(localItems);
+        }
       } else {
         setItems(localItems);
       }
@@ -160,10 +166,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_IN') {
         setIsLoggedIn(true);
         const currentLocal = loadCart();
-        const result = await fetchAndMergeServerCart(currentLocal);
-        setItems(result.items);
-        saveCart(result.items);
-        initialSyncDoneRef.current = result.synced;
+        const result = await fetchServerCart();
+        if (result.ok) {
+          const finalItems = await pushLocalItemsToServer(currentLocal, result.items);
+          setItems(finalItems);
+          saveCart(finalItems);
+          initialSyncDoneRef.current = true;
+        } else {
+          setItems(currentLocal);
+        }
       } else if (event === 'SIGNED_OUT') {
         setIsLoggedIn(false);
         initialSyncDoneRef.current = false;
@@ -252,10 +263,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const clearCart = useCallback(() => {
+  const clearCart = useCallback(async () => {
     setItems([]);
+    saveCart([]);
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+      syncTimeoutRef.current = null;
+    }
     if (isLoggedIn) {
-      fetch('/api/user/cart', { method: 'DELETE' }).catch(() => {});
+      try {
+        await fetch('/api/user/cart', { method: 'DELETE' });
+      } catch {}
     }
   }, [isLoggedIn]);
 
