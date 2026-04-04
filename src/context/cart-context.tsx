@@ -21,6 +21,7 @@ export interface VpsConfig {
 export interface CartItem {
   productId: number;
   quantity: number;
+  configId?: string;
   selectedStockId?: number;
   selectedRegion?: string;
   selectedImage?: string;
@@ -32,7 +33,7 @@ interface CartContextType {
   count: number;
   hydrated: boolean;
   addItem: (productId: number, qty?: number, options?: { selectedStockId?: number; selectedRegion?: string; selectedImage?: string; vpsConfig?: VpsConfig }) => void;
-  removeItem: (productId: number) => void;
+  removeItem: (productId: number, configId?: string) => void;
   updateQuantity: (productId: number, qty: number) => void;
   clearCart: () => void;
   isInCart: (productId: number) => boolean;
@@ -51,6 +52,10 @@ const CartContext = createContext<CartContextType>({
 
 const STORAGE_KEY = 'digitalloka_cart';
 
+function generateConfigId(): string {
+  return `cfg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
 function loadCart(): CartItem[] {
   if (typeof window === 'undefined') return [];
   try {
@@ -68,14 +73,19 @@ function saveCart(items: CartItem[]) {
 }
 
 function mergeCartItems(local: CartItem[], server: CartItem[]): CartItem[] {
-  const merged = new Map<number, CartItem>();
+  const merged: CartItem[] = [];
+  const serverByKey = new Map<string, CartItem>();
+
   for (const item of server) {
-    merged.set(item.productId, { ...item });
+    const key = item.configId || `pid_${item.productId}`;
+    serverByKey.set(key, { ...item });
   }
+
   for (const item of local) {
-    const existing = merged.get(item.productId);
+    const key = item.configId || `pid_${item.productId}`;
+    const existing = serverByKey.get(key);
     if (existing) {
-      merged.set(item.productId, {
+      serverByKey.set(key, {
         ...existing,
         quantity: Math.max(existing.quantity, item.quantity),
         ...(item.selectedStockId !== undefined && { selectedStockId: item.selectedStockId }),
@@ -84,10 +94,11 @@ function mergeCartItems(local: CartItem[], server: CartItem[]): CartItem[] {
         ...(item.vpsConfig !== undefined && { vpsConfig: item.vpsConfig }),
       });
     } else {
-      merged.set(item.productId, { ...item });
+      serverByKey.set(key, { ...item });
     }
   }
-  return Array.from(merged.values());
+
+  return Array.from(serverByKey.values());
 }
 
 async function fetchAndMergeServerCart(localItems: CartItem[]): Promise<{ items: CartItem[]; synced: boolean }> {
@@ -100,7 +111,8 @@ async function fetchAndMergeServerCart(localItems: CartItem[]): Promise<{ items:
     const merged = mergeCartItems(localItems, serverItems);
 
     const needsSync = merged.length !== serverItems.length || merged.some(m => {
-      const s = serverItems.find(si => si.productId === m.productId);
+      const key = m.configId || `pid_${m.productId}`;
+      const s = serverItems.find(si => (si.configId || `pid_${si.productId}`) === key);
       return !s || s.quantity !== m.quantity;
     });
 
@@ -191,15 +203,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback((productId: number, qty = 1, options?: { selectedStockId?: number; selectedRegion?: string; selectedImage?: string; vpsConfig?: VpsConfig }) => {
     setItems(prev => {
-      const existing = prev.find(i => i.productId === productId);
+      if (options?.vpsConfig) {
+        return [...prev, {
+          productId,
+          quantity: qty,
+          configId: generateConfigId(),
+          ...(options.selectedStockId !== undefined && { selectedStockId: options.selectedStockId }),
+          ...(options.selectedRegion !== undefined && { selectedRegion: options.selectedRegion }),
+          ...(options.selectedImage !== undefined && { selectedImage: options.selectedImage }),
+          vpsConfig: options.vpsConfig,
+        }];
+      }
+
+      const existing = prev.find(i => i.productId === productId && !i.configId);
       if (existing) {
-        return prev.map(i => i.productId === productId ? {
+        return prev.map(i => (i.productId === productId && !i.configId) ? {
           ...i,
           quantity: i.quantity + qty,
           ...(options?.selectedStockId !== undefined && { selectedStockId: options.selectedStockId }),
           ...(options?.selectedRegion !== undefined && { selectedRegion: options.selectedRegion }),
           ...(options?.selectedImage !== undefined && { selectedImage: options.selectedImage }),
-          ...(options?.vpsConfig !== undefined && { vpsConfig: options.vpsConfig }),
         } : i);
       }
       return [...prev, {
@@ -208,13 +231,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ...(options?.selectedStockId !== undefined && { selectedStockId: options.selectedStockId }),
         ...(options?.selectedRegion !== undefined && { selectedRegion: options.selectedRegion }),
         ...(options?.selectedImage !== undefined && { selectedImage: options.selectedImage }),
-        ...(options?.vpsConfig !== undefined && { vpsConfig: options.vpsConfig }),
       }];
     });
   }, []);
 
-  const removeItem = useCallback((productId: number) => {
-    setItems(prev => prev.filter(i => i.productId !== productId));
+  const removeItem = useCallback((productId: number, configId?: string) => {
+    setItems(prev => {
+      if (configId) {
+        return prev.filter(i => i.configId !== configId);
+      }
+      return prev.filter(i => i.productId !== productId);
+    });
   }, []);
 
   const updateQuantity = useCallback((productId: number, qty: number) => {

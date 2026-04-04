@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Check } from 'lucide-react';
-import { useCart } from '@/context/cart-context';
+import { ArrowLeft, Loader2, Check, Server, Cpu, MemoryStick, HardDrive, MapPin, Monitor } from 'lucide-react';
+import { useCart, CartItem } from '@/context/cart-context';
 import { useWishlist } from '@/context/wishlist-context';
 import { formatCurrency } from '@/lib/utils';
 import { LoginDialog } from '@/components/ui/login-dialog';
@@ -18,8 +18,8 @@ interface Product {
   price_amount: number;
   price_currency: string;
   price_billing_period: string;
+  product_type: string;
   category: { name: string } | null;
-
 }
 
 const ICON_COLORS: Record<string, string> = {
@@ -28,6 +28,7 @@ const ICON_COLORS: Record<string, string> = {
   plugin: 'linear-gradient(135deg, #fce7f3, #fbcfe8)',
   ebook: 'linear-gradient(135deg, #fef3c7, #fde68a)',
   course: 'linear-gradient(135deg, #dbeafe, #bfdbfe)',
+  vps: 'linear-gradient(135deg, #e0e7ff, #c7d2fe)',
 };
 
 const STEPS = [
@@ -35,6 +36,13 @@ const STEPS = [
   { num: 2, label: 'Details' },
   { num: 3, label: 'Review' },
 ];
+
+function getItemPrice(ci: CartItem, product: Product): number {
+  if (ci.vpsConfig) {
+    return ci.vpsConfig.priceMonthly;
+  }
+  return product.price_amount;
+}
 
 export default function CheckoutPage() {
   const { items, clearCart, hydrated } = useCart();
@@ -71,12 +79,14 @@ export default function CheckoutPage() {
       setLoading(false);
       return;
     }
+
+    const uniqueIds = [...new Set(items.map(i => i.productId))];
     setFetchError(false);
     setLoading(true);
     fetch('/api/cart/products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: items.map(i => i.productId) }),
+      body: JSON.stringify({ ids: uniqueIds }),
     })
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(d => setProducts(d.data || []))
@@ -84,10 +94,15 @@ export default function CheckoutPage() {
       .finally(() => setLoading(false));
   }, [hydrated, items.length]);
 
-  const getQty = (productId: number) => items.find(i => i.productId === productId)?.quantity || 1;
-  const cartProducts = products.filter(p => items.some(i => i.productId === p.id));
-  const subtotal = cartProducts.reduce((sum, p) => sum + p.price_amount * getQty(p.id), 0);
-  const currency = cartProducts[0]?.price_currency || 'IDR';
+  const getProduct = (productId: number) => products.find(p => p.id === productId);
+  const hasProducts = items.length > 0 && products.length > 0;
+
+  const subtotal = items.reduce((sum, ci) => {
+    const product = getProduct(ci.productId);
+    if (!product) return sum;
+    return sum + getItemPrice(ci, product) * ci.quantity;
+  }, 0);
+  const currency = products[0]?.price_currency || 'IDR';
 
   const advanceStep = (step: number) => {
     setCurrentStep(step + 1);
@@ -119,6 +134,7 @@ export default function CheckoutPage() {
             ...(i.selectedStockId && { selected_stock_id: i.selectedStockId }),
             ...(i.selectedRegion && { selected_region: i.selectedRegion }),
             ...(i.selectedImage && { selected_image: i.selectedImage }),
+            ...(i.vpsConfig && { vps_config: i.vpsConfig }),
           })),
           customer_name: formData.name,
           customer_email: formData.email,
@@ -139,7 +155,8 @@ export default function CheckoutPage() {
     }
   };
 
-  const getCatSlug = (p: Product) => p.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'template';
+  const getCatSlug = (ci: CartItem, p: Product) =>
+    ci.vpsConfig ? 'vps' : (p.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'template');
 
   return (
     <div className="inner-wrap">
@@ -164,7 +181,7 @@ export default function CheckoutPage() {
           <div className="empty-desc">Could not load checkout details. Please try again.</div>
           <button className="btn btn-accent" onClick={() => window.location.reload()}>Retry</button>
         </div>
-      ) : cartProducts.length === 0 ? (
+      ) : !hasProducts ? (
         <div className="empty-state">
           <div className="empty-icon">&#128722;</div>
           <div className="empty-title">Nothing to checkout</div>
@@ -189,7 +206,6 @@ export default function CheckoutPage() {
 
           <div className="checkout-layout">
             <div>
-              {/* Step 2: Customer Details */}
               <div className={`form-panel${currentStep < 2 ? ' locked' : ''}`}>
                 <div className="fp-header">
                   <div className="fp-title">
@@ -292,7 +308,6 @@ export default function CheckoutPage() {
                 )}
               </div>
 
-              {/* Step 3: Review & Pay */}
               <div className={`form-panel${currentStep < 3 ? ' locked' : ''}`}>
                 <div className="fp-header">
                   <div className="fp-title">
@@ -389,7 +404,6 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Right: Order Summary */}
             <div>
               <div className="order-summary" style={{ top: '80px' }}>
                 <div className="os-header">
@@ -397,21 +411,39 @@ export default function CheckoutPage() {
                 </div>
                 <div className="os-body">
                   <div style={{ marginBottom: '14px' }}>
-                    {cartProducts.map(product => (
-                      <div className="review-item" key={product.id}>
-                        <div className="ri-icon" style={{ background: ICON_COLORS[getCatSlug(product)] || ICON_COLORS.template }}>
-                          {'📦'}
-                        </div>
-                        <div className="ri-info">
-                          <div className="ri-name">{product.name}</div>
-                          <div className="ri-meta">
-                            {product.category?.name || 'Product'}
-                            {getQty(product.id) > 1 ? ` x${getQty(product.id)}` : ''}
+                    {items.map(ci => {
+                      const product = getProduct(ci.productId);
+                      if (!product) return null;
+                      const isVps = !!ci.vpsConfig;
+                      const catSlug = getCatSlug(ci, product);
+                      const iconBg = ICON_COLORS[catSlug] || ICON_COLORS.template;
+                      const unitPrice = getItemPrice(ci, product);
+                      const itemKey = ci.configId || `pid_${product.id}`;
+
+                      return (
+                        <div className="review-item" key={itemKey}>
+                          <div className="ri-icon" style={{ background: iconBg }}>
+                            {isVps ? <Server size={14} /> : '📦'}
                           </div>
+                          <div className="ri-info">
+                            <div className="ri-name">{product.name}</div>
+                            <div className="ri-meta">
+                              {isVps && ci.vpsConfig
+                                ? `${ci.vpsConfig.vcpus}vCPU / ${ci.vpsConfig.memory >= 1024 ? `${ci.vpsConfig.memory / 1024}GB` : `${ci.vpsConfig.memory}MB`} / ${ci.vpsConfig.disk}GB`
+                                : (product.category?.name || 'Product')
+                              }
+                              {ci.quantity > 1 ? ` x${ci.quantity}` : ''}
+                            </div>
+                            {isVps && ci.vpsConfig && (
+                              <div style={{ fontSize: '0.68rem', color: 'var(--muted-foreground)', marginTop: '2px' }}>
+                                {ci.vpsConfig.regionName} &middot; {ci.vpsConfig.osName || ci.vpsConfig.os}
+                              </div>
+                            )}
+                          </div>
+                          <div className="ri-price">{formatCurrency(unitPrice * ci.quantity, product.price_currency)}</div>
                         </div>
-                        <div className="ri-price">{formatCurrency(product.price_amount * getQty(product.id), product.price_currency)}</div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   <div className="os-divider"></div>

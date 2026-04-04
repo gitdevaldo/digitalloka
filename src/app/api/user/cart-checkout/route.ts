@@ -18,6 +18,21 @@ function getAppBaseUrl(): string {
   return 'http://localhost:5000';
 }
 
+interface CheckoutVpsConfig {
+  provider: string;
+  region: string;
+  regionName: string;
+  sizeSlug: string;
+  stockId: number;
+  vcpus: number;
+  memory: number;
+  disk: number;
+  transfer: number;
+  priceMonthly: number;
+  os?: string;
+  osName?: string;
+}
+
 export const POST = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
   if (!userId) return apiError('Unauthorized', 401);
@@ -32,11 +47,12 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     const { items, customer_name, customer_email, customer_mobile } = parsed.data;
 
     const supabase = await createSupabaseServerClient();
+    const admin = createSupabaseAdminClient();
 
     const productIds = items.map(i => i.product_id);
     const { data: products, error: prodErr } = await supabase
       .from('products')
-      .select('id, name, slug, price_amount, price_currency')
+      .select('id, name, slug, price_amount, price_currency, product_type')
       .in('id', productIds)
       .eq('is_visible', true);
 
@@ -46,6 +62,33 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
     const productMap = new Map(products.map((p) => [p.id, p]));
 
+    const stockLookups = items
+      .filter(i => i.selected_stock_id || i.vps_config?.stockId)
+      .map(i => ({
+        stockId: (i.selected_stock_id || i.vps_config?.stockId) as number,
+        productId: i.product_id,
+      }))
+      .filter(s => s.stockId);
+
+    const stockIds = stockLookups.map(s => s.stockId);
+    const stockPriceMap = new Map<string, number>();
+    if (stockIds.length > 0) {
+      const { data: stockItems } = await admin
+        .from('product_stock_items')
+        .select('id, product_id, credential_data, meta')
+        .in('id', stockIds);
+
+      if (stockItems) {
+        for (const s of stockItems) {
+          const cred = (s.credential_data || {}) as Record<string, unknown>;
+          const meta = (s.meta || {}) as Record<string, unknown>;
+          const costPrice = (cred.price_monthly as number) || 0;
+          const sellingPrice = meta.selling_price !== undefined ? Number(meta.selling_price) : costPrice;
+          stockPriceMap.set(`${s.product_id}_${s.id}`, sellingPrice);
+        }
+      }
+    }
+
     let subtotal = 0;
     let currency = 'IDR';
     const orderItems: { product_id: number; item_name: string; quantity: number; unit_price: number; line_total: number; meta: Record<string, string | number> }[] = [];
@@ -54,31 +97,56 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     for (const item of items) {
       const product = productMap.get(item.product_id);
       if (!product) continue;
-      if (!product.price_amount || product.price_amount <= 0) continue;
+
+      const vpsConfig = item.vps_config as CheckoutVpsConfig | undefined;
+      const stockId = item.selected_stock_id || vpsConfig?.stockId;
+
+      let unitPrice = product.price_amount || 0;
+      if (stockId) {
+        const stockKey = `${product.id}_${stockId}`;
+        if (stockPriceMap.has(stockKey)) {
+          unitPrice = stockPriceMap.get(stockKey)!;
+        } else {
+          return apiError(`Invalid stock item for product ${product.name}`, 422);
+        }
+      }
+
+      if (!unitPrice || unitPrice <= 0) continue;
 
       const qty = item.quantity ?? 1;
-      const lineTotal = product.price_amount * qty;
+      const lineTotal = unitPrice * qty;
       subtotal += lineTotal;
       currency = product.price_currency || 'IDR';
 
       const itemMeta: Record<string, string | number> = { product_slug: product.slug };
-      if (item.selected_stock_id) itemMeta.selected_stock_id = item.selected_stock_id;
-      if (item.selected_region) itemMeta.selected_region = item.selected_region;
-      if (item.selected_image) itemMeta.selected_image = item.selected_image;
+      if (stockId) itemMeta.selected_stock_id = stockId;
+      if (item.selected_region || vpsConfig?.region) itemMeta.selected_region = item.selected_region || vpsConfig?.region || '';
+      if (item.selected_image || vpsConfig?.os) itemMeta.selected_image = item.selected_image || vpsConfig?.os || '';
+      if (vpsConfig) {
+        itemMeta.vps_size = vpsConfig.sizeSlug;
+        itemMeta.vps_region = vpsConfig.region;
+        itemMeta.vps_region_name = vpsConfig.regionName;
+        if (vpsConfig.os) itemMeta.vps_os = vpsConfig.os;
+        if (vpsConfig.osName) itemMeta.vps_os_name = vpsConfig.osName;
+      }
+
+      const itemName = vpsConfig
+        ? `${product.name} (${vpsConfig.vcpus}vCPU / ${vpsConfig.memory >= 1024 ? `${vpsConfig.memory / 1024}GB` : `${vpsConfig.memory}MB`} RAM / ${vpsConfig.disk}GB SSD)`
+        : product.name;
 
       orderItems.push({
         product_id: product.id,
-        item_name: product.name,
+        item_name: itemName,
         quantity: qty,
-        unit_price: product.price_amount,
+        unit_price: unitPrice,
         line_total: lineTotal,
         meta: itemMeta,
       });
 
       mayarItems.push({
         quantity: qty,
-        rate: product.price_amount,
-        description: product.name,
+        rate: unitPrice,
+        description: itemName,
       });
     }
 
@@ -122,7 +190,6 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       });
     } catch (invoiceErr) {
       console.error('[cart-checkout] Mayar invoice creation failed:', invoiceErr);
-      const admin = createSupabaseAdminClient();
       await admin.from('orders').update({
         status: 'cancelled',
         meta: { cancel_reason: 'payment_gateway_error' },
@@ -130,7 +197,6 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       return apiError('Payment gateway error. Please try again.', 502);
     }
 
-    const admin = createSupabaseAdminClient();
     await admin.from('orders').update({
       meta: {
         mayar_invoice_id: mayarResponse.data.id,

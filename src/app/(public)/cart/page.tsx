@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Trash2 } from 'lucide-react';
-import { useCart } from '@/context/cart-context';
+import { ArrowLeft, Trash2, Server, MapPin, Monitor, Cpu, HardDrive, MemoryStick, Pencil } from 'lucide-react';
+import { useCart, CartItem } from '@/context/cart-context';
 import { formatCurrency } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
@@ -15,6 +15,7 @@ interface Product {
   price_amount: number;
   price_currency: string;
   price_billing_period: string;
+  product_type: string;
   category: { name: string } | null;
 }
 
@@ -24,7 +25,58 @@ const ICON_COLORS: Record<string, string> = {
   plugin: 'linear-gradient(135deg, #fce7f3, #fbcfe8)',
   ebook: 'linear-gradient(135deg, #fef3c7, #fde68a)',
   course: 'linear-gradient(135deg, #dbeafe, #bfdbfe)',
+  vps: 'linear-gradient(135deg, #e0e7ff, #c7d2fe)',
 };
+
+function getItemPrice(ci: CartItem, product: Product): number {
+  if (ci.vpsConfig) {
+    return ci.vpsConfig.priceMonthly;
+  }
+  return product.price_amount;
+}
+
+function VpsConfigDetails({ ci }: { ci: CartItem }) {
+  const cfg = ci.vpsConfig;
+  if (!cfg) return null;
+
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '6px 16px',
+      marginTop: '8px',
+      padding: '10px 12px',
+      background: 'var(--muted)',
+      borderRadius: 'var(--r-md, 12px)',
+      fontSize: '0.75rem',
+      fontWeight: 500,
+      color: 'var(--muted-foreground)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Cpu size={12} style={{ flexShrink: 0 }} />
+        <span>{cfg.vcpus} vCPU{cfg.vcpus > 1 ? 's' : ''}</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <MemoryStick size={12} style={{ flexShrink: 0 }} />
+        <span>{cfg.memory >= 1024 ? `${cfg.memory / 1024} GB` : `${cfg.memory} MB`} RAM</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <HardDrive size={12} style={{ flexShrink: 0 }} />
+        <span>{cfg.disk} GB SSD</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <MapPin size={12} style={{ flexShrink: 0 }} />
+        <span>{cfg.regionName || cfg.region}</span>
+      </div>
+      {cfg.osName && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', gridColumn: '1 / -1' }}>
+          <Monitor size={12} style={{ flexShrink: 0 }} />
+          <span>{cfg.osName}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function CartPage() {
   const { items, removeItem, clearCart, hydrated } = useCart();
@@ -42,12 +94,13 @@ export default function CartPage() {
       return;
     }
 
+    const uniqueIds = [...new Set(items.map(i => i.productId))];
     setFetchError(false);
     setLoading(true);
     fetch('/api/cart/products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: items.map(i => i.productId) }),
+      body: JSON.stringify({ ids: uniqueIds }),
     })
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(d => setProducts(d.data || []))
@@ -55,14 +108,16 @@ export default function CartPage() {
       .finally(() => setLoading(false));
   }, [hydrated, items.length]);
 
-  const getCartItem = (productId: number) => items.find(i => i.productId === productId);
-  const cartProducts = products.filter(p => items.some(i => i.productId === p.id));
+  const getProduct = (productId: number) => products.find(p => p.id === productId);
 
-  const subtotal = cartProducts.reduce((sum, p) => {
-    const ci = getCartItem(p.id);
-    return sum + (ci ? p.price_amount * ci.quantity : 0);
+  const subtotal = items.reduce((sum, ci) => {
+    const product = getProduct(ci.productId);
+    if (!product) return sum;
+    return sum + getItemPrice(ci, product) * ci.quantity;
   }, 0);
-  const currency = cartProducts[0]?.price_currency || 'USD';
+  const currency = products[0]?.price_currency || 'USD';
+
+  const hasProducts = items.length > 0 && products.length > 0;
 
   return (
     <div className="inner-wrap">
@@ -75,8 +130,8 @@ export default function CartPage() {
         <div className="page-sub">
           {loading
             ? ''
-            : cartProducts.length > 0
-              ? `${cartProducts.length} item${cartProducts.length !== 1 ? 's' : ''} in your cart`
+            : hasProducts
+              ? `${items.length} item${items.length !== 1 ? 's' : ''} in your cart`
               : 'Your cart is empty'}
         </div>
       </div>
@@ -93,7 +148,7 @@ export default function CartPage() {
           <div className="empty-desc">Could not load cart details. Please try again.</div>
           <button className="btn btn-accent" onClick={() => window.location.reload()}>Retry</button>
         </div>
-      ) : cartProducts.length === 0 ? (
+      ) : !hasProducts ? (
         <div className="empty-state">
           <div className="empty-icon">&#128722;</div>
           <div className="empty-title">Your cart is empty</div>
@@ -104,42 +159,61 @@ export default function CartPage() {
         <div className="cart-layout">
           <div>
             <div className="cart-items">
-              {cartProducts.map(product => {
-                const ci = getCartItem(product.id);
-                if (!ci) return null;
-                const catSlug = product.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'template';
+              {items.map(ci => {
+                const product = getProduct(ci.productId);
+                if (!product) return null;
+                const isVps = !!ci.vpsConfig;
+                const catSlug = isVps ? 'vps' : (product.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'template');
                 const iconBg = ICON_COLORS[catSlug] || ICON_COLORS.template;
+                const unitPrice = getItemPrice(ci, product);
+                const itemKey = ci.configId || `pid_${product.id}`;
+
                 return (
-                  <div className="cart-item" key={product.id}>
+                  <div className="cart-item" key={itemKey}>
                     <div className="prod-icon" style={{ background: iconBg }}>
-                      {'📦'}
+                      {isVps ? <Server size={20} /> : '📦'}
                     </div>
                     <div className="cart-item-info">
                       <div className="ci-type">{product.category?.name || 'Product'}</div>
                       <Link href={`/products/${product.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                         <div className="ci-name">{product.name}</div>
                       </Link>
-                      <div className="ci-meta">
-                        <span className="ci-spec"><strong>{product.price_billing_period || 'one-time'}</strong> billing</span>
-                      </div>
+                      {isVps && ci.vpsConfig ? (
+                        <VpsConfigDetails ci={ci} />
+                      ) : (
+                        <div className="ci-meta">
+                          <span className="ci-spec"><strong>{product.price_billing_period || 'one-time'}</strong> billing</span>
+                        </div>
+                      )}
                     </div>
                     <div className="cart-item-right">
                       <div className="ci-price">
-                        {formatCurrency(product.price_amount * ci.quantity, product.price_currency)}
+                        {formatCurrency(unitPrice * ci.quantity, product.price_currency)}
                         {product.price_billing_period && product.price_billing_period !== 'one-time' && (
                           <div className="ci-period">/{product.price_billing_period}</div>
                         )}
                       </div>
-                      <button className="ci-remove" onClick={() => removeItem(product.id)}>
-                        <Trash2 size={12} /> Remove
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {isVps && (
+                          <Link
+                            href={`/products/${product.slug}`}
+                            className="ci-remove"
+                            style={{ color: 'var(--accent)' }}
+                          >
+                            <Pencil size={12} /> Edit
+                          </Link>
+                        )}
+                        <button className="ci-remove" onClick={() => removeItem(product.id, ci.configId)}>
+                          <Trash2 size={12} /> Remove
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            {cartProducts.length > 1 && (
+            {items.length > 1 && (
               <div style={{ marginTop: '12px', textAlign: 'right' }}>
                 <button className="btn btn-ghost btn-sm" onClick={clearCart}>Clear all</button>
               </div>
@@ -153,20 +227,31 @@ export default function CartPage() {
               </div>
               <div className="os-body">
                 <div style={{ marginBottom: '14px' }}>
-                  {cartProducts.map(product => {
-                    const ci = getCartItem(product.id);
-                    const catSlug = product.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'template';
+                  {items.map(ci => {
+                    const product = getProduct(ci.productId);
+                    if (!product) return null;
+                    const isVps = !!ci.vpsConfig;
+                    const catSlug = isVps ? 'vps' : (product.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'template');
                     const iconBg = ICON_COLORS[catSlug] || ICON_COLORS.template;
+                    const unitPrice = getItemPrice(ci, product);
+                    const itemKey = ci.configId || `pid_${product.id}`;
+
                     return (
-                      <div className="review-item" key={product.id}>
+                      <div className="review-item" key={itemKey}>
                         <div className="ri-icon" style={{ background: iconBg }}>
-                          {'📦'}
+                          {isVps ? <Server size={14} /> : '📦'}
                         </div>
                         <div className="ri-info">
                           <div className="ri-name">{product.name}</div>
-                          <div className="ri-meta">{product.category?.name || 'Product'} {ci && ci.quantity > 1 ? `x${ci.quantity}` : ''}</div>
+                          <div className="ri-meta">
+                            {isVps && ci.vpsConfig
+                              ? `${ci.vpsConfig.vcpus}vCPU / ${ci.vpsConfig.memory >= 1024 ? `${ci.vpsConfig.memory / 1024}GB` : `${ci.vpsConfig.memory}MB`} / ${ci.vpsConfig.disk}GB`
+                              : (product.category?.name || 'Product')
+                            }
+                            {ci.quantity > 1 ? ` x${ci.quantity}` : ''}
+                          </div>
                         </div>
-                        <div className="ri-price">{formatCurrency(product.price_amount * (ci?.quantity || 1), product.price_currency)}</div>
+                        <div className="ri-price">{formatCurrency(unitPrice * ci.quantity, product.price_currency)}</div>
                       </div>
                     );
                   })}

@@ -88,7 +88,7 @@ Key design decisions:
 - **All JSON columns use JSONB** (migrated from json→jsonb in migration 003)
 - **updated_at triggers** bound to all tables with `updated_at` via `update_updated_at_column()` function
 - **created_at/updated_at defaults** all set to `DEFAULT now()`
-- **Server-Synced Cart**: `cart_items` table stores cart state for logged-in users, synced from `CartProvider`.
+- **Server-Synced Cart**: `cart_items` table stores cart state for logged-in users, synced from `CartProvider`. Supports `config_id` (for multiple VPS configs per product) and `meta` JSONB (stores vpsConfig, selectedStockId, selectedRegion, selectedImage). Unique constraint on `(user_id, product_id, COALESCE(config_id, ''))`.
 
 ### RLS Policies (Applied via migration script)
 - `products` — Public SELECT allowed where `is_visible = true` (anon + authenticated)

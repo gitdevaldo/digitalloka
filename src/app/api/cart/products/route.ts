@@ -15,7 +15,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
       .from('products')
-      .select('id, name, slug, short_description, price_amount, price_currency, price_billing_period, status, category:product_categories(name, slug)')
+      .select('id, name, slug, short_description, price_amount, price_currency, price_billing_period, product_type, status, category:product_categories(name, slug)')
       .in('id', ids)
       .eq('is_visible', true);
 
