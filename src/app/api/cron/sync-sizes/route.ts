@@ -25,14 +25,7 @@ export async function GET(request: NextRequest) {
   const results: { product_id: number; product_name: string; provider: string; synced: number; created: number; updated: number; availability_changes: number }[] = [];
 
   for (const product of vpsProducts) {
-    const meta = (product.meta as Record<string, unknown>) || {};
-    const typeFields = (meta.type_fields || {}) as Record<string, string>;
-    const provider = typeFields.server_provider || 'DigitalOcean';
-
-    if (provider !== 'DigitalOcean') {
-      results.push({ product_id: product.id, product_name: product.name, provider, synced: 0, created: 0, updated: 0, availability_changes: 0 });
-      continue;
-    }
+    const provider = 'DigitalOcean';
 
     try {
       const sizes = await listSizes();
@@ -95,7 +88,7 @@ export async function GET(request: NextRequest) {
             credential_hash: hash,
             status: 'disabled',
             is_unlimited: true,
-            meta: { type: 'do_size', synced_at: new Date().toISOString(), source: 'cron' },
+            meta: { type: 'do_size', provider: 'DigitalOcean', synced_at: new Date().toISOString(), source: 'cron' },
           });
           created++;
         }

@@ -165,11 +165,10 @@ async function fulfillVpsDroplet(
     return { success: false, product_type: 'vps_droplet', product_id: product.id, details: {}, error: 'size_not_available' };
   }
 
-  const productMeta = (product.meta || {}) as Record<string, unknown>;
-  const typeFields = (productMeta.type_fields || {}) as Record<string, string>;
-  const provider = typeFields.server_provider || 'DigitalOcean';
-  const region = (itemMeta.selected_region as string) || typeFields.datacenter || 'sgp1';
-  const image = (itemMeta.selected_image as string) || typeFields.operating_system || 'ubuntu-24-04-x64';
+  const stockMeta = (stockItem.meta as Record<string, unknown>) || {};
+  const provider = (stockMeta.provider as string) || 'DigitalOcean';
+  const region = (itemMeta.selected_region as string) || (cred.regions as string[] || [])[0] || 'sgp1';
+  const image = (itemMeta.selected_image as string) || 'ubuntu-24-04-x64';
 
   if (provider !== 'DigitalOcean') {
     return {

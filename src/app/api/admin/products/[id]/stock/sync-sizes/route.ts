@@ -72,7 +72,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
         credential_hash: hash,
         status: 'disabled',
         is_unlimited: true,
-        meta: { type: 'do_size', synced_at: new Date().toISOString() },
+        meta: { type: 'do_size', provider: 'DigitalOcean', synced_at: new Date().toISOString() },
       });
       created++;
     }
