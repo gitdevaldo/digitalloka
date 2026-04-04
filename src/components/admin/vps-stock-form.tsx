@@ -59,8 +59,6 @@ export function VpsStockForm({
   const [providerDataOptions, setProviderDataOptions] = useState<Record<string, ProviderDataOption[]>>({});
   const [loadingProviderData, setLoadingProviderData] = useState<Record<string, boolean>>({});
 
-  const currentProvider = values['provider'] || '';
-
   const fetchProviderData = useCallback(async (provider: string, dataType: string, fieldKey: string) => {
     if (!provider) {
       setProviderDataOptions(prev => ({ ...prev, [fieldKey]: [] }));
@@ -80,11 +78,12 @@ export function VpsStockForm({
   }, []);
 
   useEffect(() => {
-    const providerDataFields = fields.filter(f => f.options_source === 'provider_data' && f.provider_data_type);
+    const providerDataFields = fields.filter(f => f.provider_data_type);
     for (const field of providerDataFields) {
-      fetchProviderData(currentProvider, field.provider_data_type!, field.key);
+      const depValue = field.depends_on ? (values[field.depends_on] || '') : (values['provider'] || '');
+      fetchProviderData(depValue, field.provider_data_type!, field.key);
     }
-  }, [currentProvider, fields, fetchProviderData]);
+  }, [values, fields, fetchProviderData]);
 
   function handleFieldChange(changedKey: string, value: string) {
     onChange(changedKey, value);
@@ -95,32 +94,15 @@ export function VpsStockForm({
   }
 
   function getOptionsForField(field: StockFieldDef): { value: string; label: string }[] {
-    const staticOptions = (field.options || []).map(opt => ({ value: opt, label: opt }));
-
-    if (field.options_source === 'provider_data' && field.provider_data_type) {
+    if (field.provider_data_type) {
       const dynamicItems = providerDataOptions[field.key] || [];
-      const dynamicOptions = dynamicItems.map(item => ({
+      return dynamicItems.map(item => ({
         value: item.slug,
         label: `${item.name} (${item.slug})`,
       }));
-      const allValues = new Set<string>();
-      const merged: { value: string; label: string }[] = [];
-      for (const opt of dynamicOptions) {
-        if (!allValues.has(opt.value)) {
-          allValues.add(opt.value);
-          merged.push(opt);
-        }
-      }
-      for (const opt of staticOptions) {
-        if (!allValues.has(opt.value)) {
-          allValues.add(opt.value);
-          merged.push(opt);
-        }
-      }
-      return merged;
     }
 
-    return staticOptions;
+    return (field.options || []).map(opt => ({ value: opt, label: opt }));
   }
 
   function renderField(field: StockFieldDef) {
@@ -154,7 +136,7 @@ export function VpsStockForm({
         );
       }
 
-      if (options.length === 0 && field.options_source === 'provider_data') {
+      if (options.length === 0 && field.provider_data_type) {
         return (
           <div key={field.key}>
             <label className={labelClass}>{field.label}{field.required ? ' *' : ''}</label>
@@ -261,8 +243,8 @@ export function VpsStockForm({
     );
   }
 
-  const configFields = fields.filter(f => !['region', 'os'].includes(f.key) && !(f.options_source === 'provider_data'));
-  const locationFields = fields.filter(f => f.options_source === 'provider_data' || ['region', 'os'].includes(f.key));
+  const configFields = fields.filter(f => !f.provider_data_type);
+  const locationFields = fields.filter(f => !!f.provider_data_type);
 
   const numberPairKeys = ['vcpus', 'memory', 'disk', 'transfer'];
   const numberFields = configFields.filter(f => numberPairKeys.includes(f.key));
