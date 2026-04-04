@@ -32,6 +32,11 @@ export function useDataFetch<T>({
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(true);
   const fetchCountRef = useRef(0);
+  const transformRef = useRef(transform);
+  const onErrorRef = useRef(onError);
+
+  transformRef.current = transform;
+  onErrorRef.current = onError;
 
   const fetchData = useCallback(async () => {
     if (!enabled) return;
@@ -56,19 +61,19 @@ export function useDataFetch<T>({
       }
 
       const raw = await res.json();
-      const result = transform ? transform(raw) : raw as T;
+      const result = transformRef.current ? transformRef.current(raw) : raw as T;
       setData(result);
     } catch (err) {
       if (!mountedRef.current || fetchId !== fetchCountRef.current) return;
       const message = err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(message);
-      onError?.(message);
+      onErrorRef.current?.(message);
     } finally {
       if (mountedRef.current && fetchId === fetchCountRef.current) {
         setLoading(false);
       }
     }
-  }, [url, method, body, enabled, transform, onError]);
+  }, [url, method, body, enabled]);
 
   useEffect(() => {
     mountedRef.current = true;
