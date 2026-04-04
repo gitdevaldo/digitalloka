@@ -15,6 +15,9 @@ export const cartCheckoutSchema = z.object({
       }),
     )
     .min(1, 'Cart must contain at least one item'),
+  customer_name: z.string().min(1, 'Name is required').max(255),
+  customer_email: z.string().email('Must be a valid email'),
+  customer_mobile: z.string().min(1, 'Phone number is required').max(30),
 });
 
 const productBaseFields = {

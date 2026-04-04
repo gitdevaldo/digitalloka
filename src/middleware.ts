@@ -39,6 +39,6 @@ export const config = {
     '/api/admin/:path*',
     '/api/user/:path*',
     '/api/auth/:path*',
-    '/api/payments/:path*',
+    '/api/payments/webhook',
   ],
 };

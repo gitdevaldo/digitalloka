@@ -81,7 +81,7 @@ src/
 - Shared Topbar component: All areas (catalog, dashboard, admin) use same `Topbar` component with variant prop
 - Wishlist: Context-based (`WishlistProvider`), stored in Supabase `wishlists` table, login dialog for unauthenticated users. Dedicated page at `/wishlist` with 2-col grid, thick border cards, remove/add-to-cart/buy-now actions, summary bar
 - Cart: Context-based (`CartProvider`), stored in localStorage (`digitalloka_cart`). Dedicated page at `/cart` with 2-col layout (items + sticky order summary), quantity controls, remove buttons
-- Checkout: `/checkout` page — multi-step wizard (Account/Payment/Review) with sticky order summary, creates orders via `/api/user/cart-checkout`, success page with green circle icon + order details card
+- Checkout: `/checkout` page — 3-step wizard (Details/Review & Pay) with sticky order summary, creates orders via `/api/user/cart-checkout`, redirects to Mayar payment link. Success page at `/checkout/success` with green circle icon + order details card
 - "Add to Cart" button on homepage product cards (`add-cart-btn` class) and product detail page (shows "Already in Cart" when in cart)
 - Shared `FloatingBar` component (`src/components/layout/floating-bar.tsx`): fixed bottom bar that slides up after scrolling 200px and hides near footer (IntersectionObserver on `.catalog-footer`). Props: `alwaysVisible` (skip scroll), `mobileOnly` (hidden at ≥769px via `.mobile-only-bar`). Different content per page:
   - Homepage: Filter / Cart / Wishlist buttons (mobileOnly)
@@ -90,6 +90,12 @@ src/
 - Inner page CSS classes: `.inner-wrap`, `.wish-card`, `.cart-item`, `.cart-layout`, `.order-summary`, `.form-panel`, `.checkout-steps`, `.success-page`, `.success-icon-circle`, `.prod-icon`, `.spec-pill`, `.remove-btn`
 - Empty state styling: `.empty-state` with `.empty-icon`, `.empty-title`, `.empty-desc` or `.icon/h3/p`
 - Button disabled states: `.btn:disabled` and `.btn.btn-disabled` (opacity 0.4, no transform), `.add-cart-btn:disabled` (cursor not-allowed)
+
+## CRITICAL: Database Connection Rules
+- **ALWAYS use `DATABASE_URL` from `.env.local`** to connect to the Supabase PostgreSQL database. This is the live Supabase database.
+- **NEVER use Replit's built-in Helium/local PostgreSQL database.** It is a completely separate system and has nothing to do with this project.
+- **All application tables live in the `public` schema.** When querying, inspecting columns, or making changes, always target the `public` schema.
+- The `DATABASE_URL` in `.env.local` points directly to the Supabase PostgreSQL instance (session mode, port 5432).
 
 ## Database (Supabase PostgreSQL)
 Tables: `users`, `products`, `product_categories`, `product_types`, `product_stock_items`, `orders`, `order_items`, `transactions`, `payment_events`, `entitlements`, `site_settings`, `audit_logs`, `wishlists`
@@ -111,12 +117,26 @@ Run against Supabase to apply performance indexes:
 - `entitlements(order_item_id, user_id)` — entitlement existence checks
 - `product_stock_items(product_id, credential_hash)` — already covered by existing unique index from initial migration
 
+## Payment Gateway: Mayar (Sandbox)
+- **Provider:** Mayar (Indonesian payment gateway) — sandbox at `mayar.club`
+- **Base URL:** `https://api.mayar.club/hl/v1` (configured in `.env.local` as `MAYAR_BASE_URL`)
+- **API client:** `src/lib/services/mayar.ts` — `createInvoice()` and `createPayment()`
+- **Checkout flow:** Order created (pending) → Mayar invoice created with `extraData` (order_id, order_number, user_id) → user redirected to Mayar payment link → Mayar sends webhook on payment → order marked paid
+- **Webhook:** `POST /api/payments/mayar/webhook` — handles `payment.received` events, uses `process_payment_atomic` RPC for idempotent payment processing
+- **Success page:** `/checkout/success?order=<order_number>` — where Mayar redirects users after payment (configured via `redirectUrl` in invoice)
+- **Middleware:** Mayar webhook route is NOT behind auth middleware (must be publicly accessible for Mayar callbacks)
+- **Checkout UI:** Simplified 3-step wizard (Cart → Details → Review & Pay). Payment method selection removed — Mayar handles all payment options (bank transfer, QRIS, e-wallet, etc.)
+
 ## Required Environment Variables
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
 - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
 - `DIGITALOCEAN_TOKEN` - DigitalOcean API token
 - `DATABASE_URL` - Direct PostgreSQL connection string (for migrations)
+- `MAYAR_API_KEY` - Mayar API key (in Replit secrets)
+- `MAYAR_WEBHOOK_TOKEN` - Mayar webhook verification token (in Replit secrets, separate from API key)
+- `MAYAR_BASE_URL` - Mayar API base URL (in `.env.local`)
+- `MAYAR_SANDBOX` - Set to "true" for sandbox mode (in `.env.local`)
 
 ## Key Features
 1. **Catalog/Marketplace** - Public product browsing with search, sort, filtering
@@ -133,13 +153,6 @@ Large tables (audit logs, orders, transactions) support cursor-based pagination 
 API endpoints accept `cursor` (base64url-encoded), `per_page`, and `mode=cursor|offset` query params. Default mode is `cursor`. Responses include `next_cursor` and `has_more` fields. Offset-based pagination still works by passing `mode=offset` with `page` param.
 
 Admin and user dashboard pages use cursor-based "Load More" pattern for audit logs and orders.
-
-## CRITICAL: Git & Replit Rules
-- **Replit only has a SHALLOW copy of the git history.** It does NOT have the full commit history from GitHub.
-- **NEVER run `git filter-branch`, `git rebase`, or any history-rewriting command on Replit.** The local repo only has recent commits, so rewriting + force-pushing will DESTROY the full history on GitHub.
-- **NEVER run `git push --force` from Replit.** Always push from a full local clone on your machine if a force-push is needed.
-- **To remove secrets from git history:** Clone the full repo on your local machine, run the cleanup there, then force-push from there. Never do it from Replit.
-- **To push new commits from Replit:** Use regular `git push` only. If it fails with "non-fast-forward", pull first or push from a local machine.
 
 ## Legacy Archives
 - `.archive/legacy-laravel/` - Previous Laravel implementation (source of truth for UI parity)

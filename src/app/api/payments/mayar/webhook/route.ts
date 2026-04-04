@@ -1,0 +1,138 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import crypto from 'crypto';
+
+function verifyWebhookSignature(rawBody: string, signatureHeader: string | null): boolean {
+  const webhookSecret = process.env.MAYAR_WEBHOOK_TOKEN;
+  if (!webhookSecret) return false;
+  if (!signatureHeader) return false;
+
+  const expectedSignature = crypto
+    .createHmac('sha256', webhookSecret)
+    .update(rawBody)
+    .digest('hex');
+
+  try {
+    return crypto.timingSafeEqual(
+      Buffer.from(signatureHeader),
+      Buffer.from(expectedSignature)
+    );
+  } catch {
+    return false;
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const rawBody = await request.text();
+
+    const signature = request.headers.get('x-callback-signature')
+      || request.headers.get('x-webhook-signature')
+      || request.headers.get('x-mayar-signature');
+
+    const isSandbox = process.env.MAYAR_SANDBOX === 'true';
+    if (!isSandbox && !verifyWebhookSignature(rawBody, signature)) {
+      console.error('[mayar-webhook] Invalid signature');
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    }
+
+    const payload = JSON.parse(rawBody);
+
+    const event = payload.event;
+    if (event !== 'payment.received') {
+      return NextResponse.json({ received: true, skipped: true, event });
+    }
+
+    const data = payload.data || {};
+    const mayarTransactionId = data.id || '';
+    const status = data.status || '';
+    const amount = Number(data.amount || 0);
+    const paymentMethod = data.paymentMethod || '';
+    const customerEmail = data.email || '';
+    const customerName = data.name || '';
+
+    const extraData = data.extraData || {};
+    const orderId = Number(extraData.order_id || 0);
+    const orderNumber = extraData.order_number || '';
+
+    if (!orderId || !mayarTransactionId) {
+      return NextResponse.json({ error: 'Missing order_id or transaction id' }, { status: 400 });
+    }
+
+    const admin = createSupabaseAdminClient();
+
+    const idempotencyKey = `mayar_${mayarTransactionId}`;
+
+    const { data: existingEvent } = await admin.from('payment_events')
+      .select('id, status')
+      .eq('idempotency_key', idempotencyKey)
+      .single();
+
+    if (existingEvent) {
+      if (existingEvent.status === 'processed') {
+        return NextResponse.json({ processed: false, duplicate: true, message: 'Already processed' });
+      }
+    } else {
+      const { error: insertError } = await admin.from('payment_events').insert({
+        provider: 'mayar',
+        event_id: mayarTransactionId,
+        idempotency_key: idempotencyKey,
+        status: 'received',
+        payload,
+      });
+
+      if (insertError && insertError.code !== '23505') {
+        throw new Error(insertError.message);
+      }
+    }
+
+    const { data: order } = await admin.from('orders').select('*').eq('id', orderId).single();
+    if (!order) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+
+    if (order.order_number !== orderNumber) {
+      return NextResponse.json({ error: 'Order mismatch' }, { status: 400 });
+    }
+
+    if (status === 'paid' || status === 'settled') {
+      const { error: rpcError } = await admin.rpc('process_payment_atomic', {
+        p_order_id: order.id,
+        p_user_id: order.user_id,
+        p_provider: 'mayar',
+        p_provider_ref: mayarTransactionId,
+        p_idempotency_key: idempotencyKey,
+        p_amount: amount || order.total_amount,
+        p_currency: order.currency || 'IDR',
+        p_payload: {
+          mayar_transaction_id: mayarTransactionId,
+          payment_method: paymentMethod,
+          customer_email: customerEmail,
+          customer_name: customerName,
+          raw_event: event,
+        },
+      });
+
+      if (rpcError) throw new Error(rpcError.message);
+
+      await admin.from('payment_events')
+        .update({ status: 'processed', processed_at: new Date().toISOString() })
+        .eq('idempotency_key', idempotencyKey);
+
+      await admin.from('orders').update({
+        meta: {
+          ...((order.meta as Record<string, unknown>) || {}),
+          mayar_payment_method: paymentMethod,
+          mayar_paid_at: new Date().toISOString(),
+        },
+      }).eq('id', orderId);
+
+      return NextResponse.json({ processed: true, order_id: orderId, status: 'paid' });
+    }
+
+    return NextResponse.json({ processed: true, order_id: orderId, status });
+  } catch (err) {
+    console.error('[mayar-webhook] Error:', err);
+    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 422 });
+  }
+}
