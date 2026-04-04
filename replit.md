@@ -110,6 +110,13 @@ Key design decisions:
 - **updated_at triggers** bound to all tables with `updated_at` via `update_updated_at_column()` function
 - **created_at/updated_at defaults** all set to `DEFAULT now()`
 
+### Security Hardening (docs/sql/2026-04-04-security-hardening.sql)
+Run against Supabase to apply critical RLS fixes:
+- `wishlists` — RLS enabled with user-scoped read/write policies + admin read
+- `orders` — Update policy tightened so users cannot modify status, payment_status, total_amount, subtotal_amount
+- `product_stock_items` — RLS enabled, public read removed, admin-only + sold-item owner read
+- `products` — Legacy unconditional public read policy dropped (main policy already filters by is_visible + status)
+
 ### Database Indexes (docs/sql/2026-04-03-database-indexes.sql)
 Run against Supabase to apply performance indexes:
 - `order_items(order_id)`, `transactions(order_id)` — RLS policy join acceleration
@@ -139,6 +146,7 @@ Run against Supabase to apply performance indexes:
 - `MAYAR_API_KEY` - Mayar API key (in Replit secrets)
 - `MAYAR_WEBHOOK_TOKEN` - Mayar webhook verification token (in Replit secrets, separate from API key)
 - `MAYAR_BASE_URL` - Mayar API base URL (in `.env.local`)
+- `PAYMENT_WEBHOOK_SECRET` - HMAC secret for verifying payment webhook signatures
 - `MAYAR_SANDBOX` - Set to "true" for sandbox mode (in `.env.local`)
 
 ## Key Features

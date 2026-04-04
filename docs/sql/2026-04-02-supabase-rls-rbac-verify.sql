@@ -20,7 +20,9 @@ where n.nspname = 'public'
     'transactions',
     'entitlements',
     'site_settings',
-    'audit_logs'
+    'audit_logs',
+    'wishlists',
+    'product_stock_items'
   )
 order by c.relname;
 
@@ -46,7 +48,9 @@ where schemaname = 'public'
     'transactions',
     'entitlements',
     'site_settings',
-    'audit_logs'
+    'audit_logs',
+    'wishlists',
+    'product_stock_items'
   )
 order by tablename, policyname, cmd;
 
@@ -70,7 +74,9 @@ where schemaname = 'public'
     'transactions',
     'entitlements',
     'site_settings',
-    'audit_logs'
+    'audit_logs',
+    'wishlists',
+    'product_stock_items'
   )
 group by tablename
 order by tablename;
@@ -93,7 +99,9 @@ where table_schema = 'public'
     'transactions',
     'entitlements',
     'site_settings',
-    'audit_logs'
+    'audit_logs',
+    'wishlists',
+    'product_stock_items'
   )
 group by table_name, grantee
 order by table_name, grantee;
