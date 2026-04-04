@@ -8,8 +8,10 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 export default function UserOrdersPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -90,6 +92,15 @@ export default function UserOrdersPage() {
         <span style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)' }}>
           {formatDate(row.created_at as string)}
         </span>
+      ),
+    },
+    {
+      key: 'actions',
+      label: '',
+      render: (row: Record<string, unknown>) => (
+        <Button size="sm" onClick={() => router.push(`/dashboard/orders/${row.id}`)}>
+          View
+        </Button>
       ),
     },
   ];
