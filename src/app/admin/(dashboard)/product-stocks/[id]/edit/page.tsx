@@ -19,7 +19,7 @@ export default function EditStockPage() {
   const [loading, setLoading] = useState(true);
   const [credentials, setCredentials] = useState('');
   const [credHeaders, setCredHeaders] = useState<string[]>([]);
-  const [status, setStatus] = useState('unsold');
+  const [status, setStatus] = useState('enabled');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export default function EditStockPage() {
         const values = cred ? headers.map(h => cred[h] || '') : [];
         setCredHeaders(headers);
         setCredentials(values.join('|'));
-        setStatus(stock.status || 'unsold');
+        setStatus(stock.status || 'enabled');
       } catch { showToast('Failed to load stock'); }
       finally { setLoading(false); }
     }

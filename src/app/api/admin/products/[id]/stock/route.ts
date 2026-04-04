@@ -58,7 +58,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       product_id: Number(id),
       credential_data: credentialData,
       credential_hash: credentialHash,
-      status: 'unsold',
+      status: 'enabled',
     });
 
     if (!error) inserted++;

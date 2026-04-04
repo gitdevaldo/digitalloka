@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
           product_id: Number(product_id),
           credential_data: row.credentialData,
           credential_hash: row.credentialHash,
-          status: 'unsold',
+          status: 'enabled',
           meta: { imported_by: userId, source: 'product-stock-submenu' },
         });
       }

@@ -92,7 +92,7 @@ export default function ProductStocksPage() {
 
   async function toggleStockStatus(stockId: number, currentStatus: string) {
     if (!selectedProduct) return;
-    const newStatus = currentStatus === 'unsold' ? 'disabled' : 'unsold';
+    const newStatus = currentStatus === 'enabled' ? 'disabled' : 'enabled';
     setTogglingId(stockId);
     try {
       const res = await fetch(`/api/admin/products/${selectedProduct.id}/stock/sync-sizes`, {
@@ -247,8 +247,8 @@ export default function ProductStocksPage() {
         const status = row.status as string;
         return (
           <StatusBadge
-            variant={status === 'unsold' ? 'active' : status === 'disabled' ? 'stopped' : 'active'}
-            label={status === 'unsold' ? 'Enabled' : status === 'disabled' ? 'Disabled' : 'Sold'}
+            variant={status === 'enabled' ? 'active' : status === 'disabled' ? 'stopped' : 'active'}
+            label={status === 'enabled' ? 'Enabled' : status === 'disabled' ? 'Disabled' : 'Sold'}
           />
         );
       },
@@ -271,11 +271,11 @@ export default function ProductStocksPage() {
         return (
           <Button
             size="sm"
-            variant={status === 'unsold' ? 'ghost' : 'default'}
+            variant={status === 'enabled' ? 'ghost' : 'default'}
             disabled={togglingId === (row.id as number)}
             onClick={() => toggleStockStatus(row.id as number, status)}
           >
-            {togglingId === (row.id as number) ? '...' : status === 'unsold' ? 'Disable' : 'Enable'}
+            {togglingId === (row.id as number) ? '...' : status === 'enabled' ? 'Disable' : 'Enable'}
           </Button>
         );
       },
@@ -297,7 +297,7 @@ export default function ProductStocksPage() {
         const status = row.status as string;
         return (
           <StatusBadge
-            variant={status === 'unsold' ? 'active' : status === 'disabled' ? 'stopped' : 'stopped'}
+            variant={status === 'enabled' ? 'active' : status === 'disabled' ? 'stopped' : 'stopped'}
             label={status}
           />
         );
@@ -351,11 +351,11 @@ export default function ProductStocksPage() {
             {status !== 'sold' && (
               <Button
                 size="sm"
-                variant={status === 'unsold' ? 'ghost' : 'default'}
+                variant={status === 'enabled' ? 'ghost' : 'default'}
                 disabled={togglingId === (row.id as number)}
                 onClick={() => toggleStockStatus(row.id as number, status)}
               >
-                {togglingId === (row.id as number) ? '...' : status === 'unsold' ? 'Disable' : 'Enable'}
+                {togglingId === (row.id as number) ? '...' : status === 'enabled' ? 'Disable' : 'Enable'}
               </Button>
             )}
             <Button size="sm" onClick={() => router.push(`/admin/product-stocks/${row.id}/edit?product=${selectedProduct?.id}`)}>Edit</Button>
@@ -367,7 +367,7 @@ export default function ProductStocksPage() {
   ];
 
   if (selectedProduct) {
-    const enabledCount = stocks.filter(s => s.status === 'unsold').length;
+    const enabledCount = stocks.filter(s => s.status === 'enabled').length;
     const disabledCount = stocks.filter(s => s.status === 'disabled').length;
     const soldCount = stocks.filter(s => s.status === 'sold').length;
 

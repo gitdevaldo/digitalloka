@@ -146,7 +146,7 @@ async function fulfillVpsDroplet(
     .select('*')
     .eq('id', selectedStockId)
     .eq('product_id', product.id)
-    .eq('status', 'unsold')
+    .eq('status', 'enabled')
     .single();
 
   if (!stockItem) {

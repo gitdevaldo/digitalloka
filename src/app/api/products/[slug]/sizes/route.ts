@@ -19,7 +19,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     .from('product_stock_items')
     .select('id, credential_data, is_unlimited')
     .eq('product_id', product.id)
-    .eq('status', 'unsold')
+    .eq('status', 'enabled')
     .order('credential_data->price_monthly', { ascending: true });
 
   if (error) {

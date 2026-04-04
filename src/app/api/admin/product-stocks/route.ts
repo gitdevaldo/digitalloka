@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     .limit(100);
 
   if (productId) query = query.eq('product_id', Number(productId));
-  if (status && ['unsold', 'sold'].includes(status)) query = query.eq('status', status);
+  if (status && ['unsold', 'sold', 'enabled', 'disabled'].includes(status)) query = query.eq('status', status);
 
   const { data, error } = await query;
 
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       product_id: Number(body.product_id),
       credential_data: credentialData,
       credential_hash: credentialHash,
-      status: 'unsold',
+      status: 'enabled',
     })
     .select('*, product:products(id, name, slug, product_type)')
     .single();

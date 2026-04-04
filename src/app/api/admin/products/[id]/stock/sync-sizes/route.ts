@@ -91,8 +91,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const body = await request.json();
   const { stock_item_id, status } = body;
 
-  if (!stock_item_id || !['unsold', 'disabled'].includes(status)) {
-    return NextResponse.json({ error: 'stock_item_id and status (unsold|disabled) required' }, { status: 422 });
+  if (!stock_item_id || !['enabled', 'disabled'].includes(status)) {
+    return NextResponse.json({ error: 'stock_item_id and status (enabled|disabled) required' }, { status: 422 });
   }
 
   const admin = createSupabaseAdminClient();
@@ -108,8 +108,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: 'Stock item not found' }, { status: 404 });
   }
 
-  if (stock.status === 'sold') {
-    return NextResponse.json({ error: 'Cannot change status of sold stock item' }, { status: 422 });
+  if (stock.status === 'sold' || stock.status === 'unsold') {
+    return NextResponse.json({ error: 'Cannot change status of sold/legacy stock item' }, { status: 422 });
   }
 
   const { error } = await admin.from('product_stock_items')
