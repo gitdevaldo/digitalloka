@@ -255,19 +255,20 @@ export default function EditProductTypePage() {
                       />
                       <div className="mt-2 grid grid-cols-2 gap-3">
                         <div>
-                          <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Options Source</label>
+                          <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Extra Options From</label>
                           <select
                             value={f.options_source || ''}
                             onChange={(e) => updateField(idx, { options_source: e.target.value || undefined })}
                             className="w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent"
                           >
-                            <option value="">Static only</option>
-                            <option value="provider_data">Also from Provider Data</option>
+                            <option value="">None (use options above only)</option>
+                            <option value="provider_data">Synced Provider Data (DigitalOcean, etc.)</option>
                           </select>
+                          <div className="text-[0.6rem] text-muted-foreground mt-0.5">If set, synced data will be merged with the options above</div>
                         </div>
                         {f.options_source === 'provider_data' && (
                           <div>
-                            <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Provider Data Type</label>
+                            <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Data Type</label>
                             <select
                               value={f.provider_data_type || ''}
                               onChange={(e) => updateField(idx, { provider_data_type: e.target.value || undefined })}
@@ -282,14 +283,14 @@ export default function EditProductTypePage() {
                       </div>
                       {f.options_source === 'provider_data' && (
                         <div className="mt-2">
-                          <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Depends On Field</label>
+                          <label className="text-[0.7rem] font-bold text-muted-foreground block mb-1">Reload When This Field Changes</label>
                           <input
                             value={f.depends_on || ''}
                             onChange={(e) => updateField(idx, { depends_on: e.target.value.replace(/[^a-z0-9_]/g, '') || undefined })}
                             className="w-full border-2 border-border rounded-lg px-3 py-2 text-sm font-medium bg-input focus:outline-none focus:border-accent"
                             placeholder="e.g. provider"
                           />
-                          <div className="text-[0.6rem] text-muted-foreground mt-0.5">Options will re-load when this field changes</div>
+                          <div className="text-[0.6rem] text-muted-foreground mt-0.5">When this field changes, clear selection and reload synced options</div>
                         </div>
                       )}
                     </div>
