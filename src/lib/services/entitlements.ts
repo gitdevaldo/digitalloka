@@ -23,13 +23,32 @@ export async function listUserEntitlements(supabase: TypedSupabaseClient, userId
 
   const { data, count, error } = await supabase
     .from('entitlements')
-    .select('*, product:products(id, name, slug, status)', { count: 'exact' })
+    .select('*, product:products(id, name, slug, status, product_type)', { count: 'exact' })
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .range(from, to);
 
   if (error) throw new Error(error.message);
-  return { data: data || [], total: count || 0, page, per_page: perPage };
+
+  const admin = createSupabaseAdminClient();
+  const enriched = await Promise.all((data || []).map(async (ent) => {
+    const meta = (ent.meta as Record<string, unknown>) || {};
+    const stockItemId = meta.stock_item_id as number | undefined;
+    if (!stockItemId) return ent;
+
+    const { data: stockItem } = await admin
+      .from('product_stock_items')
+      .select('credential_data')
+      .eq('id', stockItemId)
+      .single();
+
+    if (stockItem?.credential_data) {
+      return { ...ent, credential_data: stockItem.credential_data };
+    }
+    return ent;
+  }));
+
+  return { data: enriched, total: count || 0, page, per_page: perPage };
 }
 
 export async function updateEntitlementStatus(entitlementId: number, newStatus: string, reason?: string) {

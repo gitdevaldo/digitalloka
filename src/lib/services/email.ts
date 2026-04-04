@@ -409,7 +409,15 @@ function buildFulfillmentDetails(results: FulfillmentResult[]): string {
       }
       case 'digital':
       case 'template':
-      case 'course':
+      case 'course': {
+        const cred = r.details.credential_data as Record<string, string> | undefined;
+        const credRows = cred ? Object.entries(cred).map(([k, v]) => `
+          <tr>
+            <td style="padding:4px 0;font-family:${FONT_BODY};font-size:12px;font-weight:600;color:${COLOR_MUTED};text-transform:uppercase;letter-spacing:0.04em;width:100px;vertical-align:top;">${k}</td>
+            <td style="padding:4px 0;font-family:${FONT_BODY};font-size:13px;font-weight:600;color:${COLOR_DARK};word-break:break-all;">${String(v)}</td>
+          </tr>
+        `).join('') : '';
+
         return `
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:12px;">
           <tr><td style="background-color:#ECFDF5;border:2px solid ${COLOR_GREEN};border-radius:12px;padding:16px 20px;">
@@ -418,15 +426,22 @@ function buildFulfillmentDetails(results: FulfillmentResult[]): string {
                 <td style="padding-right:12px;vertical-align:top;font-size:20px;">&#10024;</td>
                 <td>
                   <span style="font-family:${FONT_HEADING};font-size:14px;font-weight:700;color:#059669;">Digital Product Ready</span>
+                  ${credRows ? `
+                  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:10px;background-color:#FFFFFF;border:2px solid ${COLOR_BORDER};border-radius:8px;padding:12px 16px;width:100%;">
+                    ${credRows}
+                  </table>
+                  ` : `
                   <p style="font-family:${FONT_BODY};font-size:13px;color:${COLOR_MUTED};line-height:1.5;margin:4px 0 0;">
                     Your product has been assigned and is ready to access from your dashboard.
                   </p>
+                  `}
                 </td>
               </tr>
             </table>
           </td></tr>
         </table>
         `;
+      }
       default:
         return `
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:12px;">

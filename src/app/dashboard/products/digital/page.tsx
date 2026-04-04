@@ -3,16 +3,15 @@
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
-import { TableShell } from '@/components/ui/table-shell';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Button, ButtonLink } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/toast';
 
 export default function DigitalProductsPage() {
   const [products, setProducts] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
-  const [downloading, setDownloading] = useState<number | null>(null);
+  const [revealedId, setRevealedId] = useState<number | null>(null);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -30,57 +29,90 @@ export default function DigitalProductsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function handleDownload(entitlementId: number) {
-    setDownloading(entitlementId);
-    try {
-      const res = await fetch(`/api/user/products/${entitlementId}/actions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'download_assets' }),
-      });
-      if (!res.ok) throw new Error();
-      showToast('Download request queued');
-    } catch { showToast('Download failed'); }
-    finally { setDownloading(null); }
+  function copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text).then(() => showToast('Copied!')).catch(() => showToast('Copy failed'));
   }
 
   return (
     <div style={{ animation: 'fadeUp 0.3s var(--ease-bounce)' }}>
-      <PageHeader title="Digital Products" subtitle="Your downloadable files, templates, and kits." />
+      <PageHeader title="Digital Products" subtitle="Your purchased digital products and account credentials." />
 
       {loading ? (
         <div className="h-32 bg-card border-2 border-border rounded-xl animate-pulse" />
       ) : products.length === 0 ? (
         <EmptyState icon="📥" title="No digital products" description="Digital products will appear here when purchased." />
       ) : (
-        <Panel>
-          <TableShell variant="dashboard">
-            <thead><tr><th>Product</th><th>Type</th><th>Status</th><th>Started</th><th></th></tr></thead>
-            <tbody>
-              {products.map(item => {
-                const product = item.product as Record<string, unknown> | undefined;
-                const isActive = (item.status as string) === 'active';
-                return (
-                  <tr key={item.id as number}>
-                    <td><strong>{(product?.name as string) || 'Unknown'}</strong></td>
-                    <td><span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border rounded-full text-[0.68rem] font-bold text-muted-foreground">{(product?.product_type as string) || '—'}</span></td>
-                    <td><StatusBadge variant={item.status as string} label={item.status as string} /></td>
-                    <td className="text-[0.8rem] text-muted-foreground">{item.starts_at ? new Date(item.starts_at as string).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</td>
-                    <td>
-                      {isActive ? (
-                        <Button size="sm" variant="accent" onClick={() => handleDownload(item.id as number)} disabled={downloading === (item.id as number)}>
-                          {downloading === (item.id as number) ? '…' : '⬇ Download'}
-                        </Button>
-                      ) : (
-                        <ButtonLink href="/products" size="sm" variant="warning">Renew</ButtonLink>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </TableShell>
-        </Panel>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {products.map(item => {
+            const product = item.product as Record<string, unknown> | undefined;
+            const isActive = (item.status as string) === 'active';
+            const cred = item.credential_data as Record<string, string> | undefined;
+            const isRevealed = revealedId === (item.id as number);
+
+            return (
+              <Panel key={item.id as number}>
+                <div style={{ padding: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{(product?.name as string) || 'Unknown'}</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', marginTop: '2px' }}>
+                        Purchased {item.starts_at ? new Date(item.starts_at as string).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                      </div>
+                    </div>
+                    <StatusBadge variant={item.status as string} label={item.status as string} />
+                  </div>
+
+                  {cred && Object.keys(cred).length > 0 && isActive ? (
+                    <div style={{ background: 'var(--muted)', border: '2px solid var(--border)', borderRadius: '10px', padding: '14px 18px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted-foreground)' }}>
+                          Account Credentials
+                        </span>
+                        <button
+                          onClick={() => setRevealedId(isRevealed ? null : (item.id as number))}
+                          style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}
+                        >
+                          {isRevealed ? 'Hide' : 'Reveal'}
+                        </button>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {Object.entries(cred).map(([key, value]) => (
+                          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.03em', minWidth: '90px', flexShrink: 0 }}>
+                              {key}
+                            </span>
+                            <span
+                              className="font-mono"
+                              style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--foreground)', flex: 1, wordBreak: 'break-all' }}
+                            >
+                              {isRevealed ? String(value) : '••••••••••'}
+                            </span>
+                            {isRevealed && (
+                              <button
+                                onClick={() => copyToClipboard(String(value))}
+                                style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent)', background: 'none', border: '1.5px solid var(--border)', borderRadius: '6px', cursor: 'pointer', padding: '3px 8px', flexShrink: 0 }}
+                              >
+                                Copy
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : !isActive ? (
+                    <div style={{ textAlign: 'center', padding: '12px' }}>
+                      <ButtonLink href="/products" size="sm" variant="warning">Renew</ButtonLink>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)', padding: '8px 0' }}>
+                      No credentials attached. Check your dashboard for access details.
+                    </div>
+                  )}
+                </div>
+              </Panel>
+            );
+          })}
+        </div>
       )}
     </div>
   );
