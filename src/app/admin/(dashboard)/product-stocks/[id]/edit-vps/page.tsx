@@ -13,8 +13,6 @@ function formatMemory(mb: number): string {
   return `${mb} MB`;
 }
 
-const PROVIDERS = ['DigitalOcean', 'AWS', 'Google Cloud', 'Azure', 'Linode', 'Vultr', 'Hetzner', 'Other'];
-
 export default function EditVpsStockPage() {
   const router = useRouter();
   const params = useParams();
@@ -28,7 +26,7 @@ export default function EditVpsStockPage() {
   const [stock, setStock] = useState<Record<string, unknown> | null>(null);
   const [product, setProduct] = useState<Record<string, unknown> | null>(null);
 
-  const [provider, setProvider] = useState('DigitalOcean');
+  const [provider, setProvider] = useState('');
   const [slug, setSlug] = useState('');
   const [vcpus, setVcpus] = useState('');
   const [memory, setMemory] = useState('');
@@ -54,12 +52,12 @@ export default function EditVpsStockPage() {
       }
       const item = data.data;
       setStock(item);
-      setProduct(item.product || null);
+      const prod = item.product || null;
+      setProduct(prod);
 
       const cred = (item.credential_data || {}) as Record<string, unknown>;
       const meta = (item.meta || {}) as Record<string, unknown>;
 
-      setProvider((meta.provider as string) || 'DigitalOcean');
       setSlug((cred.slug as string) || '');
       setVcpus(String(cred.vcpus || ''));
       setMemory(String(cred.memory || ''));
@@ -68,6 +66,16 @@ export default function EditVpsStockPage() {
       setSellingPrice(String(meta.selling_price || ''));
       setStatus(item.status || 'disabled');
       setIsUnlimited(item.is_unlimited ?? true);
+
+      if (prod?.id) {
+        const prodRes = await fetch(`/api/admin/products/${prod.id}`);
+        const prodData = await prodRes.json();
+        const p = prodData.data || prodData;
+        const typeFields = (p?.meta?.type_fields || {}) as Record<string, string>;
+        setProvider(typeFields.provider || (meta.provider as string) || 'Unknown');
+      } else {
+        setProvider((meta.provider as string) || 'Unknown');
+      }
     } catch {
       showToast('Failed to load stock item');
     } finally {
@@ -183,13 +191,10 @@ export default function EditVpsStockPage() {
           <div style={{ display: 'grid', gap: 16 }}>
             <div>
               <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1.5">Provider</label>
-              <select
-                className="w-full border-2 border-border rounded-[var(--r-sm)] px-3 py-2 font-body text-[0.85rem] font-semibold bg-input text-foreground focus:outline-none focus:border-accent"
-                value={provider}
-                onChange={e => setProvider(e.target.value)}
-              >
-                {PROVIDERS.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
+              <div className="border-2 border-border rounded-[var(--r-sm)] px-3 py-2 text-[0.85rem] font-bold bg-muted text-foreground">
+                {provider || 'Loading...'}
+              </div>
+              <div className="text-[0.65rem] text-muted-foreground mt-1">Set in Product Edit → VPS Provider field</div>
             </div>
 
             <div>

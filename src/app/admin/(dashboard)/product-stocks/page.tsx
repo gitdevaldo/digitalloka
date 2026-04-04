@@ -28,9 +28,6 @@ export default function ProductStocksPage() {
   const [stockFilter, setStockFilter] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [addForm, setAddForm] = useState({ provider: 'DigitalOcean', slug: '', vcpus: '', memory: '', disk: '', transfer: '', price_monthly: '', selling_price: '' });
-  const [addingSave, setAddingSave] = useState(false);
   const { showToast } = useToast();
 
   const isVpsProduct = selectedProduct?.product_type === 'vps_droplet';
@@ -113,25 +110,6 @@ export default function ProductStocksPage() {
       ));
     } catch { showToast('Toggle failed'); }
     finally { setTogglingId(null); }
-  }
-
-  async function addManualSize() {
-    if (!selectedProduct) return;
-    setAddingSave(true);
-    try {
-      const res = await fetch(`/api/admin/products/${selectedProduct.id}/stock/sync-sizes`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(addForm),
-      });
-      const data = await res.json();
-      if (!res.ok) { showToast(data.error || 'Failed to add size'); return; }
-      showToast(`Size "${addForm.slug}" added for ${addForm.provider}`);
-      setShowAddModal(false);
-      setAddForm({ provider: 'DigitalOcean', slug: '', vcpus: '', memory: '', disk: '', transfer: '', price_monthly: '', selling_price: '' });
-      await refreshStocks();
-    } catch { showToast('Failed to add size'); }
-    finally { setAddingSave(false); }
   }
 
   function getProvider(row: Record<string, unknown>): string {
@@ -433,7 +411,7 @@ export default function ProductStocksPage() {
               <Button size="sm" onClick={refreshStocks}>Refresh</Button>
               {isVpsProduct && (
                 <>
-                  <Button variant="accent" onClick={() => setShowAddModal(true)}>
+                  <Button variant="accent" onClick={() => router.push(`/admin/product-stocks/add-vps?product=${selectedProduct.id}&name=${encodeURIComponent(selectedProduct.name as string)}`)}>
                     + Add Size
                   </Button>
                   <Button variant="accent" onClick={syncDoSizes} disabled={syncing}>
@@ -479,86 +457,6 @@ export default function ProductStocksPage() {
           )}
         </Panel>
 
-        {showAddModal && (
-          <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} onClick={() => setShowAddModal(false)} />
-            <div style={{ position: 'relative', background: 'var(--card)', border: '3px solid var(--border)', borderRadius: 'var(--r-md)', padding: 24, width: 480, maxHeight: '90vh', overflow: 'auto', boxShadow: '6px 6px 0 var(--shadow)' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, marginBottom: 16 }}>Add VPS Size</h3>
-
-              <div style={{ display: 'grid', gap: 12 }}>
-                <div>
-                  <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">Provider *</label>
-                  <select
-                    className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 font-body text-[0.8rem] font-semibold bg-input text-foreground"
-                    value={addForm.provider}
-                    onChange={e => setAddForm(f => ({ ...f, provider: e.target.value }))}
-                  >
-                    <option value="DigitalOcean">DigitalOcean</option>
-                    <option value="AWS">AWS</option>
-                    <option value="Google Cloud">Google Cloud</option>
-                    <option value="Azure">Azure</option>
-                    <option value="Linode">Linode</option>
-                    <option value="Vultr">Vultr</option>
-                    <option value="Hetzner">Hetzner</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">Size Slug *</label>
-                  <input
-                    className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 text-[0.8rem] bg-input text-foreground font-mono"
-                    placeholder="e.g. t3.micro, e2-micro, cx11"
-                    value={addForm.slug}
-                    onChange={e => setAddForm(f => ({ ...f, slug: e.target.value }))}
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  <div>
-                    <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">vCPUs *</label>
-                    <input type="number" className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 text-[0.8rem] bg-input text-foreground" placeholder="1" value={addForm.vcpus} onChange={e => setAddForm(f => ({ ...f, vcpus: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">Memory (MB) *</label>
-                    <input type="number" className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 text-[0.8rem] bg-input text-foreground" placeholder="1024" value={addForm.memory} onChange={e => setAddForm(f => ({ ...f, memory: e.target.value }))} />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  <div>
-                    <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">Disk (GB) *</label>
-                    <input type="number" className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 text-[0.8rem] bg-input text-foreground" placeholder="25" value={addForm.disk} onChange={e => setAddForm(f => ({ ...f, disk: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">Transfer (TB)</label>
-                    <input type="number" className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 text-[0.8rem] bg-input text-foreground" placeholder="1" value={addForm.transfer} onChange={e => setAddForm(f => ({ ...f, transfer: e.target.value }))} />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1">Selling Price (IDR/mo) *</label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[0.8rem] font-bold text-muted-foreground">Rp</span>
-                      <input type="number" className="w-full border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 text-[0.8rem] bg-input text-foreground font-bold" placeholder="50000" value={addForm.selling_price} onChange={e => setAddForm(f => ({ ...f, selling_price: e.target.value }))} />
-                    </div>
-                    {addForm.selling_price && Number(addForm.selling_price) > 0 && (
-                      <div className="text-[0.65rem] text-muted-foreground mt-1">Displays as: {formatCurrency(Number(addForm.selling_price), 'IDR')}/mo</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-2 mt-4 justify-end">
-                <Button variant="ghost" onClick={() => setShowAddModal(false)}>Cancel</Button>
-                <Button variant="accent" onClick={addManualSize} disabled={addingSave || !addForm.slug || !addForm.vcpus || !addForm.memory || !addForm.disk}>
-                  {addingSave ? 'Adding...' : 'Add Size'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
