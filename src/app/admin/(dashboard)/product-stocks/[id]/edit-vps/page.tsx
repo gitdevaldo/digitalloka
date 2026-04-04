@@ -27,6 +27,7 @@ export default function EditVpsStockPage() {
   const [product, setProduct] = useState<Record<string, unknown> | null>(null);
 
   const [provider, setProvider] = useState('');
+  const [providerOptions, setProviderOptions] = useState<string[]>([]);
   const [slug, setSlug] = useState('');
   const [vcpus, setVcpus] = useState('');
   const [memory, setMemory] = useState('');
@@ -37,23 +38,36 @@ export default function EditVpsStockPage() {
   const [isUnlimited, setIsUnlimited] = useState(true);
 
   useEffect(() => {
-    loadStock();
+    loadData();
   }, [stockId]);
 
-  async function loadStock() {
+  async function loadData() {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/product-stocks/${stockId}`);
-      const data = await res.json();
-      if (!res.ok || !data.data) {
+      const [stockRes, typeRes] = await Promise.all([
+        fetch(`/api/admin/product-stocks/${stockId}`),
+        fetch('/api/admin/product-types'),
+      ]);
+
+      const typeData = await typeRes.json();
+      const types = typeData.data || [];
+      const vpsType = types.find((t: { type_key?: string; type?: string }) => t.type_key === 'vps_droplet' || t.type === 'vps_droplet');
+      if (vpsType?.fields) {
+        const providerField = (vpsType.fields as Array<{ key: string; options?: string[] }>).find((f) => f.key === 'provider');
+        if (providerField?.options) {
+          setProviderOptions(providerField.options);
+        }
+      }
+
+      const stockData = await stockRes.json();
+      if (!stockRes.ok || !stockData.data) {
         showToast('Stock item not found');
         router.back();
         return;
       }
-      const item = data.data;
+      const item = stockData.data;
       setStock(item);
-      const prod = item.product || null;
-      setProduct(prod);
+      setProduct(item.product || null);
 
       const cred = (item.credential_data || {}) as Record<string, unknown>;
       const meta = (item.meta || {}) as Record<string, unknown>;
@@ -66,16 +80,7 @@ export default function EditVpsStockPage() {
       setSellingPrice(String(meta.selling_price || ''));
       setStatus(item.status || 'disabled');
       setIsUnlimited(item.is_unlimited ?? true);
-
-      if (prod?.id) {
-        const prodRes = await fetch(`/api/admin/products/${prod.id}`);
-        const prodData = await prodRes.json();
-        const p = prodData.data || prodData;
-        const typeFields = (p?.meta?.type_fields || {}) as Record<string, string>;
-        setProvider(typeFields.provider || (meta.provider as string) || 'Unknown');
-      } else {
-        setProvider((meta.provider as string) || 'Unknown');
-      }
+      setProvider((meta.provider as string) || '');
     } catch {
       showToast('Failed to load stock item');
     } finally {
@@ -86,6 +91,10 @@ export default function EditVpsStockPage() {
   async function handleSave() {
     if (!slug || !vcpus || !memory || !disk) {
       showToast('Slug, vCPUs, Memory, and Disk are required');
+      return;
+    }
+    if (!provider) {
+      showToast('Provider is required');
       return;
     }
     if (!sellingPrice || Number(sellingPrice) <= 0) {
@@ -190,18 +199,24 @@ export default function EditVpsStockPage() {
         <Panel title="Size Configuration">
           <div style={{ display: 'grid', gap: 16 }}>
             <div>
-              <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1.5">Provider</label>
-              {!provider && loading ? (
-                <div className="border-2 border-border rounded-[var(--r-sm)] px-3 py-2 text-[0.85rem] bg-muted text-muted-foreground">Loading...</div>
-              ) : provider ? (
-                <div className="border-2 border-border rounded-[var(--r-sm)] px-3 py-2 text-[0.85rem] font-bold bg-muted text-foreground">{provider}</div>
+              <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1.5">Provider *</label>
+              {providerOptions.length > 0 ? (
+                <select
+                  className="w-full border-2 border-border rounded-[var(--r-sm)] px-3 py-2 text-[0.85rem] font-bold bg-input text-foreground focus:outline-none focus:border-accent"
+                  value={provider}
+                  onChange={e => setProvider(e.target.value)}
+                >
+                  <option value="">— select provider —</option>
+                  {providerOptions.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
               ) : (
                 <div className="border-2 border-secondary rounded-[var(--r-sm)] px-3 py-2 bg-secondary/10">
-                  <div className="text-[0.8rem] font-bold text-secondary">Provider not set</div>
+                  <div className="text-[0.8rem] font-bold text-secondary">No provider options found</div>
                   <div className="text-[0.65rem] text-muted-foreground mt-0.5">
-                    Go to{' '}
-                    <a href={`/admin/products/${(product as Record<string, unknown>)?.id || productId}/edit`} className="text-accent underline font-bold">Product Edit</a>
-                    {' '}and set the "VPS Provider" field first.
+                    Add a "provider" field with options to the{' '}
+                    <a href="/admin/product-types/vps_droplet/edit" className="text-accent underline font-bold">vps_droplet product type</a>.
                   </div>
                 </div>
               )}
@@ -315,7 +330,7 @@ export default function EditVpsStockPage() {
           <Panel title="Preview">
             <div style={{ background: 'var(--muted)', borderRadius: 'var(--r-sm)', padding: 16 }}>
               <div className="flex items-center gap-2 mb-2">
-                <span style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em', color: 'var(--accent)' }}>{provider}</span>
+                <span style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em', color: 'var(--accent)' }}>{provider || '—'}</span>
               </div>
               <div style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.9rem', marginBottom: 4 }}>{slug || '—'}</div>
               <div className="flex gap-1.5 flex-wrap mb-3">
@@ -334,7 +349,7 @@ export default function EditVpsStockPage() {
 
       <div className="flex gap-3 mt-5 justify-end">
         <Button variant="ghost" onClick={() => productId ? router.push(`/admin/product-stocks?product=${productId}`) : router.back()}>Cancel</Button>
-        <Button variant="accent" onClick={handleSave} disabled={saving || !slug || !vcpus || !memory || !disk || !sellingPrice}>
+        <Button variant="accent" onClick={handleSave} disabled={saving || !slug || !vcpus || !memory || !disk || !sellingPrice || !provider}>
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>
       </div>

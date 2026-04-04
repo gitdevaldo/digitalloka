@@ -22,7 +22,8 @@ export default function AddVpsStockPage() {
 
   const [saving, setSaving] = useState(false);
   const [provider, setProvider] = useState('');
-  const [loadingProduct, setLoadingProduct] = useState(true);
+  const [providerOptions, setProviderOptions] = useState<string[]>([]);
+  const [loadingType, setLoadingType] = useState(true);
 
   const [slug, setSlug] = useState('');
   const [vcpus, setVcpus] = useState('');
@@ -32,22 +33,30 @@ export default function AddVpsStockPage() {
   const [sellingPrice, setSellingPrice] = useState('');
 
   useEffect(() => {
-    if (!productId) return;
-    setLoadingProduct(true);
-    fetch(`/api/admin/products/${productId}`)
+    setLoadingType(true);
+    fetch('/api/admin/product-types')
       .then(r => r.json())
       .then(data => {
-        const p = data.data || data;
-        const typeFields = (p?.meta?.type_fields || {}) as Record<string, string>;
-        setProvider(typeFields.provider || '');
+        const types = data.data || [];
+        const vpsType = types.find((t: { type_key?: string; type?: string }) => t.type_key === 'vps_droplet' || t.type === 'vps_droplet');
+        if (vpsType?.fields) {
+          const providerField = (vpsType.fields as Array<{ key: string; options?: string[] }>).find((f) => f.key === 'provider');
+          if (providerField?.options) {
+            setProviderOptions(providerField.options);
+          }
+        }
       })
       .catch(() => {})
-      .finally(() => setLoadingProduct(false));
-  }, [productId]);
+      .finally(() => setLoadingType(false));
+  }, []);
 
   async function handleSave() {
     if (!slug || !vcpus || !memory || !disk) {
       showToast('Slug, vCPUs, Memory, and Disk are required');
+      return;
+    }
+    if (!provider) {
+      showToast('Provider is required');
       return;
     }
     if (!sellingPrice || Number(sellingPrice) <= 0) {
@@ -92,7 +101,7 @@ export default function AddVpsStockPage() {
     <div style={{ animation: 'fadeUp 0.28s var(--ease)' }}>
       <PageHeader
         title="Add VPS Size"
-        subtitle={`Product: ${decodeURIComponent(productName)} — Provider: ${loadingProduct ? 'Loading...' : provider}`}
+        subtitle={`Product: ${decodeURIComponent(productName)}`}
         actions={
           <Button size="sm" onClick={() => router.push(`/admin/product-stocks?product=${productId}`)}>Back</Button>
         }
@@ -102,18 +111,26 @@ export default function AddVpsStockPage() {
         <Panel title="Size Configuration">
           <div style={{ display: 'grid', gap: 16 }}>
             <div>
-              <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1.5">Provider</label>
-              {loadingProduct ? (
+              <label className="text-[0.72rem] font-bold text-muted-foreground block mb-1.5">Provider *</label>
+              {loadingType ? (
                 <div className="border-2 border-border rounded-[var(--r-sm)] px-3 py-2 text-[0.85rem] bg-muted text-muted-foreground">Loading...</div>
-              ) : provider ? (
-                <div className="border-2 border-border rounded-[var(--r-sm)] px-3 py-2 text-[0.85rem] font-bold bg-muted text-foreground">{provider}</div>
+              ) : providerOptions.length > 0 ? (
+                <select
+                  className="w-full border-2 border-border rounded-[var(--r-sm)] px-3 py-2 text-[0.85rem] font-bold bg-input text-foreground focus:outline-none focus:border-accent"
+                  value={provider}
+                  onChange={e => setProvider(e.target.value)}
+                >
+                  <option value="">— select provider —</option>
+                  {providerOptions.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
               ) : (
                 <div className="border-2 border-secondary rounded-[var(--r-sm)] px-3 py-2 bg-secondary/10">
-                  <div className="text-[0.8rem] font-bold text-secondary">Provider not set</div>
+                  <div className="text-[0.8rem] font-bold text-secondary">No provider options found</div>
                   <div className="text-[0.65rem] text-muted-foreground mt-0.5">
-                    Go to{' '}
-                    <a href={`/admin/products/${productId}/edit`} className="text-accent underline font-bold">Product Edit</a>
-                    {' '}and set the "VPS Provider" field first.
+                    Add a "provider" field with options to the{' '}
+                    <a href="/admin/product-types/vps_droplet/edit" className="text-accent underline font-bold">vps_droplet product type</a>.
                   </div>
                 </div>
               )}
