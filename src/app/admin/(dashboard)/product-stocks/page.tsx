@@ -255,8 +255,22 @@ export default function ProductStocksPage() {
       },
     },
     {
+      key: 'provider_price',
+      label: 'Provider Price',
+      render: (row: Record<string, unknown>) => {
+        const cred = row.credential_data as Record<string, unknown> | undefined;
+        const pm = cred?.price_monthly as number;
+        if (!pm && pm !== 0) return <span style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)' }}>—</span>;
+        return (
+          <span style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)' }}>
+            ${pm.toFixed(0)}/mo
+          </span>
+        );
+      },
+    },
+    {
       key: 'selling_price',
-      label: 'Price',
+      label: 'Sell Price',
       render: (row: Record<string, unknown>) => {
         const sp = getSellingPrice(row);
         if (sp !== null && sp > 0) {
