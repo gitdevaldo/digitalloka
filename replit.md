@@ -89,6 +89,11 @@ Key design decisions:
 - **created_at/updated_at defaults** all set to `DEFAULT now()`
 - **Server-Synced Cart**: `cart_items` table stores cart state for logged-in users, synced from `CartProvider`.
 
+### RLS Policies (Applied via migration script)
+- `products` — Public SELECT allowed where `is_visible = true` (anon + authenticated)
+- `product_categories` — Public SELECT allowed for all (anon + authenticated)
+- `cart_items` — RLS enabled; user-scoped SELECT/INSERT/UPDATE/DELETE via `auth.uid() = user_id`
+
 ### Security Hardening (docs/sql/2026-04-04-security-hardening.sql)
 Run against Supabase to apply critical RLS fixes:
 - `wishlists` — RLS enabled with user-scoped read/write policies + admin read
