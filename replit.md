@@ -154,6 +154,22 @@ API endpoints accept `cursor` (base64url-encoded), `per_page`, and `mode=cursor|
 
 Admin and user dashboard pages use cursor-based "Load More" pattern for audit logs and orders.
 
+## CRITICAL: Git & Replit Rules — READ THIS BEFORE ANY GIT OPERATION
+- **Replit only has a SHALLOW copy of the git history.** It does NOT have the full commit history from GitHub. The local repo may only have the most recent commits (e.g. 14 out of 188).
+- **NEVER run `git filter-branch`, `git rebase`, or any history-rewriting command on Replit.** The local repo only has recent commits, so rewriting + force-pushing will DESTROY the full history on GitHub. This already happened once and nearly wiped 188 commits.
+- **NEVER run `git push --force` from Replit.** Force-push from a shallow repo replaces the full GitHub history with only the shallow local commits. This is catastrophic and irreversible without GitHub reflog recovery.
+- **NEVER suggest or run `git rebase -i` to drop commits on Replit.** Dropping commits via interactive rebase also removes the file changes from the working directory, destroying code that was in those commits. This already happened and wiped all Mayar integration files from disk.
+- **To remove secrets from git history:** The user MUST do this from a full local clone on their own machine. Never attempt it from Replit. Tell the user to clone, clean, and force-push from their machine.
+- **To push new commits from Replit:** Use ONLY regular `git push`. If it fails with "non-fast-forward", use `git pull origin main --rebase` first, then `git push`. Never force-push.
+- **Checkpoints are precious.** Replit checkpoints capture all file changes. Do not run any git command that could cause checkpoint data to be lost. If unsure whether a command is safe, DO NOT RUN IT.
+
+### Incident Log (2026-04-04)
+1. `git filter-branch` was run on Replit to remove `env.local` from history. Replit only had 14 local commits. Force-push replaced GitHub's full 188-commit history with just 14 commits.
+2. Recovered using GitHub's dangling commit SHA (`426ffeab4ed3bf9cd69b32c40475ee1f977652eb`).
+3. Then `git rebase -i` was used to drop the env.local commits, which also wiped the Mayar integration files and all pre-Mayar checkpoint changes from disk.
+4. Files were recovered from git reflog (`36c6df1`) but the individual pre-Mayar checkpoint commits (RLS fix, documentation updates, etc.) were lost as separate commits — their changes were squashed into a single new checkpoint.
+5. Lesson: NEVER do git history rewriting on Replit. Always tell the user to do it from a full local clone.
+
 ## Legacy Archives
 - `.archive/legacy-laravel/` - Previous Laravel implementation (source of truth for UI parity)
 - `.archive/legacy/` - Original Next.js implementation
