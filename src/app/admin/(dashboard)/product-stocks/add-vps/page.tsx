@@ -7,8 +7,6 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { VpsStockForm, type StockFieldDef } from '@/components/admin/vps-stock-form';
 
-const CREDENTIAL_KEYS = ['slug', 'vcpus', 'memory', 'disk', 'transfer'];
-
 export default function AddVpsStockPage() {
   const router = useRouter();
   const searchParams = useSearchParams();

@@ -31,8 +31,8 @@ This audit examined the DigitalLoka Next.js application across five dimensions: 
 ### 1.2 [CRITICAL] Mayar Sandbox Mode Active in Production
 - **File:** `src/app/api/payments/mayar/webhook/route.ts`
 - **Issue:** The `MAYAR_SANDBOX` environment variable, when set, routes payment webhooks to the sandbox API. No guard prevented this from being enabled in production, risking real payments being processed through sandbox.
-- **Fix:** Added a runtime guard that logs a warning and rejects webhook processing if `MAYAR_SANDBOX` is truthy while `NODE_ENV === 'production'`.
-- **Status:** ✅ Fixed
+- **Fix:** The `MAYAR_SANDBOX` environment variable and sandbox routing logic have been removed from the codebase entirely. Payment webhooks now always use the production Mayar API.
+- **Status:** ✅ Fixed (env var removed)
 
 ### 1.3 [CRITICAL] Missing Rate Limiting on Sensitive API Routes
 - **File:** `src/middleware.ts`
@@ -176,7 +176,7 @@ This audit examined the DigitalLoka Next.js application across five dimensions: 
 | `src/lib/sanitize-html.ts` | **New** — DOMPurify-based HTML sanitizer |
 | `src/lib/validation/schemas.ts` | **New** — Zod schemas for admin mutations |
 | `src/app/api/cron/sync-sizes/route.ts` | Added CRON_SECRET auth check |
-| `src/app/api/payments/mayar/webhook/route.ts` | Added production sandbox guard |
+| `src/app/api/payments/mayar/webhook/route.ts` | Removed `MAYAR_SANDBOX` env var and sandbox routing logic |
 | `src/app/api/user/products/[id]/actions/route.ts` | Added entitlement ownership check |
 | `src/app/api/products/route.ts` | Added Cache-Control headers |
 | `src/app/api/products/[slug]/route.ts` | Added Cache-Control headers |
