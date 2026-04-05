@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { PageHeader } from '@/components/layout/page-header';
 import { Panel } from '@/components/ui/panel';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { ArrowLeft, Eye, EyeOff, ExternalLink, Copy, Check } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 interface OrderItem {
   id: number;
@@ -26,17 +26,6 @@ interface OrderItem {
   } | null;
 }
 
-interface Entitlement {
-  id: number;
-  product_id: number;
-  status: string;
-  starts_at: string | null;
-  expires_at: string | null;
-  meta: Record<string, unknown> | null;
-  credential_data: Record<string, string> | null;
-  credential_headers: string[] | null;
-}
-
 interface Transaction {
   id: number;
   provider: string;
@@ -52,222 +41,17 @@ interface Order {
   order_number: string;
   status: string;
   total_amount: number;
+  subtotal: number;
   currency: string;
   created_at: string;
   payment_status: string | null;
   items: OrderItem[];
   transactions: Transaction[];
-  entitlements: Entitlement[];
   meta: Record<string, unknown> | null;
-}
-
-function isLinkValue(val: string): boolean {
-  return /^https?:\/\//i.test(val);
-}
-
-function CredentialCard({ entitlement, productName }: { entitlement: Entitlement; productName: string }) {
-  const [revealed, setRevealed] = useState(false);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-
-  const cred = entitlement.credential_data;
-  if (!cred || Object.keys(cred).length === 0) return null;
-
-  const headers = entitlement.credential_headers || Object.keys(cred);
-
-  const handleCopy = (value: string, field: string) => {
-    navigator.clipboard.writeText(value).then(() => {
-      setCopiedField(field);
-      setTimeout(() => setCopiedField(null), 2000);
-    });
-  };
-
-  return (
-    <div style={{
-      border: '2px solid var(--border)',
-      borderRadius: 'var(--r-md)',
-      overflow: 'hidden',
-    }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '12px 16px',
-        borderBottom: '2px solid var(--border)',
-        background: 'var(--muted)',
-      }}>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{productName}</div>
-          <StatusBadge variant={entitlement.status} label={entitlement.status} />
-        </div>
-        <button
-          onClick={() => setRevealed(!revealed)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            background: 'var(--card)',
-            border: '2px solid var(--border)',
-            borderRadius: 'var(--r-sm)',
-            padding: '6px 12px',
-            cursor: 'pointer',
-            fontSize: '0.75rem',
-            fontWeight: 700,
-            color: 'var(--foreground)',
-          }}
-        >
-          {revealed ? <EyeOff size={14} /> : <Eye size={14} />}
-          {revealed ? 'Hide' : 'Reveal'}
-        </button>
-      </div>
-
-      <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {headers.map((header) => {
-          const value = cred[header];
-          if (!value) return null;
-          const isLink = isLinkValue(value);
-
-          return (
-            <div key={header}>
-              <div style={{
-                fontSize: '0.65rem',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                color: 'var(--muted-foreground)',
-                marginBottom: 4,
-              }}>
-                {header}
-              </div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                background: 'var(--muted)',
-                borderRadius: 'var(--r-sm)',
-                padding: '8px 12px',
-                border: '1.5px solid var(--border)',
-              }}>
-                <span style={{
-                  flex: 1,
-                  fontFamily: 'monospace',
-                  fontSize: '0.8rem',
-                  wordBreak: 'break-all',
-                  color: 'var(--foreground)',
-                }}>
-                  {revealed ? value : '••••••••••••••••••••'}
-                </span>
-                {revealed && (
-                  <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                    <button
-                      onClick={() => handleCopy(value, header)}
-                      title="Copy"
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: copiedField === header ? 'var(--success)' : 'var(--muted-foreground)',
-                        padding: 4,
-                      }}
-                    >
-                      {copiedField === header ? <Check size={14} /> : <Copy size={14} />}
-                    </button>
-                    {isLink && (
-                      <a
-                        href={value}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Open link"
-                        style={{
-                          color: 'var(--accent)',
-                          padding: 4,
-                          display: 'flex',
-                        }}
-                      >
-                        <ExternalLink size={14} />
-                      </a>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function VpsDetails({ entitlement, productName }: { entitlement: Entitlement; productName: string }) {
-  const meta = (entitlement.meta as Record<string, unknown>) || {};
-  const dropletId = meta.droplet_id as number | undefined;
-  const dropletName = meta.droplet_name as string | undefined;
-  const sizeSlug = meta.size_slug as string | undefined;
-  const region = meta.region as string | undefined;
-  const image = meta.image as string | undefined;
-
-  if (!dropletId) return null;
-
-  const fields = [
-    { label: 'Droplet ID', value: String(dropletId) },
-    { label: 'Name', value: dropletName || '—' },
-    { label: 'Size', value: sizeSlug || '—' },
-    { label: 'Region', value: region || '—' },
-    { label: 'Image', value: image || '—' },
-  ];
-
-  return (
-    <div style={{
-      border: '2px solid var(--border)',
-      borderRadius: 'var(--r-md)',
-      overflow: 'hidden',
-    }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '12px 16px',
-        borderBottom: '2px solid var(--border)',
-        background: 'var(--muted)',
-      }}>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{productName}</div>
-          <StatusBadge variant={entitlement.status} label={entitlement.status} />
-        </div>
-      </div>
-      <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {fields.map((f) => (
-          <div key={f.label}>
-            <div style={{
-              fontSize: '0.65rem',
-              fontWeight: 800,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              color: 'var(--muted-foreground)',
-              marginBottom: 4,
-            }}>
-              {f.label}
-            </div>
-            <div style={{
-              fontFamily: 'monospace',
-              fontSize: '0.8rem',
-              background: 'var(--muted)',
-              borderRadius: 'var(--r-sm)',
-              padding: '8px 12px',
-              border: '1.5px solid var(--border)',
-              color: 'var(--foreground)',
-            }}>
-              {f.value}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
 }
 
 export default function OrderDetailPage() {
   const { id } = useParams();
-  const router = useRouter();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -304,44 +88,28 @@ export default function OrderDetailPage() {
     );
   }
 
-  const productMap = new Map<number, string>();
-  for (const item of order.items) {
-    productMap.set(item.product_id, item.product?.name || item.item_name);
-  }
-
-  const credentialEntitlements = order.entitlements.filter(
-    (e) => e.credential_data && Object.keys(e.credential_data).length > 0
-  );
-  const vpsEntitlements = order.entitlements.filter((e) => {
-    const meta = (e.meta as Record<string, unknown>) || {};
-    return !!meta.droplet_id;
-  });
-
   return (
     <div style={{ animation: 'fadeUp 0.3s var(--ease-bounce)' }}>
       <div style={{ marginBottom: 8 }}>
-        <button
-          onClick={() => router.push('/dashboard/orders')}
+        <Link
+          href="/dashboard/orders"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: 6,
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
             color: 'var(--muted-foreground)',
             fontSize: '0.8rem',
             fontWeight: 600,
-            padding: 0,
+            textDecoration: 'none',
           }}
         >
           <ArrowLeft size={14} /> Back to orders
-        </button>
+        </Link>
       </div>
 
       <PageHeader
-        title={`Order ${order.order_number}`}
-        subtitle={`Placed on ${formatDate(order.created_at)}`}
+        title={`Invoice #${order.order_number}`}
+        subtitle={`Issued on ${formatDate(order.created_at)}`}
       />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -354,7 +122,7 @@ export default function OrderDetailPage() {
             }}>
               <div>
                 <div style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', marginBottom: 4 }}>
-                  Status
+                  Order Status
                 </div>
                 <StatusBadge variant={order.status} label={order.status} />
               </div>
@@ -363,14 +131,6 @@ export default function OrderDetailPage() {
                   Payment
                 </div>
                 <StatusBadge variant={order.payment_status || 'pending'} label={order.payment_status || 'pending'} />
-              </div>
-              <div>
-                <div style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', marginBottom: 4 }}>
-                  Total
-                </div>
-                <span style={{ fontFamily: 'var(--font-h)', fontWeight: 800, fontSize: '1rem' }}>
-                  {formatCurrency(order.total_amount, order.currency)}
-                </span>
               </div>
               <div>
                 <div style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', marginBottom: 4 }}>
@@ -386,61 +146,82 @@ export default function OrderDetailPage() {
 
         <Panel>
           <div style={{ padding: 16 }}>
-            <h3 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: 12 }}>Order Items</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {order.items.map((item) => (
-                <div
-                  key={item.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '10px 12px',
-                    background: 'var(--muted)',
-                    borderRadius: 'var(--r-sm)',
-                    border: '1.5px solid var(--border)',
-                  }}
-                >
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>
-                      {item.product?.name || item.item_name}
-                    </div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)' }}>
-                      {item.product?.product_type || '—'} · Qty: {item.quantity}
-                    </div>
+            <h3 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: 16 }}>Items</h3>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr auto auto auto',
+              gap: '0',
+              fontSize: '0.65rem',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: 'var(--muted-foreground)',
+              borderBottom: '2px solid var(--border)',
+              paddingBottom: 8,
+              marginBottom: 8,
+            }}>
+              <div>Product</div>
+              <div style={{ textAlign: 'right' }}>Qty</div>
+              <div style={{ textAlign: 'right' }}>Unit Price</div>
+              <div style={{ textAlign: 'right' }}>Total</div>
+            </div>
+
+            {order.items.map((item) => (
+              <div
+                key={item.id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto auto auto',
+                  gap: '0',
+                  padding: '10px 0',
+                  borderBottom: '1px solid var(--border)',
+                  alignItems: 'center',
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>
+                    {item.product?.name || item.item_name}
                   </div>
-                  <div style={{ fontFamily: 'var(--font-h)', fontWeight: 800, fontSize: '0.9rem' }}>
-                    {formatCurrency(item.line_total, order.currency)}
+                  <div style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)' }}>
+                    {item.product?.product_type || '—'}
                   </div>
                 </div>
-              ))}
+                <div style={{ textAlign: 'right', fontSize: '0.85rem', fontWeight: 600, paddingLeft: 24 }}>
+                  {item.quantity}
+                </div>
+                <div style={{ textAlign: 'right', fontSize: '0.85rem', fontFamily: 'var(--font-h)', fontWeight: 600, paddingLeft: 24 }}>
+                  {formatCurrency(item.unit_price, order.currency)}
+                </div>
+                <div style={{ textAlign: 'right', fontSize: '0.85rem', fontFamily: 'var(--font-h)', fontWeight: 800, paddingLeft: 24 }}>
+                  {formatCurrency(item.line_total, order.currency)}
+                </div>
+              </div>
+            ))}
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              paddingTop: 12,
+              marginTop: 4,
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 180 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--muted-foreground)' }}>
+                  <span>Subtotal</span>
+                  <span style={{ fontFamily: 'var(--font-h)', fontWeight: 600 }}>
+                    {formatCurrency(order.subtotal || order.total_amount, order.currency)}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 800, borderTop: '2px solid var(--border)', paddingTop: 8 }}>
+                  <span>Total</span>
+                  <span style={{ fontFamily: 'var(--font-h)' }}>
+                    {formatCurrency(order.total_amount, order.currency)}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </Panel>
-
-        {(credentialEntitlements.length > 0 || vpsEntitlements.length > 0) && (
-          <Panel>
-            <div style={{ padding: 16 }}>
-              <h3 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: 12 }}>Product Access & Credentials</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {credentialEntitlements.map((ent) => (
-                  <CredentialCard
-                    key={ent.id}
-                    entitlement={ent}
-                    productName={productMap.get(ent.product_id) || 'Product'}
-                  />
-                ))}
-                {vpsEntitlements.map((ent) => (
-                  <VpsDetails
-                    key={ent.id}
-                    entitlement={ent}
-                    productName={productMap.get(ent.product_id) || 'VPS'}
-                  />
-                ))}
-              </div>
-            </div>
-          </Panel>
-        )}
 
         {order.transactions.length > 0 && (
           <Panel>

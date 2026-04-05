@@ -6,9 +6,12 @@ import { Panel } from '@/components/ui/panel';
 import { AdminTable } from '@/components/ui/admin-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 export default function UserProductsPage() {
+  const router = useRouter();
   const [products, setProducts] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -66,6 +69,15 @@ export default function UserProductsPage() {
         <span style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)' }}>
           {row.expires_at ? formatDate(row.expires_at as string) : '—'}
         </span>
+      ),
+    },
+    {
+      key: 'actions',
+      label: '',
+      render: (row: Record<string, unknown>) => (
+        <Button size="sm" onClick={() => router.push(`/dashboard/products/${row.id}`)}>
+          View
+        </Button>
       ),
     },
   ];
