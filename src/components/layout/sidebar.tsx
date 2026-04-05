@@ -31,7 +31,6 @@ const dashboardNav: NavItemDef[] = [
       { label: 'All Products', href: '/dashboard/products' },
       { label: 'VPS Droplets', href: '/dashboard/droplets' },
       { label: 'Digital Products', href: '/dashboard/products/digital' },
-      { label: 'Product Access', href: '/dashboard/products/access' },
     ]
   },
   { label: 'Orders', href: '/dashboard/orders', icon: <ShoppingCart size={18} />, group: 'Main', badge: 'dot' },
