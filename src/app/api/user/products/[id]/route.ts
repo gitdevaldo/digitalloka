@@ -30,7 +30,7 @@ export const GET = withErrorHandler(async (_request: NextRequest, { params }: { 
   let credentialHeaders: string[] | null = null;
 
   if (stockItemId) {
-    const { data: stockItem } = await admin
+    const { data: stockItem, error: stockErr } = await admin
       .from('product_stock_items')
       .select('credential_data, credential_headers, product_id')
       .eq('id', stockItemId)
@@ -40,6 +40,22 @@ export const GET = withErrorHandler(async (_request: NextRequest, { params }: { 
     if (stockItem) {
       credentialData = stockItem.credential_data;
       credentialHeaders = (stockItem.credential_headers as string[]) || null;
+    }
+  }
+
+  if (!stockItemId) {
+    const { data: stockByOrder } = await admin
+      .from('product_stock_items')
+      .select('id, credential_data, credential_headers')
+      .eq('product_id', entitlement.product_id)
+      .eq('sold_user_id', userId)
+      .not('credential_data', 'is', null)
+      .order('sold_at', { ascending: false })
+      .limit(1);
+
+    if (stockByOrder && stockByOrder.length > 0) {
+      credentialData = stockByOrder[0].credential_data;
+      credentialHeaders = (stockByOrder[0].credential_headers as string[]) || null;
     }
   }
 

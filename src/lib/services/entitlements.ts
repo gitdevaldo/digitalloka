@@ -34,17 +34,34 @@ export async function listUserEntitlements(supabase: TypedSupabaseClient, userId
   const enriched = await Promise.all((data || []).map(async (ent) => {
     const meta = (ent.meta as Record<string, unknown>) || {};
     const stockItemId = meta.stock_item_id as number | undefined;
-    if (!stockItemId) return ent;
 
-    const { data: stockItem } = await admin
-      .from('product_stock_items')
-      .select('credential_data')
-      .eq('id', stockItemId)
-      .single();
+    if (stockItemId) {
+      const { data: stockItem } = await admin
+        .from('product_stock_items')
+        .select('credential_data')
+        .eq('id', stockItemId)
+        .single();
 
-    if (stockItem?.credential_data) {
-      return { ...ent, credential_data: stockItem.credential_data };
+      if (stockItem?.credential_data) {
+        return { ...ent, credential_data: stockItem.credential_data };
+      }
     }
+
+    if (!stockItemId) {
+      const { data: stockByOrder } = await admin
+        .from('product_stock_items')
+        .select('credential_data')
+        .eq('product_id', ent.product_id)
+        .eq('sold_user_id', userId)
+        .not('credential_data', 'is', null)
+        .order('sold_at', { ascending: false })
+        .limit(1);
+
+      if (stockByOrder && stockByOrder.length > 0 && stockByOrder[0].credential_data) {
+        return { ...ent, credential_data: stockByOrder[0].credential_data };
+      }
+    }
+
     return ent;
   }));
 
