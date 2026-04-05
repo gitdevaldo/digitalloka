@@ -31,39 +31,67 @@ export async function listUserEntitlements(supabase: TypedSupabaseClient, userId
   if (error) throw new Error(error.message);
 
   const admin = createSupabaseAdminClient();
-  const enriched = await Promise.all((data || []).map(async (ent) => {
+  const entries = data || [];
+
+  const stockItemIds: number[] = [];
+  const fallbackProductIds: number[] = [];
+
+  for (const ent of entries) {
+    const meta = (ent.meta as Record<string, unknown>) || {};
+    const stockItemId = meta.stock_item_id as number | undefined;
+    if (stockItemId) {
+      stockItemIds.push(stockItemId);
+    } else {
+      fallbackProductIds.push(ent.product_id);
+    }
+  }
+
+  const stockItemMap: Record<number, unknown> = {};
+  if (stockItemIds.length > 0) {
+    const { data: stockItems } = await admin
+      .from('product_stock_items')
+      .select('id, credential_data')
+      .in('id', stockItemIds);
+
+    for (const item of stockItems || []) {
+      if (item.credential_data) {
+        stockItemMap[item.id] = item.credential_data;
+      }
+    }
+  }
+
+  const fallbackMap: Record<number, unknown> = {};
+  if (fallbackProductIds.length > 0) {
+    const uniqueProductIds = [...new Set(fallbackProductIds)];
+    const { data: fallbackItems } = await admin
+      .from('product_stock_items')
+      .select('product_id, credential_data, sold_at')
+      .in('product_id', uniqueProductIds)
+      .eq('sold_user_id', userId)
+      .not('credential_data', 'is', null)
+      .order('sold_at', { ascending: false });
+
+    for (const item of fallbackItems || []) {
+      if (!fallbackMap[item.product_id] && item.credential_data) {
+        fallbackMap[item.product_id] = item.credential_data;
+      }
+    }
+  }
+
+  const enriched = entries.map((ent) => {
     const meta = (ent.meta as Record<string, unknown>) || {};
     const stockItemId = meta.stock_item_id as number | undefined;
 
-    if (stockItemId) {
-      const { data: stockItem } = await admin
-        .from('product_stock_items')
-        .select('credential_data')
-        .eq('id', stockItemId)
-        .single();
-
-      if (stockItem?.credential_data) {
-        return { ...ent, credential_data: stockItem.credential_data };
-      }
+    if (stockItemId && stockItemMap[stockItemId]) {
+      return { ...ent, credential_data: stockItemMap[stockItemId] };
     }
 
-    if (!stockItemId) {
-      const { data: stockByOrder } = await admin
-        .from('product_stock_items')
-        .select('credential_data')
-        .eq('product_id', ent.product_id)
-        .eq('sold_user_id', userId)
-        .not('credential_data', 'is', null)
-        .order('sold_at', { ascending: false })
-        .limit(1);
-
-      if (stockByOrder && stockByOrder.length > 0 && stockByOrder[0].credential_data) {
-        return { ...ent, credential_data: stockByOrder[0].credential_data };
-      }
+    if (!stockItemId && fallbackMap[ent.product_id]) {
+      return { ...ent, credential_data: fallbackMap[ent.product_id] };
     }
 
     return ent;
-  }));
+  });
 
   return { data: enriched, total: count || 0, page, per_page: perPage };
 }

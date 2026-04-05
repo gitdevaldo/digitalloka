@@ -47,7 +47,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 
   const dropletIds = Object.keys(ownersByDropletId).map(Number);
   if (dropletIds.length === 0) {
-    return apiJson({ droplets: [], page, total_pages: Math.ceil((totalUsers || 0) / PAGE_SIZE), has_more: false });
+    return apiJson({ data: [], droplets: [], page, total_pages: Math.ceil((totalUsers || 0) / PAGE_SIZE), has_more: false });
   }
 
   try {
@@ -86,7 +86,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     });
 
     const totalPages = Math.ceil((totalUsers || 0) / PAGE_SIZE);
-    return apiJson({ droplets: mapped, page, total_pages: totalPages, has_more: page < totalPages });
+    return apiJson({ data: mapped, droplets: mapped, page, total_pages: totalPages, has_more: page < totalPages });
   } catch {
     return apiError('Failed to load droplets', 502);
   }

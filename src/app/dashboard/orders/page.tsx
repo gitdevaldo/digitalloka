@@ -29,7 +29,7 @@ export default function UserOrdersPage() {
         setNextCursor(data.next_cursor || null);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => { console.error('[UserOrders] Failed to load orders:', err); setLoading(false); });
   }, []);
 
   async function loadMore() {
@@ -40,7 +40,7 @@ export default function UserOrdersPage() {
       const data = await res.json();
       setOrders(prev => [...prev, ...(data.data || [])]);
       setNextCursor(data.next_cursor || null);
-    } catch { /* ignore */ }
+    } catch (err) { console.error('[UserOrders] Failed to load more orders:', err); }
     finally { setLoadingMore(false); }
   }
 

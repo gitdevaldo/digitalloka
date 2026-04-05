@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ButtonLink } from '@/components/ui/button';
 import { Panel } from '@/components/ui/panel';
 import { AdminTable, type Column } from '@/components/ui/admin-table';
@@ -16,13 +16,16 @@ export default function DashboardOverviewPage() {
   const [droplets, setDroplets] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
+    setLoading(true);
     Promise.all([
-      fetch('/api/user/products').then(r => r.json()).then(d => setProducts(d.data || [])).catch(() => {}),
-      fetch('/api/user/orders').then(r => r.json()).then(d => setOrders(d.data || [])).catch(() => {}),
-      fetch('/api/droplets').then(r => r.json()).then(d => setDroplets(d.data || [])).catch(() => {}),
+      fetch('/api/user/products').then(r => r.json()).then(d => setProducts(d.data || [])).catch((err) => console.error('[Dashboard] Failed to load products:', err)),
+      fetch('/api/user/orders').then(r => r.json()).then(d => setOrders(d.data || [])).catch((err) => console.error('[Dashboard] Failed to load orders:', err)),
+      fetch('/api/droplets').then(r => r.json()).then(d => setDroplets(d.data || [])).catch((err) => console.error('[Dashboard] Failed to load droplets:', err)),
     ]).finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
 
   const runningDroplets = droplets.filter(d => (d.status as string) === 'active').length;
   const stoppedDroplets = droplets.length - runningDroplets;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ButtonLink } from '@/components/ui/button';
 import { Panel } from '@/components/ui/panel';
 import { AdminTable } from '@/components/ui/admin-table';
@@ -51,9 +51,7 @@ export default function AdminOverviewPage() {
   const [auditRows, setAuditRows] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadAllData(); }, []);
-
-  async function loadAllData() {
+  const loadAllData = useCallback(async () => {
     setLoading(true);
     try {
       const [productsRes, ordersRes, entitlementsRes, usersRes, dropletsRes, auditRes] = await Promise.allSettled([
@@ -69,7 +67,7 @@ export default function AdminOverviewPage() {
       const orders = ordersRes.status === 'fulfilled' ? (ordersRes.value.data || []) : [];
       const entitlements = entitlementsRes.status === 'fulfilled' ? (entitlementsRes.value.data || []) : [];
       const users = usersRes.status === 'fulfilled' ? (usersRes.value.data || []) : [];
-      const dropletsRaw = dropletsRes.status === 'fulfilled' ? (dropletsRes.value.droplets || dropletsRes.value.data || []) : [];
+      const dropletsRaw = dropletsRes.status === 'fulfilled' ? (dropletsRes.value.data || []) : [];
       const audit = auditRes.status === 'fulfilled' ? (auditRes.value.data || []) : [];
 
       const activeProducts = products.filter((p: Record<string, unknown>) => Boolean(p.is_visible)).length;
@@ -131,12 +129,14 @@ export default function AdminOverviewPage() {
         result: String(e.result || 'ok').toLowerCase(),
         ts: formatDate(e.created_at as string),
       })));
-    } catch {
-      // silently fail
+    } catch (err) {
+      console.error('[AdminOverview] Failed to load dashboard data:', err);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => { loadAllData(); }, [loadAllData]);
 
   const auditColumns = [
     { key: 'actor', label: 'Actor', render: (row: AuditRow) => <span className="font-mono text-[0.78rem]">{row.actor}</span> },
