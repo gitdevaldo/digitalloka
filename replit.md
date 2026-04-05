@@ -133,8 +133,6 @@ Run against Supabase to apply performance indexes:
 - `MAYAR_API_KEY` - Mayar API key (in Replit secrets)
 - `MAYAR_WEBHOOK_TOKEN` - Mayar webhook verification token (in Replit secrets, separate from API key)
 - `MAYAR_BASE_URL` - Mayar API base URL (in `.env.local`)
-- `PAYMENT_WEBHOOK_SECRET` - HMAC secret for verifying payment webhook signatures
-- `MAYAR_SANDBOX` - Set to "true" for sandbox mode (in `.env.local`)
 - `NEXT_PUBLIC_LOGO_DEV_TOKEN` - Logo.dev publishable key for provider logos
 
 ## Cursor-Based Pagination

@@ -28,7 +28,6 @@ interface Entitlement {
   meta: Record<string, unknown> | null;
   product: Product | null;
   credential_data: Record<string, string> | null;
-  credential_headers: string[] | null;
 }
 
 function isLinkValue(val: string): boolean {
@@ -42,7 +41,7 @@ function CredentialSection({ entitlement }: { entitlement: Entitlement }) {
   const cred = entitlement.credential_data;
   if (!cred || Object.keys(cred).length === 0) return null;
 
-  const headers = entitlement.credential_headers || Object.keys(cred);
+  const headers = Object.keys(cred);
 
   const handleCopy = (value: string, field: string) => {
     navigator.clipboard.writeText(value).then(() => {

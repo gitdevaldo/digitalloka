@@ -27,26 +27,24 @@ export const GET = withErrorHandler(async (_request: NextRequest, { params }: { 
   const stockItemId = meta.stock_item_id as number | undefined;
 
   let credentialData = null;
-  let credentialHeaders: string[] | null = null;
 
   if (stockItemId) {
-    const { data: stockItem, error: stockErr } = await admin
+    const { data: stockItem } = await admin
       .from('product_stock_items')
-      .select('credential_data, credential_headers, product_id')
+      .select('credential_data, product_id')
       .eq('id', stockItemId)
       .eq('product_id', entitlement.product_id)
       .single();
 
-    if (stockItem) {
+    if (stockItem?.credential_data) {
       credentialData = stockItem.credential_data;
-      credentialHeaders = (stockItem.credential_headers as string[]) || null;
     }
   }
 
-  if (!stockItemId) {
+  if (!credentialData) {
     const { data: stockByOrder } = await admin
       .from('product_stock_items')
-      .select('id, credential_data, credential_headers')
+      .select('id, credential_data')
       .eq('product_id', entitlement.product_id)
       .eq('sold_user_id', userId)
       .not('credential_data', 'is', null)
@@ -55,7 +53,6 @@ export const GET = withErrorHandler(async (_request: NextRequest, { params }: { 
 
     if (stockByOrder && stockByOrder.length > 0) {
       credentialData = stockByOrder[0].credential_data;
-      credentialHeaders = (stockByOrder[0].credential_headers as string[]) || null;
     }
   }
 
@@ -63,7 +60,6 @@ export const GET = withErrorHandler(async (_request: NextRequest, { params }: { 
     data: {
       ...entitlement,
       credential_data: credentialData,
-      credential_headers: credentialHeaders,
     },
   });
 });

@@ -2,22 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { fulfillOrder } from '@/lib/services/fulfillment';
 import { sendOrderConfirmationEmail } from '@/lib/services/email';
-import crypto from 'crypto';
 import { withErrorHandler } from '@/lib/api-handler';
 import { apiError } from '@/lib/api-response';
 
 function verifyCallbackToken(tokenHeader: string | null): boolean {
   const expectedToken = process.env.MAYAR_WEBHOOK_TOKEN;
   if (!expectedToken || !tokenHeader) return false;
-
-  try {
-    return crypto.timingSafeEqual(
-      Buffer.from(expectedToken),
-      Buffer.from(tokenHeader)
-    );
-  } catch {
-    return false;
-  }
+  return expectedToken === tokenHeader;
 }
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
