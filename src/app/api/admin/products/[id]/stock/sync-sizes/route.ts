@@ -5,6 +5,7 @@ import { listSizes } from '@/lib/services/digitalocean';
 import { syncDigitalOceanProviderData } from '@/lib/services/sync-provider-data';
 import { apiError, apiJson } from '@/lib/api-response';
 import { withErrorHandler } from '@/lib/api-handler';
+import { parseRequestBody } from '@/lib/validation';
 import { syncSizesUpdateSchema, manualSizeCreateSchema } from '@/lib/validation/schemas';
 
 export const POST = withErrorHandler(async (_request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
@@ -104,11 +105,9 @@ export const PATCH = withErrorHandler(async (request: NextRequest, { params }: {
 
   const { id } = await params;
   const productId = Number(id);
-  const body = await request.json();
-  const parsed = syncSizesUpdateSchema.safeParse(body);
-  if (!parsed.success) {
-    return apiError(parsed.error.issues.map(i => i.message).join(', '), 422);
-  }
+  const parsed = await parseRequestBody(request, syncSizesUpdateSchema);
+  if (!parsed.success) return parsed.response;
+
   const { stock_item_id, status, selling_price } = parsed.data;
 
   const admin = createSupabaseAdminClient();
@@ -157,11 +156,8 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: { p
 
   const { id } = await params;
   const productId = Number(id);
-  const body = await request.json();
-  const parsed = manualSizeCreateSchema.safeParse(body);
-  if (!parsed.success) {
-    return apiError(parsed.error.issues.map(i => i.message).join(', '), 422);
-  }
+  const parsed = await parseRequestBody(request, manualSizeCreateSchema);
+  if (!parsed.success) return parsed.response;
 
   const { provider, slug, vcpus, memory, disk } = parsed.data;
 
@@ -176,7 +172,7 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: { p
     disk: Number(disk),
     transfer: parsed.data.transfer,
     price_monthly: parsed.data.price_monthly,
-    price_hourly: Number((parsed.data.price_monthly / 730).toFixed(5)),
+    price_hourly: Number(((parsed.data.price_monthly ?? 0) / 730).toFixed(5)),
     available: true,
     regions: parsed.data.regions,
   };
@@ -189,7 +185,8 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: { p
     added_at: new Date().toISOString(),
   };
 
-  for (const [key, value] of Object.entries(body)) {
+  const rawBody = await request.clone().json().catch(() => ({}));
+  for (const [key, value] of Object.entries(rawBody as Record<string, unknown>)) {
     if (['selling_price', 'price_monthly', 'regions'].includes(key)) continue;
     if (CREDENTIAL_KEYS.includes(key)) continue;
     if (key === 'provider') continue;

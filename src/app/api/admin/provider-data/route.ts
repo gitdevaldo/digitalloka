@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { parseRequestBody } from '@/lib/validation';
+import { providerDataCreateSchema, providerDataUpdateSchema } from '@/lib/validation/schemas';
 
 export async function GET(request: NextRequest) {
   const userId = await getSessionUserId();
@@ -38,16 +40,10 @@ export async function POST(request: NextRequest) {
   const userId = await getSessionUserId();
   if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const body = await request.json();
-  const { provider, resource_type, slug, name, available, data } = body;
+  const parsed = await parseRequestBody(request, providerDataCreateSchema);
+  if (!parsed.success) return parsed.response;
 
-  if (!provider || !resource_type || !slug || !name) {
-    return NextResponse.json({ error: 'provider, resource_type, slug, and name are required' }, { status: 422 });
-  }
-
-  if (!['region', 'image'].includes(resource_type)) {
-    return NextResponse.json({ error: 'resource_type must be "region" or "image"' }, { status: 422 });
-  }
+  const { provider, resource_type, slug, name, available, data } = parsed.data;
 
   const admin = createSupabaseAdminClient();
 
@@ -70,8 +66,8 @@ export async function POST(request: NextRequest) {
       resource_type,
       slug,
       name,
-      available: available !== false,
-      data: data || {},
+      available,
+      data: (data || {}) as import('@/lib/supabase/database.types').Json,
       synced_at: new Date().toISOString(),
     })
     .select()
@@ -105,22 +101,20 @@ export async function PUT(request: NextRequest) {
   const userId = await getSessionUserId();
   if (!userId || !await isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const body = await request.json();
-  const { id, name, slug, available } = body;
-
-  if (!id) return NextResponse.json({ error: 'id is required' }, { status: 422 });
+  const parsed = await parseRequestBody(request, providerDataUpdateSchema);
+  if (!parsed.success) return parsed.response;
 
   const admin = createSupabaseAdminClient();
 
   const updates: Record<string, unknown> = {};
-  if (name !== undefined) updates.name = name;
-  if (slug !== undefined) updates.slug = slug;
-  if (available !== undefined) updates.available = available;
+  if (parsed.data.name !== undefined) updates.name = parsed.data.name;
+  if (parsed.data.slug !== undefined) updates.slug = parsed.data.slug;
+  if (parsed.data.available !== undefined) updates.available = parsed.data.available;
 
   const { data, error } = await admin
     .from('vps_provider_data')
     .update(updates)
-    .eq('id', Number(id))
+    .eq('id', parsed.data.id)
     .select()
     .single();
 

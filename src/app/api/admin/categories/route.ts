@@ -5,6 +5,8 @@ import { sanitizeDbError } from '@/lib/error-sanitizer';
 import { withErrorHandler } from '@/lib/api-handler';
 import { apiSuccess, apiError } from '@/lib/api-response';
 import { logAudit } from '@/lib/services/audit-log';
+import { parseRequestBody } from '@/lib/validation';
+import { categoryCreateSchema } from '@/lib/validation/schemas';
 
 export const GET = withErrorHandler(async () => {
   const userId = await getSessionUserId();
@@ -24,17 +26,16 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
   if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
-  const body = await request.json();
-  if (!body.name?.trim()) {
-    return apiError('Category name is required', 422);
-  }
+  const parsed = await parseRequestBody(request, categoryCreateSchema);
+  if (!parsed.success) return parsed.response;
 
   const admin = createSupabaseAdminClient();
-  const slug = body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const name = parsed.data.name.trim();
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
   const { data, error } = await admin
     .from('product_categories')
-    .insert({ name: body.name.trim(), slug })
+    .insert({ name, slug })
     .select()
     .single();
 
@@ -52,7 +53,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     target_id: String(data.id),
     actor_user_id: userId,
     actor_role: 'admin',
-    changes: { name: body.name.trim(), slug },
+    changes: { name, slug },
   }).catch((err: unknown) => {
     console.error('[audit-log] Failed to log category.create:', err);
   });

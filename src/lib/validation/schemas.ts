@@ -128,6 +128,104 @@ export const syncSizesUpdateSchema = z.object({
   selling_price: z.coerce.number().min(0).optional(),
 });
 
+export const cartItemSchema = z.object({
+  productId: z.coerce.number().int().positive('productId must be a positive integer'),
+  quantity: z.coerce.number().int().min(1).max(50),
+  configId: z.string().optional(),
+  selectedStockId: z.coerce.number().int().positive().optional(),
+  selectedRegion: z.string().optional(),
+  selectedImage: z.string().optional(),
+  vpsConfig: z.record(z.unknown()).optional(),
+});
+
+export const cartUpdateSchema = z.object({
+  items: z.array(cartItemSchema),
+});
+
+export const sessionSetSchema = z.object({
+  access_token: z.string().min(1, 'access_token is required'),
+  refresh_token: z.string().optional().default(''),
+});
+
+export const productActionSchema = z.object({
+  action: z.enum(['view_details', 'download_assets', 'renew', 'revoke'], {
+    errorMap: () => ({ message: 'Invalid action' }),
+  }),
+});
+
+export const wishlistToggleSchema = z.object({
+  product_id: z.coerce.number().int().positive('product_id must be a positive integer'),
+});
+
+export const cartProductIdsSchema = z.object({
+  ids: z.array(z.coerce.number().int().positive()).min(1, 'ids must contain at least one item'),
+});
+
+export const settingsUpdateSchema = z.object({
+  group: z.string().min(1, 'group is required'),
+  values: z.record(z.unknown()).refine(val => typeof val === 'object', 'values must be an object'),
+});
+
+export const userAccessUpdateSchema = z.object({
+  role: z.enum(['user', 'admin']).optional(),
+  is_active: z.boolean().optional(),
+});
+
+export const orderStatusUpdateSchema = z.object({
+  status: z.string().min(1, 'status is required'),
+});
+
+export const entitlementStatusUpdateSchema = z.object({
+  status: z.enum(['pending', 'active', 'expired', 'revoked'], {
+    errorMap: () => ({ message: 'Invalid status' }),
+  }),
+  reason: z.string().optional(),
+});
+
+export const entitlementExtendSchema = z.object({
+  days: z.coerce.number().int().positive().optional().default(30),
+});
+
+export const categoryCreateSchema = z.object({
+  name: z.string().min(1, 'Category name is required').max(255),
+});
+
+export const testEmailSchema = z.object({
+  to: z.string().email('Valid email address required'),
+});
+
+export const productStockUpdateSchema = z.object({
+  credential_data: z.record(z.unknown()).optional(),
+  status: z.string().optional(),
+  meta: z.record(z.unknown()).optional(),
+  is_unlimited: z.boolean().optional(),
+});
+
+export const productTypeUpdateSchema = z.object({
+  label: z.string().min(1).max(255).optional(),
+  description: z.string().max(1000).optional(),
+  is_active: z.boolean().optional(),
+  fields: z.array(z.unknown()).optional(),
+});
+
+export const providerDataCreateSchema = z.object({
+  provider: z.string().min(1, 'provider is required'),
+  resource_type: z.enum(['region', 'image'], {
+    errorMap: () => ({ message: 'resource_type must be "region" or "image"' }),
+  }),
+  slug: z.string().min(1, 'slug is required'),
+  name: z.string().min(1, 'name is required'),
+  available: z.boolean().optional().default(true),
+  data: z.record(z.unknown()).optional().default({}),
+});
+
+export const providerDataUpdateSchema = z.object({
+  id: z.coerce.number().int().positive('id is required'),
+  name: z.string().optional(),
+  slug: z.string().optional(),
+  available: z.boolean().optional(),
+});
+
 export const manualSizeCreateSchema = z.object({
   provider: z.string().min(1, 'provider is required'),
   slug: z.string().min(1, 'slug is required'),

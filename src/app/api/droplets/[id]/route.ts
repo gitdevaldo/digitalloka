@@ -20,7 +20,8 @@ export const GET = withErrorHandler(async (_request: NextRequest, { params }: { 
   try {
     const droplet = await getDroplet(dropletId);
     return apiSuccess(droplet);
-  } catch {
+  } catch (err) {
+    console.error('[droplets] Failed to get droplet:', err);
     return apiError('Droplet not found', 404);
   }
 });

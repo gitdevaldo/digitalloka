@@ -5,6 +5,7 @@ import { sanitizeDbError } from '@/lib/error-sanitizer';
 import { withErrorHandler } from '@/lib/api-handler';
 import { apiSuccess, apiError, apiJson } from '@/lib/api-response';
 import { logAudit } from '@/lib/services/audit-log';
+import { parseRequestBody } from '@/lib/validation';
 import { productStockBulkSchema } from '@/lib/validation/schemas';
 
 export const GET = withErrorHandler(async (_request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
@@ -34,11 +35,8 @@ export const POST = withErrorHandler(async (request: NextRequest, { params }: { 
   if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { id } = await params;
-  const body = await request.json();
-  const parsed = productStockBulkSchema.safeParse(body);
-  if (!parsed.success) {
-    return apiError(parsed.error.issues.map(i => i.message).join(', '), 422);
-  }
+  const parsed = await parseRequestBody(request, productStockBulkSchema);
+  if (!parsed.success) return parsed.response;
 
   const admin = createSupabaseAdminClient();
   const headers: string[] = parsed.data.headers;
@@ -63,7 +61,6 @@ export const POST = withErrorHandler(async (request: NextRequest, { params }: { 
       credential_data: credentialData,
       credential_hash: credentialHash,
       status: 'enabled',
-      is_unlimited: !!body.is_unlimited,
       created_at: new Date().toISOString(),
     });
 

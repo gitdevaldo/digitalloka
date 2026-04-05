@@ -3,6 +3,8 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
 import { withErrorHandler } from '@/lib/api-handler';
 import { apiError } from '@/lib/api-response';
+import { parseRequestBody } from '@/lib/validation';
+import { wishlistToggleSchema } from '@/lib/validation/schemas';
 
 export const GET = withErrorHandler(async () => {
   const supabase = await createSupabaseServerClient();
@@ -32,17 +34,10 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     return apiError('Not authenticated', 401);
   }
 
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return apiError('Invalid JSON', 400);
-  }
+  const parsed = await parseRequestBody(request, wishlistToggleSchema);
+  if (!parsed.success) return parsed.response;
 
-  const { product_id } = body;
-  if (!product_id || typeof product_id !== 'number') {
-    return apiError('product_id must be a number', 400);
-  }
+  const { product_id } = parsed.data;
 
   const { data: existing, error: fetchError } = await supabase
     .from('wishlists')

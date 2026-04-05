@@ -5,18 +5,20 @@ import { sanitizeDbError } from '@/lib/error-sanitizer';
 import { withErrorHandler } from '@/lib/api-handler';
 import { apiSuccess, apiError } from '@/lib/api-response';
 import { logAudit } from '@/lib/services/audit-log';
+import { parseRequestBody } from '@/lib/validation';
+import { userAccessUpdateSchema } from '@/lib/validation/schemas';
 
 export const PUT = withErrorHandler(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const userId = await getSessionUserId();
   if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { id } = await params;
-  const body = await request.json();
-  const updates: Record<string, unknown> = {};
+  const parsed = await parseRequestBody(request, userAccessUpdateSchema);
+  if (!parsed.success) return parsed.response;
 
-  const validRoles = ['user', 'admin'];
-  if (body.role && validRoles.includes(body.role)) updates.role = body.role;
-  if (body.is_active !== undefined) updates.is_active = Boolean(body.is_active);
+  const updates: Record<string, unknown> = {};
+  if (parsed.data.role) updates.role = parsed.data.role;
+  if (parsed.data.is_active !== undefined) updates.is_active = parsed.data.is_active;
 
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin.from('users').update(updates).eq('id', id).select().single();

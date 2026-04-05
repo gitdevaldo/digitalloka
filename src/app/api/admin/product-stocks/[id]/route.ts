@@ -5,6 +5,8 @@ import { sanitizeDbError } from '@/lib/error-sanitizer';
 import { withErrorHandler } from '@/lib/api-handler';
 import { apiSuccess, apiError, apiJson } from '@/lib/api-response';
 import { logAudit } from '@/lib/services/audit-log';
+import { parseRequestBody } from '@/lib/validation';
+import { productStockUpdateSchema } from '@/lib/validation/schemas';
 
 export const GET = withErrorHandler(async (_request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const userId = await getSessionUserId();
@@ -38,13 +40,15 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: { p
   if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { id } = await params;
-  const body = await request.json();
+  const parsed = await parseRequestBody(request, productStockUpdateSchema);
+  if (!parsed.success) return parsed.response;
+
   const admin = createSupabaseAdminClient();
 
   const updates: Record<string, unknown> = {};
-  if (body.credential_data && typeof body.credential_data === 'object') {
-    updates.credential_data = body.credential_data;
-    updates.credential_hash = await hashCredentials(body.credential_data);
+  if (parsed.data.credential_data && typeof parsed.data.credential_data === 'object' && Object.keys(parsed.data.credential_data).length > 0) {
+    updates.credential_data = parsed.data.credential_data;
+    updates.credential_hash = await hashCredentials(parsed.data.credential_data as Record<string, unknown>);
 
     const { data: dup } = await admin
       .from('product_stock_items')
@@ -57,9 +61,9 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: { p
       return apiError('Duplicate stock credentials for this product', 422);
     }
   }
-  if (body.status) updates.status = body.status;
-  if (body.meta && typeof body.meta === 'object') updates.meta = body.meta;
-  if (body.is_unlimited !== undefined) updates.is_unlimited = body.is_unlimited;
+  if (parsed.data.status) updates.status = parsed.data.status;
+  if (parsed.data.meta && typeof parsed.data.meta === 'object') updates.meta = parsed.data.meta;
+  if (parsed.data.is_unlimited !== undefined) updates.is_unlimited = parsed.data.is_unlimited;
 
   if (Object.keys(updates).length === 0) {
     return apiError('No valid fields to update', 422);

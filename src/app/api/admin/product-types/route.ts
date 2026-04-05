@@ -5,6 +5,7 @@ import { sanitizeDbError } from '@/lib/error-sanitizer';
 import { withErrorHandler } from '@/lib/api-handler';
 import { apiError, apiJson } from '@/lib/api-response';
 import { logAudit } from '@/lib/services/audit-log';
+import { parseRequestBody } from '@/lib/validation';
 import { productTypeCreateSchema } from '@/lib/validation/schemas';
 
 export const GET = withErrorHandler(async () => {
@@ -35,11 +36,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
   if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
-  const body = await request.json();
-  const parsed = productTypeCreateSchema.safeParse(body);
-  if (!parsed.success) {
-    return apiError(parsed.error.issues.map(i => i.message).join(', '), 422);
-  }
+  const parsed = await parseRequestBody(request, productTypeCreateSchema);
+  if (!parsed.success) return parsed.response;
 
   const admin = createSupabaseAdminClient();
 

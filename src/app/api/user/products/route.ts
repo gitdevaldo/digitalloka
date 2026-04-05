@@ -13,7 +13,8 @@ export const GET = withErrorHandler(async () => {
     const supabase = await createSupabaseServerClient();
     const result = await listUserEntitlements(supabase, userId);
     return NextResponse.json(result);
-  } catch {
+  } catch (err) {
+    console.error('[user/products] Failed to load products:', err);
     return apiError('Failed to load products', 500);
   }
 });

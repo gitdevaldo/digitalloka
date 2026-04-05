@@ -14,7 +14,8 @@ export const GET = withErrorHandler(async () => {
     const dropletIds = await getUserDropletIds(supabase, userId);
     const droplets = await listDroplets(dropletIds);
     return NextResponse.json({ data: droplets });
-  } catch {
+  } catch (err) {
+    console.error('[droplets] Failed to load droplets:', err);
     return apiError('Failed to load droplets', 500);
   }
 });

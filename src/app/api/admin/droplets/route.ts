@@ -87,7 +87,8 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 
     const totalPages = Math.ceil((totalUsers || 0) / PAGE_SIZE);
     return apiJson({ data: mapped, droplets: mapped, page, total_pages: totalPages, has_more: page < totalPages });
-  } catch {
+  } catch (err) {
+    console.error('[admin/droplets] Failed to load droplets:', err);
     return apiError('Failed to load droplets', 502);
   }
 });

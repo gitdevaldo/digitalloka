@@ -5,14 +5,18 @@ import { sanitizeDbError } from '@/lib/error-sanitizer';
 import { withErrorHandler } from '@/lib/api-handler';
 import { apiSuccess, apiError } from '@/lib/api-response';
 import { logAudit } from '@/lib/services/audit-log';
+import { parseRequestBody } from '@/lib/validation';
+import { entitlementExtendSchema } from '@/lib/validation/schemas';
 
 export const PUT = withErrorHandler(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const userId = await getSessionUserId();
   if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { id } = await params;
-  const body = await request.json();
-  const days = Number(body.days || 30);
+  const parsed = await parseRequestBody(request, entitlementExtendSchema);
+  if (!parsed.success) return parsed.response;
+
+  const days = parsed.data.days ?? 30;
 
   const admin = createSupabaseAdminClient();
 

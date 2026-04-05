@@ -2,15 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
 import { withErrorHandler } from '@/lib/api-handler';
+import { parseRequestBody } from '@/lib/validation';
+import { cartProductIdsSchema } from '@/lib/validation/schemas';
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
   try {
-    const body = await request.json();
-    const ids: number[] = body.ids;
+    const parsed = await parseRequestBody(request, cartProductIdsSchema);
+    if (!parsed.success) return parsed.response;
 
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return NextResponse.json({ data: [] });
-    }
+    const { ids } = parsed.data;
 
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
@@ -24,7 +24,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     }
 
     return NextResponse.json({ data: data || [] });
-  } catch {
+  } catch (err) {
+    console.error('[cart/products] Failed to load cart products:', err);
     return NextResponse.json({ data: [] }, { status: 400 });
   }
 });

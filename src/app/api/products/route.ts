@@ -54,7 +54,8 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     const response = NextResponse.json({ ...result, data: enrichedData });
     response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
     return response;
-  } catch {
+  } catch (err) {
+    console.error('[products] Failed to load products:', err);
     return apiError('Failed to load products', 500);
   }
 });

@@ -27,7 +27,8 @@ export const POST = withErrorHandler(async (request: NextRequest, { params }: { 
   try {
     const action = await performAction(dropletId, actionType);
     return apiSuccess(action);
-  } catch {
+  } catch (err) {
+    console.error('[droplets/actions] Action failed:', err);
     return apiError('Action failed', 500);
   }
 });

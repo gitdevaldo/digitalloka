@@ -29,7 +29,7 @@ DigitalLoka is a Next.js application designed to provide a comprehensive platfor
 - **Port:** 5000
 - **Security:** CSP, HSTS, Permissions-Policy headers via next.config.js; error sanitization via `src/lib/error-sanitizer.ts`; ilike injection protection in audit logs; XSS protection via `isomorphic-dompurify` (`src/lib/sanitize-html.ts`); CRON_SECRET auth on cron endpoints; Mayar sandbox production guard
 - **Error Handling:** Centralized `withErrorHandler` wrapper (`src/lib/api-handler.ts`) on all API routes; shared response helpers (`src/lib/api-response.ts`: `apiSuccess`, `apiError`, `apiJson`); audit logging on all admin write operations via `logAudit` with console.error on failures
-- **Input Validation:** Zod schemas in `src/lib/validation/schemas.ts` for admin mutation endpoints (product-stocks, product-types, sync-sizes)
+- **Input Validation:** Zod schemas in `src/lib/validation/schemas.ts` for admin mutation endpoints (product-stocks, product-types, sync-sizes) and user endpoints (cart update). All API route catch blocks log errors via `console.error` before returning error responses.
 
 ## System Architecture
 The application is built with Next.js 14 (App Router) using TypeScript and styled with Tailwind CSS 3.4, adhering to a Neo-Brutalist design system. Supabase handles database operations and magic link authentication.
@@ -104,7 +104,7 @@ Run against Supabase to apply critical RLS fixes:
 - `product_stock_items` — RLS enabled, public read removed, admin-only + sold-item owner read
 - `products` — Legacy unconditional public read policy dropped (main policy already filters by is_visible + status)
 
-### Database Indexes (docs/sql/2026-04-03-database-indexes.sql)
+### Database Indexes (docs/sql/2026-04-03-database-indexes.sql + supabase/migrations/20250405000001_add_performance_indexes.sql)
 Run against Supabase to apply performance indexes:
 - `order_items(order_id)`, `transactions(order_id)` — RLS policy join acceleration
 - `payment_events(idempotency_key)` UNIQUE — idempotent payment processing
@@ -113,6 +113,10 @@ Run against Supabase to apply performance indexes:
 - `products(name)`, `products(short_description)` — GIN trigram indexes for ILIKE search (requires pg_trgm)
 - `entitlements(order_item_id, user_id)` — entitlement existence checks
 - `product_stock_items(product_id, credential_hash)` — already covered by existing unique index from initial migration
+- `orders(user_id, created_at)` — user order listing queries
+- `entitlements(user_id, created_at)` — user entitlement queries
+- `product_stock_items(product_id, status)` — stock availability checks
+- `products(is_visible, created_at)` — visible product listing by date
 
 ## Payment Gateway: Mayar (Sandbox)
 - **Provider:** Mayar (Indonesian payment gateway) — sandbox at `mayar.club`

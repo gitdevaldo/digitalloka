@@ -46,7 +46,7 @@ export async function createSupabaseServerClient(): Promise<TypedSupabaseClient>
  *
  * USE THIS ONLY for operations that genuinely require elevated privileges:
  *   - Admin routes (/api/admin/*) that query across multiple users
- *   - Webhook processing (payment-verification) where there is no user session
+ *   - Webhook processing (e.g. Mayar) where there is no user session
  *   - User sync on auth callback (inserting into the users table for new signups)
  *   - Audit logging (system-level inserts)
  *   - Middleware role checks (isAdmin) where RLS would be circular

@@ -23,6 +23,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     if (err instanceof Error && err.message === 'Invalid cursor format') {
       return apiError('Invalid cursor', 400);
     }
+    console.error('[user/orders] Failed to load orders:', err);
     return apiError('Failed to load orders', 500);
   }
 });

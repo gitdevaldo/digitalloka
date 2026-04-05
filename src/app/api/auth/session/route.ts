@@ -3,6 +3,8 @@ import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/sup
 import { sanitizeDbError } from '@/lib/error-sanitizer';
 import { withErrorHandler } from '@/lib/api-handler';
 import { apiError } from '@/lib/api-response';
+import { parseRequestBody } from '@/lib/validation';
+import { sessionSetSchema } from '@/lib/validation/schemas';
 
 export const GET = withErrorHandler(async () => {
   const supabase = await createSupabaseServerClient();
@@ -32,17 +34,15 @@ async function syncUserToTable(userId: string, email: string) {
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
   try {
-    const body = await request.json();
-    const { access_token, refresh_token } = body;
+    const parsed = await parseRequestBody(request, sessionSetSchema);
+    if (!parsed.success) return parsed.response;
 
-    if (!access_token) {
-      return apiError('Missing access_token', 400);
-    }
+    const { access_token, refresh_token } = parsed.data;
 
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.setSession({
       access_token,
-      refresh_token: refresh_token || '',
+      refresh_token: refresh_token ?? '',
     });
 
     if (error) {
@@ -55,7 +55,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     }
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (err) {
+    console.error('[auth/session] Invalid request:', err);
     return apiError('Invalid request', 400);
   }
 });

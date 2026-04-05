@@ -5,20 +5,24 @@ import { sanitizeDbError } from '@/lib/error-sanitizer';
 import { withErrorHandler } from '@/lib/api-handler';
 import { apiError } from '@/lib/api-response';
 import { logAudit } from '@/lib/services/audit-log';
+import { parseRequestBody } from '@/lib/validation';
+import { productTypeUpdateSchema } from '@/lib/validation/schemas';
 
 export const PUT = withErrorHandler(async (request: NextRequest, { params }: { params: Promise<{ type: string }> }) => {
   const userId = await getSessionUserId();
   if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
   const { type } = await params;
-  const body = await request.json();
+  const parsed = await parseRequestBody(request, productTypeUpdateSchema);
+  if (!parsed.success) return parsed.response;
+
   const admin = createSupabaseAdminClient();
 
   const updates: Record<string, unknown> = {};
-  if (body.label !== undefined) updates.label = body.label;
-  if (body.description !== undefined) updates.description = body.description;
-  if (body.is_active !== undefined) updates.is_active = body.is_active;
-  if (body.fields !== undefined) updates.fields = body.fields;
+  if (parsed.data.label !== undefined) updates.label = parsed.data.label;
+  if (parsed.data.description !== undefined) updates.description = parsed.data.description;
+  if (parsed.data.is_active !== undefined) updates.is_active = parsed.data.is_active;
+  if (parsed.data.fields !== undefined) updates.fields = parsed.data.fields;
 
   const { data, error } = await admin
     .from('product_types')

@@ -14,7 +14,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
     const result = await startMagicLinkLogin(email, next, mode === 'admin' ? 'admin' : 'user');
     return NextResponse.json(result);
-  } catch {
+  } catch (err) {
+    console.error('[auth/login] Unable to send magic link:', err);
     return apiError('Unable to send magic link', 400);
   }
 });

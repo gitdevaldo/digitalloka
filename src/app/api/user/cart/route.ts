@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { sanitizeDbError } from '@/lib/error-sanitizer';
+import { parseRequestBody } from '@/lib/validation';
+import { cartUpdateSchema } from '@/lib/validation/schemas';
 
 export async function GET() {
   const supabase = await createSupabaseServerClient();
@@ -40,26 +42,10 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-  }
+  const parsed = await parseRequestBody(request, cartUpdateSchema);
+  if (!parsed.success) return parsed.response;
 
-  const items: Array<{
-    productId: number;
-    quantity: number;
-    configId?: string;
-    selectedStockId?: number;
-    selectedRegion?: string;
-    selectedImage?: string;
-    vpsConfig?: Record<string, unknown>;
-  }> = body.items;
-
-  if (!Array.isArray(items)) {
-    return NextResponse.json({ error: 'items must be an array' }, { status: 400 });
-  }
+  const { items } = parsed.data;
 
   const { error: deleteError } = await supabase
     .from('cart_items')

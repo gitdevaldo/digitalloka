@@ -4,6 +4,8 @@ import { performAction } from '@/lib/services/digitalocean';
 import { withErrorHandler } from '@/lib/api-handler';
 import { apiError } from '@/lib/api-response';
 import { logAudit } from '@/lib/services/audit-log';
+import { parseRequestBody } from '@/lib/validation';
+import { dropletActionSchema } from '@/lib/validation/schemas';
 
 export const POST = withErrorHandler(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const userId = await getSessionUserId();
@@ -15,14 +17,11 @@ export const POST = withErrorHandler(async (request: NextRequest, { params }: { 
     return apiError('Invalid droplet ID', 400);
   }
 
-  const body = await request.json();
-  const validActions = ['power_on', 'power_off', 'reboot', 'shutdown', 'power_cycle'];
-  if (!body.type || !validActions.includes(body.type)) {
-    return apiError('Invalid action type', 422);
-  }
+  const parsed = await parseRequestBody(request, dropletActionSchema);
+  if (!parsed.success) return parsed.response;
 
   try {
-    const action = await performAction(dropletId, body.type);
+    const action = await performAction(dropletId, parsed.data.type);
 
     await logAudit({
       action: 'droplet.action',
@@ -30,13 +29,14 @@ export const POST = withErrorHandler(async (request: NextRequest, { params }: { 
       target_id: id,
       actor_user_id: userId,
       actor_role: 'admin',
-      changes: { action_type: body.type },
+      changes: { action_type: parsed.data.type },
     }).catch((err: unknown) => {
       console.error('[audit-log] Failed to log droplet.action:', err);
     });
 
     return NextResponse.json({ action }, { status: 201 });
-  } catch {
+  } catch (err) {
+    console.error('[admin/droplets/actions] Action failed:', err);
     return apiError('Action failed', 502);
   }
 });

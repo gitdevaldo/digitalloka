@@ -5,6 +5,7 @@ import { sanitizeDbError } from '@/lib/error-sanitizer';
 import { withErrorHandler } from '@/lib/api-handler';
 import { apiError, apiJson, apiSuccess } from '@/lib/api-response';
 import { logAudit } from '@/lib/services/audit-log';
+import { parseRequestBody } from '@/lib/validation';
 import { productStockCreateSchema } from '@/lib/validation/schemas';
 
 export const GET = withErrorHandler(async (request: NextRequest) => {
@@ -48,11 +49,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   const userId = await getSessionUserId();
   if (!userId || !await isAdmin(userId)) return apiError('Forbidden', 403);
 
-  const body = await request.json();
-  const parsed = productStockCreateSchema.safeParse(body);
-  if (!parsed.success) {
-    return apiError(parsed.error.issues.map(i => i.message).join(', '), 422);
-  }
+  const parsed = await parseRequestBody(request, productStockCreateSchema);
+  if (!parsed.success) return parsed.response;
 
   const admin = createSupabaseAdminClient();
   const credentialData = parsed.data.credential_data as Record<string, unknown>;
@@ -61,7 +59,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   const { data: existing } = await admin
     .from('product_stock_items')
     .select('id')
-    .eq('product_id', Number(body.product_id))
+    .eq('product_id', parsed.data.product_id)
     .eq('credential_hash', credentialHash)
     .limit(1);
 

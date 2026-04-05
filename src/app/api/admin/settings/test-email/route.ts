@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId, isAdmin } from '@/lib/services/supabase-auth';
 import { sendEmail, buildTestEmailHtml } from '@/lib/services/email';
+import { parseRequestBody } from '@/lib/validation';
+import { testEmailSchema } from '@/lib/validation/schemas';
 
 export async function POST(request: NextRequest) {
   const userId = await getSessionUserId();
@@ -8,15 +10,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const body = await request.json();
-  const { to } = body;
-
-  if (!to || !to.includes('@')) {
-    return NextResponse.json({ error: 'Valid email address required' }, { status: 422 });
-  }
+  const parsed = await parseRequestBody(request, testEmailSchema);
+  if (!parsed.success) return parsed.response;
 
   const html = buildTestEmailHtml();
-  const success = await sendEmail(to, 'DigitalLoka — SMTP Test Email', html);
+  const success = await sendEmail(parsed.data.to, 'DigitalLoka — SMTP Test Email', html);
 
   if (success) {
     return NextResponse.json({ success: true });

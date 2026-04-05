@@ -16,7 +16,7 @@ export async function middleware(request: NextRequest) {
     if (limited) return limited;
   }
 
-  if (pathname.startsWith('/api/payments/webhook') || pathname.startsWith('/api/payments/mayar/webhook')) {
+  if (pathname.startsWith('/api/payments/mayar/webhook')) {
     const limited = await applyRateLimit(request, 'webhook', RATE_LIMITS.webhook);
     if (limited) return limited;
   }
