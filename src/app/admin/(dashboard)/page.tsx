@@ -10,15 +10,14 @@ import { formatDate, formatCurrency } from '@/lib/utils';
 
 interface OverviewStats {
   products: number;
-  entitlements: number;
   users: number;
   orders: number;
   droplets: number;
   actions: number;
   revenue: string;
   audit: number;
+  paidOrders: number;
   productsSub: string;
-  entitlementsSub: string;
   usersSub: string;
   ordersSub: string;
   dropletsSub: string;
@@ -26,7 +25,6 @@ interface OverviewStats {
   revenueSub: string;
   auditSub: string;
   pendingOrders: number;
-  expiringEntitlements: number;
   dropletsInAction: number;
 }
 
@@ -40,13 +38,12 @@ interface AuditRow {
 
 export default function AdminOverviewPage() {
   const [stats, setStats] = useState<OverviewStats>({
-    products: 0, entitlements: 0, users: 0, orders: 0,
-    droplets: 0, actions: 0, revenue: '$0.00', audit: 0,
-    productsSub: '0 active', entitlementsSub: '0 expiring soon',
-    usersSub: '0 blocked', ordersSub: '0 pending',
+    products: 0, users: 0, orders: 0,
+    droplets: 0, actions: 0, revenue: '$0.00', audit: 0, paidOrders: 0,
+    productsSub: '0 active', usersSub: '0 blocked', ordersSub: '0 pending',
     dropletsSub: '0 in action', actionsSub: '0 users affected',
     revenueSub: 'From paid orders', auditSub: '0 failures',
-    pendingOrders: 0, expiringEntitlements: 0, dropletsInAction: 0,
+    pendingOrders: 0, dropletsInAction: 0,
   });
   const [auditRows, setAuditRows] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,10 +51,9 @@ export default function AdminOverviewPage() {
   const loadAllData = useCallback(async () => {
     setLoading(true);
     try {
-      const [productsRes, ordersRes, entitlementsRes, usersRes, dropletsRes, auditRes] = await Promise.allSettled([
+      const [productsRes, ordersRes, usersRes, dropletsRes, auditRes] = await Promise.allSettled([
         fetch('/api/admin/products').then(r => r.json()),
         fetch('/api/admin/orders').then(r => r.json()),
-        fetch('/api/admin/entitlements').then(r => r.json()),
         fetch('/api/admin/users').then(r => r.json()),
         fetch('/api/admin/droplets').then(r => r.json()),
         fetch('/api/admin/audit-logs').then(r => r.json()),
@@ -65,25 +61,14 @@ export default function AdminOverviewPage() {
 
       const products = productsRes.status === 'fulfilled' ? (productsRes.value.data || []) : [];
       const orders = ordersRes.status === 'fulfilled' ? (ordersRes.value.data || []) : [];
-      const entitlements = entitlementsRes.status === 'fulfilled' ? (entitlementsRes.value.data || []) : [];
       const users = usersRes.status === 'fulfilled' ? (usersRes.value.data || []) : [];
       const dropletsRaw = dropletsRes.status === 'fulfilled' ? (dropletsRes.value.data || []) : [];
       const audit = auditRes.status === 'fulfilled' ? (auditRes.value.data || []) : [];
 
       const activeProducts = products.filter((p: Record<string, unknown>) => Boolean(p.is_visible)).length;
-      const activeEntitlements = entitlements.filter((e: Record<string, unknown>) => e.status === 'active').length;
-
-      const now = new Date();
-      const upper = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-      const expiringEntitlements = entitlements.filter((e: Record<string, unknown>) => {
-        if (e.status === 'expiring') return true;
-        const expiryDate = e.expires_at ? new Date(e.expires_at as string) : null;
-        if (!expiryDate || isNaN(expiryDate.getTime())) return false;
-        return expiryDate >= now && expiryDate <= upper;
-      }).length;
-
       const blockedUsers = users.filter((u: Record<string, unknown>) => !u.is_active).length;
       const pendingOrders = orders.filter((o: Record<string, unknown>) => (o.status || 'pending') === 'pending').length;
+      const paidOrders = orders.filter((o: Record<string, unknown>) => String(o.payment_status || '').toLowerCase() === 'paid').length;
 
       const droplets = Array.isArray(dropletsRaw) ? dropletsRaw : [];
       const dropletsInAction = droplets.filter((d: Record<string, unknown>) => !['running', 'stopped'].includes(String(d.status || 'stopped').toLowerCase())).length;
@@ -103,15 +88,14 @@ export default function AdminOverviewPage() {
 
       setStats({
         products: products.length,
-        entitlements: activeEntitlements,
         users: users.length,
         orders: orders.length,
         droplets: droplets.length,
         actions: dropletsInAction,
         revenue: formatCurrency(revenueMtd, 'USD'),
         audit: audit.length,
+        paidOrders,
         productsSub: `${activeProducts} active`,
-        entitlementsSub: `${expiringEntitlements} expiring soon`,
         usersSub: `${blockedUsers} blocked`,
         ordersSub: `${pendingOrders} pending`,
         dropletsSub: `${dropletsInAction} in action`,
@@ -119,7 +103,6 @@ export default function AdminOverviewPage() {
         revenueSub: 'From paid orders',
         auditSub: `${auditFailures} failures`,
         pendingOrders,
-        expiringEntitlements,
         dropletsInAction,
       });
 
@@ -168,9 +151,9 @@ export default function AdminOverviewPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
           {[
             { icon: '📦', label: 'Total Products', value: stats.products, sub: stats.productsSub, bg: 'rgba(139,92,246,0.1)' },
-            { icon: '✅', label: 'Active Entitlements', value: stats.entitlements, sub: stats.entitlementsSub, bg: 'rgba(52,211,153,0.12)' },
-            { icon: '👥', label: 'Total Users', value: stats.users, sub: stats.usersSub, bg: 'rgba(244,114,182,0.12)' },
             { icon: '🛒', label: 'Total Orders', value: stats.orders, sub: stats.ordersSub, bg: 'rgba(251,191,36,0.15)' },
+            { icon: '✅', label: 'Paid Orders', value: stats.paidOrders, sub: `${stats.orders - stats.paidOrders} unpaid`, bg: 'rgba(52,211,153,0.12)' },
+            { icon: '👥', label: 'Total Users', value: stats.users, sub: stats.usersSub, bg: 'rgba(244,114,182,0.12)' },
             { icon: '🖥️', label: 'Managed Droplets', value: stats.droplets, sub: stats.dropletsSub, bg: 'rgba(139,92,246,0.1)' },
             { icon: '⚡', label: 'Actions In Progress', value: stats.actions, sub: stats.actionsSub, bg: 'rgba(244,114,182,0.12)' },
             { icon: '💰', label: 'Revenue (MTD)', value: stats.revenue, sub: stats.revenueSub, bg: 'rgba(52,211,153,0.12)' },
@@ -213,16 +196,6 @@ export default function AdminOverviewPage() {
               <div className="flex items-center gap-2.5">
                 <span className="font-heading text-2xl font-black text-secondary">{stats.pendingOrders}</span>
                 <ButtonLink href="/admin/orders" size="sm">Review →</ButtonLink>
-              </div>
-            </div>
-            <div className="flex items-center justify-between p-3.5 px-4 border-2 border-foreground rounded-[var(--r-lg)] shadow-[3px_3px_0_var(--shadow)] transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--shadow)]" style={{ background: 'rgba(251,191,36,0.08)' }}>
-              <div>
-                <div className="font-bold text-[0.85rem]">Expiring Entitlements</div>
-                <div className="text-[0.72rem] text-muted-foreground mt-0.5">Expire within 7 days</div>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <span className="font-heading text-2xl font-black text-tertiary">{stats.expiringEntitlements}</span>
-                <ButtonLink href="/admin/entitlements" size="sm">Review →</ButtonLink>
               </div>
             </div>
             <div className="flex items-center justify-between p-3.5 px-4 border-2 border-foreground rounded-[var(--r-lg)] shadow-[3px_3px_0_var(--shadow)] transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--shadow)]" style={{ background: 'rgba(139,92,246,0.07)' }}>

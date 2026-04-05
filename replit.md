@@ -37,9 +37,9 @@ The application is built with Next.js 14 (App Router) using TypeScript and style
 **Key Features:**
 - **Catalog/Marketplace:** Public browsing with search, sort, and filter functionality.
 - **Magic Link Authentication:** Passwordless login for users and administrators using a PKCE flow.
-- **User Dashboard:** Provides an overview of stats, DigitalOcean droplet management (power actions), product entitlements, order history, and account settings.
-- **Admin Panel:** Comprehensive CRUD operations for products, product types (with schema builder), stock items, users (with role/block management), orders (fulfillment), entitlements, DigitalOcean droplets, and site settings. Includes an audit log with CSV export and live statistics. Stock management masks sensitive credentials (accounts, API keys) by default while showing links; has "Reveal/Hide" toggle. Shows "Sold To" column with buyer email and sold date.
-- **Commerce System:** Features an atomic checkout flow, idempotent payment webhook processing, collision-resistant order numbers, and shared entitlement provisioning logic. Products with no available stock (non-VPS) have Buy/Add to Cart disabled on catalog and product detail pages while wishlist remains functional.
+- **User Dashboard:** Provides an overview of stats, DigitalOcean droplet management (power actions), purchased products (via stock items), order history, and account settings.
+- **Admin Panel:** Comprehensive CRUD operations for products, product types (with schema builder), stock items, users (with role/block management), orders (fulfillment), DigitalOcean droplets, and site settings. Includes an audit log with CSV export and live statistics. Stock management masks sensitive credentials (accounts, API keys) by default while showing links; has "Reveal/Hide" toggle. Shows "Sold To" column with buyer email and sold date.
+- **Commerce System:** Features an atomic checkout flow, idempotent payment webhook processing, collision-resistant order numbers, and direct stock item assignment on fulfillment. Products with no available stock (non-VPS) have Buy/Add to Cart disabled on catalog and product detail pages while wishlist remains functional.
 - **Stock Availability:** The products API enriches each product with `available_stock` count (unsold, enabled stock items). VPS products return `null` (always available). If stock query fails, returns `null` (unknown) to avoid false out-of-stock. All dates use Asia/Jakarta (WIB) timezone. Server-side stock validation in `createCheckoutOrder` (`src/lib/services/orders.ts`) rejects orders for non-VPS products with insufficient stock (422 error).
 - **Route Protection:** Middleware secures dashboard, admin, and API routes, with admin role checks implemented at the middleware level.
 - **Rate Limiting:** A sliding window rate limiter protects authentication, webhooks, checkout, product, cart, wishlist, and user action endpoints, supporting in-memory or Supabase-backed storage.
@@ -79,7 +79,8 @@ The Neo-Brutalist design system is characterized by:
 - **Outfit & Plus Jakarta Sans:** Custom fonts used for headings and body text, respectively.
 
 ## Database (Supabase PostgreSQL)
-Tables: `users`, `products`, `product_categories`, `product_types`, `product_stock_items`, `orders`, `order_items`, `transactions`, `payment_events`, `entitlements`, `site_settings`, `audit_logs`, `wishlists`, `cart_items`, `vps_provider_data`
+Tables: `users`, `products`, `product_categories`, `product_types`, `product_stock_items`, `orders`, `order_items`, `transactions`, `payment_events`, `site_settings`, `audit_logs`, `wishlists`, `cart_items`, `vps_provider_data`
+Note: The `entitlements` table still exists in the database but is no longer used by the application. All product access is determined via `product_stock_items.sold_user_id` and `sold_order_item_id` fields.
 
 Pricing is stored directly on the `products` table (`price_amount`, `price_currency`, `price_billing_period`) — no separate pricing table.
 
@@ -111,10 +112,8 @@ Run against Supabase to apply performance indexes:
 - `products(is_visible, status, category_slug)` — catalog filter queries
 - `products(slug)` — slug lookups
 - `products(name)`, `products(short_description)` — GIN trigram indexes for ILIKE search (requires pg_trgm)
-- `entitlements(order_item_id, user_id)` — entitlement existence checks
 - `product_stock_items(product_id, credential_hash)` — already covered by existing unique index from initial migration
 - `orders(user_id, created_at)` — user order listing queries
-- `entitlements(user_id, created_at)` — user entitlement queries
 - `product_stock_items(product_id, status)` — stock availability checks
 - `products(is_visible, created_at)` — visible product listing by date
 

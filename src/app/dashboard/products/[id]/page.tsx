@@ -18,13 +18,11 @@ interface Product {
   product_type: string;
 }
 
-interface Entitlement {
+interface StockItem {
   id: number;
   product_id: number;
   status: string;
-  starts_at: string | null;
-  expires_at: string | null;
-  created_at: string;
+  sold_at: string | null;
   meta: Record<string, unknown> | null;
   product: Product | null;
   credential_data: Record<string, string> | null;
@@ -34,11 +32,11 @@ function isLinkValue(val: string): boolean {
   return /^https?:\/\//i.test(val);
 }
 
-function CredentialSection({ entitlement }: { entitlement: Entitlement }) {
+function CredentialSection({ item }: { item: StockItem }) {
   const [revealed, setRevealed] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const cred = entitlement.credential_data;
+  const cred = item.credential_data;
   if (!cred || Object.keys(cred).length === 0) return null;
 
   const headers = Object.keys(cred);
@@ -150,8 +148,8 @@ function CredentialSection({ entitlement }: { entitlement: Entitlement }) {
   );
 }
 
-function VpsSection({ entitlement }: { entitlement: Entitlement }) {
-  const meta = (entitlement.meta as Record<string, unknown>) || {};
+function VpsSection({ item }: { item: StockItem }) {
+  const meta = (item.meta as Record<string, unknown>) || {};
   const dropletId = meta.droplet_id as number | undefined;
   const dropletName = meta.droplet_name as string | undefined;
   const sizeSlug = meta.size_slug as string | undefined;
@@ -209,7 +207,7 @@ function VpsSection({ entitlement }: { entitlement: Entitlement }) {
 
 export default function ProductDetailPage() {
   const { id } = useParams();
-  const [entitlement, setEntitlement] = useState<Entitlement | null>(null);
+  const [item, setItem] = useState<StockItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -219,7 +217,7 @@ export default function ProductDetailPage() {
         if (!r.ok) throw new Error();
         return r.json();
       })
-      .then((data) => setEntitlement(data.data))
+      .then((data) => setItem(data.data))
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [id]);
@@ -232,7 +230,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (error || !entitlement) {
+  if (error || !item) {
     return (
       <div style={{ animation: 'fadeUp 0.3s var(--ease-bounce)' }}>
         <EmptyState icon="❌" title="Product not found" description="This product doesn't exist or you don't have access to it." />
@@ -245,11 +243,11 @@ export default function ProductDetailPage() {
     );
   }
 
-  const product = entitlement.product;
+  const product = item.product;
   const isVps = product?.product_type === 'vps_droplet';
-  const meta = (entitlement.meta as Record<string, unknown>) || {};
+  const meta = (item.meta as Record<string, unknown>) || {};
   const hasVpsDetails = !!meta.droplet_id;
-  const hasCredentials = entitlement.credential_data && Object.keys(entitlement.credential_data).length > 0;
+  const hasCredentials = item.credential_data && Object.keys(item.credential_data).length > 0;
 
   return (
     <div style={{ animation: 'fadeUp 0.3s var(--ease-bounce)' }}>
@@ -272,7 +270,7 @@ export default function ProductDetailPage() {
 
       <PageHeader
         title={product?.name || 'Product'}
-        subtitle={`Entitlement · ${entitlement.status.charAt(0).toUpperCase() + entitlement.status.slice(1)}`}
+        subtitle={`${item.status.charAt(0).toUpperCase() + item.status.slice(1)} · Purchased ${item.sold_at ? formatDate(item.sold_at) : '—'}`}
       />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -287,7 +285,7 @@ export default function ProductDetailPage() {
                 <div style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', marginBottom: 4 }}>
                   Status
                 </div>
-                <StatusBadge variant={entitlement.status} label={entitlement.status} />
+                <StatusBadge variant={item.status} label={item.status} />
               </div>
               <div>
                 <div style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', marginBottom: 4 }}>
@@ -302,27 +300,19 @@ export default function ProductDetailPage() {
               </div>
               <div>
                 <div style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', marginBottom: 4 }}>
-                  Access Since
+                  Purchased
                 </div>
                 <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                  {entitlement.starts_at ? formatDate(entitlement.starts_at) : formatDate(entitlement.created_at)}
-                </span>
-              </div>
-              <div>
-                <div style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', marginBottom: 4 }}>
-                  Expires
-                </div>
-                <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                  {entitlement.expires_at ? formatDate(entitlement.expires_at) : 'Never'}
+                  {item.sold_at ? formatDate(item.sold_at) : '—'}
                 </span>
               </div>
             </div>
           </div>
         </Panel>
 
-        {hasCredentials && <CredentialSection entitlement={entitlement} />}
+        {hasCredentials && <CredentialSection item={item} />}
 
-        {isVps && hasVpsDetails && <VpsSection entitlement={entitlement} />}
+        {isVps && hasVpsDetails && <VpsSection item={item} />}
 
         {!hasCredentials && !hasVpsDetails && (
           <Panel>

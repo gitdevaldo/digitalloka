@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, Package, Server, ShoppingCart,
   FileText, User, HelpCircle, LogOut, ChevronLeft,
-  ChevronRight, Users, Settings, CreditCard, Shield,
+  ChevronRight, Users, Settings, Shield,
   Layers, Database
 } from 'lucide-react';
 
@@ -51,7 +51,6 @@ const adminNav: NavItemDef[] = [
   },
   { label: 'Orders', href: '/admin/orders', icon: <ShoppingCart size={17} />, group: 'Main', badge: 'count' },
   { label: 'Users', href: '/admin/users', icon: <Users size={17} />, group: 'Main' },
-  { label: 'Entitlements', href: '/admin/entitlements', icon: <CreditCard size={17} />, group: 'Main', badge: 'dot' },
   { label: 'Droplets', href: '/admin/droplets', icon: <Server size={17} />, group: 'Main' },
   { label: 'Audit Logs', href: '/admin/audit-logs', icon: <FileText size={17} />, group: 'Main' },
   { label: 'Settings', href: '/admin/settings', icon: <Settings size={17} />, group: 'Main' },

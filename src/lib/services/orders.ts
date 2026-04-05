@@ -1,7 +1,6 @@
 import crypto from 'crypto';
 import type { TypedSupabaseClient } from '@/lib/supabase/database.types';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
-import { createEntitlementsForOrder } from '@/lib/services/entitlements';
 import { applyCursorFilter, applyCursorPagination } from '@/lib/cursor-pagination';
 
 const ALLOWED_STATUS_TRANSITIONS: Record<string, string[]> = {
@@ -122,10 +121,6 @@ export async function updateOrderStatus(orderId: number, newStatus: string) {
 
   const { error } = await admin.from('orders').update(updates).eq('id', orderId);
   if (error) throw new Error(error.message);
-
-  if (newStatus === 'paid') {
-    await createEntitlementsForOrder(orderId, order.user_id);
-  }
 
   return await getOrderById(orderId);
 }

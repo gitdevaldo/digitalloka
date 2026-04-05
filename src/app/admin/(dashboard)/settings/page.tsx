@@ -89,12 +89,6 @@ interface GroupedSettings {
     max_product_images: string;
     reviews_enabled: boolean;
   };
-  entitlement: {
-    default_expiry_days: string;
-    expiry_warning_days: string;
-    auto_suspend_on_expiry: boolean;
-    grace_period_days: string;
-  };
   order: {
     auto_fulfill_digital: boolean;
     currency: string;
@@ -124,12 +118,6 @@ const DEFAULTS: GroupedSettings = {
     slug_format: 'kebab-case',
     max_product_images: '8',
     reviews_enabled: true,
-  },
-  entitlement: {
-    default_expiry_days: '365',
-    expiry_warning_days: '7',
-    auto_suspend_on_expiry: true,
-    grace_period_days: '3',
   },
   order: {
     auto_fulfill_digital: true,
@@ -258,20 +246,6 @@ export default function AdminSettingsPage() {
             </SettingRow>
           </SettingsPanel>
 
-          <SettingsPanel title="Entitlement Defaults">
-            <SettingRow label="Default Expiry (days)" desc="Applied when no custom expiry is set">
-              <SettingInput value={settings.entitlement.default_expiry_days} onChange={(v) => updateField('entitlement', 'default_expiry_days', v)} type="number" width="70px" />
-            </SettingRow>
-            <SettingRow label="Expiry Warning (days before)" desc="Notify user N days before expiry">
-              <SettingInput value={settings.entitlement.expiry_warning_days} onChange={(v) => updateField('entitlement', 'expiry_warning_days', v)} type="number" width="70px" />
-            </SettingRow>
-            <SettingRow label="Auto-suspend on Expiry" desc="Automatically suspend expired entitlements">
-              <Toggle checked={settings.entitlement.auto_suspend_on_expiry} onChange={(v) => updateField('entitlement', 'auto_suspend_on_expiry', v)} />
-            </SettingRow>
-            <SettingRow label="Grace Period (days)" desc="Days after expiry before full revocation">
-              <SettingInput value={settings.entitlement.grace_period_days} onChange={(v) => updateField('entitlement', 'grace_period_days', v)} type="number" width="70px" />
-            </SettingRow>
-          </SettingsPanel>
         </div>
 
         <div>

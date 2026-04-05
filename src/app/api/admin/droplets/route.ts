@@ -53,20 +53,6 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   try {
     const rawDroplets = await listDroplets(dropletIds);
 
-    const ownerUserIds = [...new Set(Object.values(ownersByDropletId).map(o => o.id))];
-    const { data: entitlements } = await admin
-      .from('entitlements')
-      .select('id, user_id')
-      .in('user_id', ownerUserIds)
-      .eq('status', 'active');
-
-    const entitlementByUserId: Record<string, number> = {};
-    for (const ent of (entitlements || [])) {
-      if (!entitlementByUserId[ent.user_id]) {
-        entitlementByUserId[ent.user_id] = ent.id;
-      }
-    }
-
     const mapped = rawDroplets.map((droplet) => {
       const owner = ownersByDropletId[droplet.id] || { id: null, email: null };
       const v4 = droplet.networks?.v4 || [];
@@ -80,7 +66,6 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
         ip_address: v4[0]?.ip_address || null,
         owner_user_id: owner.id,
         owner_email: owner.email,
-        entitlement_id: owner.id ? entitlementByUserId[owner.id] || null : null,
         updated_at: droplet.created_at || null,
       };
     });

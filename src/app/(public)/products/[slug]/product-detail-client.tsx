@@ -580,7 +580,7 @@ export default function ProductDetailClient({ product }: { product: ProductData 
               '24/7 infrastructure monitoring with email alerts',
             ] : [
               'Instant delivery after checkout — access from your dashboard immediately',
-              'Clear ownership and entitlement tracking in your account',
+              'Clear ownership tracking in your account',
               'Status and renewal information always visible',
               'Secure credential handling and storage',
               'Customer support included for product lifecycle',
@@ -802,7 +802,7 @@ export default function ProductDetailClient({ product }: { product: ProductData 
             <div className="timeline">
               {[
                 { n: '1', title: 'Configure your server', desc: 'Pick provider, region, spec, and OS right here on the product page.', bg: 'rgba(139,92,246,0.1)' },
-                { n: '2', title: 'Complete checkout', desc: 'Pay securely. Your account and server entitlement is created instantly.', bg: 'rgba(251,191,36,0.15)' },
+                { n: '2', title: 'Complete checkout', desc: 'Pay securely. Your account and server access is created instantly.', bg: 'rgba(251,191,36,0.15)' },
                 { n: '3', title: 'Server provisioned', desc: 'Your VPS spins up in ~60s. OS, IP, and SSH credentials ready in your dashboard.', bg: 'rgba(52,211,153,0.12)' },
                 { n: '4', title: 'Start building', desc: 'SSH in or use the web terminal. Full root access from the moment you log in.', bg: 'rgba(244,114,182,0.12)' },
               ].map((s) => (

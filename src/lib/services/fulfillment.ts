@@ -198,20 +198,6 @@ async function fulfillVpsDroplet(
     droplet_ids: [...currentIds, droplet.id],
   }).eq('id', userId);
 
-  await admin.from('entitlements')
-    .update({
-      meta: {
-        source_order_id: orderId,
-        droplet_id: droplet.id,
-        droplet_name: dropletName,
-        size_slug: sizeSlug,
-        region: region,
-        image: image,
-      } as unknown as Json,
-    })
-    .eq('order_item_id', item.id)
-    .eq('user_id', userId);
-
   return {
     success: true,
     product_type: 'vps_droplet',
@@ -261,16 +247,6 @@ async function fulfillStockProduct(
   if (!result.success) {
     return { success: false, product_type: product.product_type, product_id: product.id, details: {}, error: result.error as string };
   }
-
-  await admin.from('entitlements')
-    .update({
-      meta: {
-        stock_item_id: result.stock_item_id,
-        is_unlimited: result.is_unlimited,
-      } as unknown as Json,
-    })
-    .eq('order_item_id', item.id)
-    .eq('user_id', userId);
 
   return {
     success: true,

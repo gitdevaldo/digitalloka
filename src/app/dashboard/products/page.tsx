@@ -54,20 +54,11 @@ export default function UserProductsPage() {
       ),
     },
     {
-      key: 'starts_at',
-      label: 'Access',
+      key: 'sold_at',
+      label: 'Purchased',
       render: (row: Record<string, unknown>) => (
         <span style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)' }}>
-          {row.starts_at ? formatDate(row.starts_at as string) : '—'}
-        </span>
-      ),
-    },
-    {
-      key: 'expires_at',
-      label: 'Expires',
-      render: (row: Record<string, unknown>) => (
-        <span style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)' }}>
-          {row.expires_at ? formatDate(row.expires_at as string) : '—'}
+          {row.sold_at ? formatDate(row.sold_at as string) : '—'}
         </span>
       ),
     },
@@ -84,7 +75,7 @@ export default function UserProductsPage() {
 
   return (
     <div style={{ animation: 'fadeUp 0.3s var(--ease-bounce)' }}>
-      <PageHeader title="All Products" subtitle="Your purchased products and entitlements." />
+      <PageHeader title="All Products" subtitle="Your purchased products." />
 
       {loading ? (
         <div className="h-32 bg-card border-2 border-border rounded-xl animate-pulse" />

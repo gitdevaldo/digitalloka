@@ -19,7 +19,6 @@ interface Droplet {
   ip_address: string | null;
   owner_user_id: string | null;
   owner_email: string | null;
-  entitlement_id: number | null;
   updated_at: string | null;
 }
 
@@ -78,7 +77,6 @@ export default function AdminDropletsPage() {
   const columns = [
     { key: 'id', label: 'Droplet ID', render: (row: Record<string, unknown>) => <span style={{ fontFamily: 'monospace', fontSize: '0.72rem' }}>{row.id as number}</span> },
     { key: 'owner_email', label: 'Owner', style: { fontSize: '0.78rem' } as React.CSSProperties },
-    { key: 'entitlement_id', label: 'Entitlement', render: (row: Record<string, unknown>) => <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: 'var(--muted-foreground)' }}>{row.entitlement_id ? String(row.entitlement_id).slice(0, 8) : '—'}</span> },
     { key: 'region', label: 'Region', render: (row: Record<string, unknown>) => <span style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase' as const }}>{(row.region as string) || '—'}</span> },
     { key: 'size', label: 'Plan', style: { fontSize: '0.78rem' } as React.CSSProperties },
     { key: 'status', label: 'Status', render: (row: Record<string, unknown>) => <StatusBadge variant={(row.status as string) === 'active' ? 'running' : (row.status as string) === 'off' ? 'stopped' : 'starting'} label={row.status as string} /> },

@@ -147,12 +147,6 @@ export const sessionSetSchema = z.object({
   refresh_token: z.string().optional().default(''),
 });
 
-export const productActionSchema = z.object({
-  action: z.enum(['view_details', 'download_assets', 'renew', 'revoke'], {
-    errorMap: () => ({ message: 'Invalid action' }),
-  }),
-});
-
 export const wishlistToggleSchema = z.object({
   product_id: z.coerce.number().int().positive('product_id must be a positive integer'),
 });
@@ -173,17 +167,6 @@ export const userAccessUpdateSchema = z.object({
 
 export const orderStatusUpdateSchema = z.object({
   status: z.string().min(1, 'status is required'),
-});
-
-export const entitlementStatusUpdateSchema = z.object({
-  status: z.enum(['pending', 'active', 'expired', 'revoked'], {
-    errorMap: () => ({ message: 'Invalid status' }),
-  }),
-  reason: z.string().optional(),
-});
-
-export const entitlementExtendSchema = z.object({
-  days: z.coerce.number().int().positive().optional().default(30),
 });
 
 export const categoryCreateSchema = z.object({

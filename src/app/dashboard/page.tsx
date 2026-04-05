@@ -34,7 +34,7 @@ export default function DashboardOverviewPage() {
   const stats = [
     { icon: '📦', label: 'Total Products', value: String(products.length), sub: 'across all types', bg: 'rgba(139,92,246,0.12)' },
     { icon: '🖥️', label: 'VPS Droplets', value: String(droplets.length), sub: `${runningDroplets} running · ${stoppedDroplets} stopped`, bg: 'rgba(139,92,246,0.12)', bars: droplets.length > 0 },
-    { icon: '✅', label: 'Active Entitlements', value: String(products.filter(p => (p.status as string) === 'active').length), sub: expiringProducts.length ? `${expiringProducts.length} expiring soon` : 'all good', bg: 'rgba(52,211,153,0.15)' },
+    { icon: '✅', label: 'Active Products', value: String(products.filter(p => (p.status as string) === 'active').length), sub: expiringProducts.length ? `${expiringProducts.length} expiring soon` : 'all good', bg: 'rgba(52,211,153,0.15)' },
     { icon: '🛒', label: 'Recent Orders', value: String(orders.length), sub: `${orders.filter(o => (o.status as string) === 'pending').length} pending`, bg: 'rgba(251,191,36,0.15)' },
   ];
 
@@ -192,7 +192,7 @@ export default function DashboardOverviewPage() {
       </div>
 
       {expiringProducts.length > 0 && (
-        <Panel title="⚠️ Expiring / Pending Entitlements" noPad>
+        <Panel title="⚠️ Expiring / Pending Products" noPad>
           <div style={{ padding: 16 }}>
             <AdminTable columns={expiringColumns} rows={expiringProducts} />
           </div>

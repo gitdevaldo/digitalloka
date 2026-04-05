@@ -53,7 +53,7 @@ export default function AdminUsersPage() {
     { key: 'email', label: 'Email', render: (row: Record<string, unknown>) => <span style={{ fontWeight: 700 }}>{row.email as string}</span> },
     { key: 'role', label: 'Role', render: (row: Record<string, unknown>) => <StatusBadge variant={(row.role as string) === 'admin' ? 'accent' : 'active'} label={row.role as string} showDot={false} /> },
     { key: 'is_active', label: 'Status', render: (row: Record<string, unknown>) => <StatusBadge variant={(row.is_active as boolean) ? 'active' : 'stopped'} label={(row.is_active as boolean) ? 'Active' : 'Blocked'} /> },
-    { key: 'entitlements_count', label: 'Products', render: (row: Record<string, unknown>) => <span>{(row.entitlements_count as number) ?? 0}</span> },
+    { key: 'orders_count', label: 'Orders', render: (row: Record<string, unknown>) => <span>{(row.orders_count as number) ?? 0}</span> },
     { key: 'last_sign_in_at', label: 'Last Active', style: { fontSize: '0.72rem', color: 'var(--muted-foreground)' } as React.CSSProperties, render: (row: Record<string, unknown>) => <span>{row.last_sign_in_at ? formatDate(row.last_sign_in_at as string) : '—'}</span> },
     { key: 'actions', label: 'Actions', render: (row: Record<string, unknown>) => <Button size="sm" onClick={() => setSelected(row)}>Manage</Button> },
   ];

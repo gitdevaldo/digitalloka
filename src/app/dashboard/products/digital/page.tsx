@@ -56,7 +56,7 @@ export default function DigitalProductsPage() {
                     <div>
                       <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{(product?.name as string) || 'Unknown'}</div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', marginTop: '2px' }}>
-                        Purchased {item.starts_at ? new Date(item.starts_at as string).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                        Purchased {item.sold_at ? new Date(item.sold_at as string).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                       </div>
                     </div>
                     <StatusBadge variant={item.status as string} label={item.status as string} />

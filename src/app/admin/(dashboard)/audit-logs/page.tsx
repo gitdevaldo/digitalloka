@@ -108,7 +108,7 @@ export default function AdminAuditLogsPage() {
           <option>All Actors</option><option>admin@dl.dev</option><option>system</option>
         </select>
         <select className="border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 font-body text-[0.75rem] font-semibold bg-input text-foreground cursor-pointer focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)]">
-          <option>All Actions</option><option>droplet.*</option><option>entitlement.*</option><option>user.*</option><option>product.*</option><option>order.*</option>
+          <option>All Actions</option><option>droplet.*</option><option>user.*</option><option>product.*</option><option>order.*</option>
         </select>
         <select className="border-2 border-border rounded-[var(--r-sm)] px-2.5 py-1.5 font-body text-[0.75rem] font-semibold bg-input text-foreground cursor-pointer focus:outline-none focus:border-accent focus:shadow-[2px_2px_0_var(--accent)]">
           <option>All Results</option><option>ok</option><option>fail</option><option>warn</option>
