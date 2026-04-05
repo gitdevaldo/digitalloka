@@ -6,20 +6,14 @@ import crypto from 'crypto';
 import { withErrorHandler } from '@/lib/api-handler';
 import { apiError } from '@/lib/api-response';
 
-function verifyWebhookSignature(rawBody: string, signatureHeader: string | null): boolean {
-  const webhookSecret = process.env.MAYAR_WEBHOOK_TOKEN;
-  if (!webhookSecret) return false;
-  if (!signatureHeader) return false;
-
-  const expectedSignature = crypto
-    .createHmac('sha256', webhookSecret)
-    .update(rawBody)
-    .digest('hex');
+function verifyCallbackToken(tokenHeader: string | null): boolean {
+  const expectedToken = process.env.MAYAR_WEBHOOK_TOKEN;
+  if (!expectedToken || !tokenHeader) return false;
 
   try {
     return crypto.timingSafeEqual(
-      Buffer.from(signatureHeader),
-      Buffer.from(expectedSignature)
+      Buffer.from(expectedToken),
+      Buffer.from(tokenHeader)
     );
   } catch {
     return false;
@@ -30,29 +24,14 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   try {
     const rawBody = await request.text();
 
-    const signature = request.headers.get('x-callback-signature')
-      || request.headers.get('x-webhook-signature')
-      || request.headers.get('x-mayar-signature');
+    const callbackToken = request.headers.get('x-callback-token');
 
-    const isSandbox = process.env.MAYAR_SANDBOX === 'true';
-
-    if (!verifyWebhookSignature(rawBody, signature)) {
-      console.error('[mayar-webhook] Invalid signature', {
-        hasToken: !!process.env.MAYAR_WEBHOOK_TOKEN,
-        hasSignatureHeader: !!signature,
-        headers: {
-          'x-callback-signature': !!request.headers.get('x-callback-signature'),
-          'x-webhook-signature': !!request.headers.get('x-webhook-signature'),
-          'x-mayar-signature': !!request.headers.get('x-mayar-signature'),
-        },
-        isSandbox,
+    if (!verifyCallbackToken(callbackToken)) {
+      console.error('[mayar-webhook] Invalid callback token', {
+        hasConfiguredToken: !!process.env.MAYAR_WEBHOOK_TOKEN,
+        hasReceivedToken: !!callbackToken,
       });
-
-      if (isSandbox) {
-        console.warn('[mayar-webhook] Bypassing signature check in sandbox mode');
-      } else {
-        return apiError('Invalid signature', 401);
-      }
+      return apiError('Invalid token', 401);
     }
 
     const payload = JSON.parse(rawBody);
