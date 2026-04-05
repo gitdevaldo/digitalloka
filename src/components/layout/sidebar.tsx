@@ -104,7 +104,7 @@ export function Sidebar({ variant = 'dashboard', collapsed = false, onToggle }: 
             'flex items-center gap-2.5 w-full text-left',
             variant === 'admin' ? 'px-2.5 py-2.5 rounded-[var(--r-md)] text-[0.83rem]' : 'px-2.5 py-2.5 rounded-[var(--radius-md)] text-[0.875rem]',
             'cursor-pointer border-2 border-transparent transition-all duration-150 whitespace-nowrap overflow-hidden min-h-[42px]',
-            'text-foreground font-semibold hover:bg-muted hover:border-border',
+            'text-foreground font-semibold hover:bg-muted hover:border-border hover:text-foreground',
           )}
         >
           <span className="flex-shrink-0 flex items-center justify-center text-muted-foreground">{item.icon}</span>
@@ -123,7 +123,7 @@ export function Sidebar({ variant = 'dashboard', collapsed = false, onToggle }: 
               variant === 'admin' ? 'px-2.5 py-2.5 rounded-[var(--r-md)] cursor-pointer border-2 border-transparent' : 'px-2.5 py-2.5 rounded-[var(--radius-md)] cursor-pointer border-2 border-transparent',
               'transition-all duration-150 whitespace-nowrap overflow-hidden min-h-[42px]',
               variant === 'admin' ? 'text-foreground text-[0.83rem] font-semibold' : 'text-foreground text-[0.875rem] font-semibold',
-              'hover:bg-muted hover:border-border',
+              'hover:bg-muted hover:border-border hover:text-foreground',
               childActive && 'bg-muted border-border',
             )}
           >
@@ -173,8 +173,9 @@ export function Sidebar({ variant = 'dashboard', collapsed = false, onToggle }: 
           'cursor-pointer border-2 border-transparent transition-all duration-150 whitespace-nowrap overflow-hidden',
           item.indent ? 'pl-7 min-h-[38px]' : 'min-h-[42px]',
           'no-underline text-foreground font-semibold',
-          'hover:bg-muted hover:border-border',
-          active && 'bg-accent text-white border-foreground shadow-[3px_3px_0_var(--shadow)] -translate-x-px -translate-y-px',
+          active
+            ? 'bg-accent text-white border-foreground shadow-[3px_3px_0_var(--shadow)] -translate-x-px -translate-y-px hover:bg-accent hover:border-foreground'
+            : 'hover:bg-muted hover:border-border hover:text-foreground',
         )}
       >
         <span className={cn('flex-shrink-0 flex items-center justify-center text-muted-foreground', active && 'text-white')}>{item.icon}</span>
